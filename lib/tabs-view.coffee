@@ -3,8 +3,8 @@ SortableList = require 'sortable-list'
 Tab = require 'tabs/src/tab'
 
 module.exports =
-class Tabs extends SortableList
-  @activate: (rootView) ->
+class Tabs extends View
+  @activate: ->
     rootView.eachEditor (editor) =>
       @prependToEditorPane(rootView, editor) if editor.attached
 
