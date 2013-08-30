@@ -131,7 +131,7 @@ class TabBarView extends View
     fromPane      = @paneContainer.paneAtIndex(fromPaneIndex)
     toIndex       = @getDropTargetIndex(event)
     toPane        = $(event.target).closest('.pane').view()
-    draggedTab    = fromPane.find(".tabs .sortable:eq(#{fromIndex})").view()
+    draggedTab    = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view()
     item          = draggedTab.item
 
     if toPane is fromPane
@@ -143,8 +143,8 @@ class TabBarView extends View
     toPane.focus()
 
   removeDropTargetClasses: ->
-    rootView.find('.tabs .is-drop-target').removeClass 'is-drop-target'
-    rootView.find('.tabs .drop-target-is-after').removeClass 'drop-target-is-after'
+    rootView.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
+    rootView.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
 
   getDropTargetIndex: (event) ->
     el = $(event.target).closest('.sortable')
