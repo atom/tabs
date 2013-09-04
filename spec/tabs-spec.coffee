@@ -3,7 +3,7 @@ _ = require 'underscore'
 RootView = require 'root-view'
 Pane = require 'pane'
 PaneContainer = require 'pane-container'
-TabBarView = require 'tabs/lib/tab-bar-view'
+TabBarView = require '../lib/tab-bar-view'
 {View} = require 'space-pen'
 
 describe "Tabs package main", ->
