@@ -1,8 +1,6 @@
 $ = require 'jquery'
 _ = require 'underscore'
 RootView = require 'root-view'
-Pane = require 'pane'
-PaneContainer = require 'pane-container'
 TabBarView = require '../lib/tab-bar-view'
 {View} = require 'space-pen'
 
@@ -36,11 +34,11 @@ describe "TabBarView", ->
     registerDeserializer(TestView)
     item1 = new TestView('Item 1')
     item2 = new TestView('Item 2')
-    editSession1 = project.open('sample.js')
-    paneContainer = new PaneContainer
-    pane = new Pane(item1, editSession1, item2)
+    editSession1 = rootView.open('sample.js')
+    pane = rootView.getActivePane()
+    pane.addItem(item1, 0)
+    pane.addItem(item2, 2)
     pane.showItem(item2)
-    paneContainer.append(pane)
     tabBar = new TabBarView(pane)
 
   afterEach ->
