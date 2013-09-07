@@ -13,10 +13,10 @@ describe "Tabs package main", ->
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
       expect(rootView.panes.find('.pane').length).toBe 1
-      expect(rootView.panes.find('.pane > .tabs').length).toBe 1
+      expect(rootView.panes.find('.pane > .tab-bar').length).toBe 1
       rootView.getActivePane().splitRight()
       expect(rootView.find('.pane').length).toBe 2
-      expect(rootView.panes.find('.pane > .tabs').length).toBe 2
+      expect(rootView.panes.find('.pane > .tab-bar').length).toBe 2
 
 describe "TabBarView", ->
   [item1, item2, editSession1, pane, tabBar] = []
