@@ -1,6 +1,4 @@
-$ = require 'jquery'
-{View} = require 'space-pen'
-_ = require 'underscore'
+{_, $, View} = require 'atom-api'
 TabView = require './tab-view'
 
 module.exports =

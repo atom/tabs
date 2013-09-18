@@ -1,6 +1,4 @@
-$ = require 'jquery'
-{View} = require 'space-pen'
-fsUtils = require 'fs-utils'
+{$, fs, View} = require 'atom-api'
 path = require 'path'
 
 module.exports =

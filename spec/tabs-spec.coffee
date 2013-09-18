@@ -1,8 +1,5 @@
-$ = require 'jquery'
-_ = require 'underscore'
-RootView = require 'root-view'
+{_, $, RootView, View}  = require 'atom-api'
 TabBarView = require '../lib/tab-bar-view'
-{View} = require 'space-pen'
 
 describe "Tabs package main", ->
   beforeEach ->
