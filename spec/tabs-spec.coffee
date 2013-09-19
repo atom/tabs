@@ -1,4 +1,4 @@
-{_, $, RootView, View}  = require 'atom-api'
+{_, $, RootView, View}  = require 'atom'
 TabBarView = require '../lib/tab-bar-view'
 
 describe "Tabs package main", ->

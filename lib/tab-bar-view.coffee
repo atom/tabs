@@ -1,4 +1,4 @@
-{_, $, View} = require 'atom-api'
+{_, $, View} = require 'atom'
 TabView = require './tab-view'
 
 module.exports =
