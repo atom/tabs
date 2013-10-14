@@ -4,7 +4,7 @@ TabBarView = require '../lib/tab-bar-view'
 describe "Tabs package main", ->
   beforeEach ->
     window.rootView = new RootView
-    rootView.open('sample.js')
+    rootView.openSync('sample.js')
     atom.activatePackage("tabs")
 
   describe ".activate()", ->
@@ -31,7 +31,7 @@ describe "TabBarView", ->
     registerDeserializer(TestView)
     item1 = new TestView('Item 1')
     item2 = new TestView('Item 2')
-    editSession1 = rootView.open('sample.js')
+    editSession1 = rootView.openSync('sample.js')
     pane = rootView.getActivePane()
     pane.addItem(item1, 0)
     pane.addItem(item2, 2)
@@ -72,7 +72,7 @@ describe "TabBarView", ->
       expect(tabBar.tabAtIndex(1).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
-      editSession2 = project.open('sample.txt')
+      editSession2 = project.openSync('sample.txt')
       editSession2.insertText('x')
       pane.showItem(editSession2)
       expect(tabBar.tabForItem(editSession2)).toHaveClass 'modified'
