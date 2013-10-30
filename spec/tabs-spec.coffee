@@ -11,7 +11,8 @@ describe "Tabs package main", ->
     it "appends a tab bar all existing and new panes", ->
       expect(rootView.panes.find('.pane').length).toBe 1
       expect(rootView.panes.find('.pane > .tab-bar').length).toBe 1
-      rootView.getActivePane().splitRight()
+      pane = rootView.getActivePane()
+      pane.splitRight(pane.copyActiveItem())
       expect(rootView.find('.pane').length).toBe 2
       expect(rootView.panes.find('.pane > .tab-bar').length).toBe 2
 
@@ -248,7 +249,7 @@ describe "TabBarView", ->
       [pane2, tabBar2, item2b] = []
 
       beforeEach ->
-        pane2 = pane.splitRight()
+        pane2 = pane.splitRight(pane.copyActiveItem())
         [item2b] = pane2.getItems()
         tabBar2 = new TabBarView(pane2)
 
