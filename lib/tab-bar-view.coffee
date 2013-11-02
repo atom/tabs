@@ -163,8 +163,6 @@ class TabBarView extends View
     el = target.closest('.sortable')
     el = sortables.last() if el.length == 0
 
-    console.log el.find('.title').text()
-
     return unless el
 
     elementCenter = el.offset().left + el.width() / 2
