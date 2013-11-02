@@ -82,6 +82,8 @@ class TabBarView extends View
     el.addClass 'is-dragging'
     event.originalEvent.dataTransfer.setData 'sortable-index', el.index()
 
+    @placeholderEl = $('<li/>', class: 'placeholder')
+
     pane = $(event.target).closest('.pane')
     paneIndex = @paneContainer.indexOfPane(pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
@@ -94,6 +96,8 @@ class TabBarView extends View
   onDragEnd: (event) =>
     @find(".is-dragging").removeClass 'is-dragging'
     @removeDropTargetClasses()
+    @placeholderEl.remove()
+    @placeholderEl = null
 
   onDragOver: (event) =>
     unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
@@ -101,16 +105,19 @@ class TabBarView extends View
       event.stopPropagation()
       return
 
-    @removeDropTargetClasses()
-
     event.preventDefault()
     newDropTargetIndex = @getDropTargetIndex(event)
+    return unless newDropTargetIndex?
+
+    @removeDropTargetClasses()
 
     sortableObjects = @find(".sortable")
     if newDropTargetIndex < sortableObjects.length
-      sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
+      el = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
+      @placeholderEl.insertBefore(el)
     else
-      sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
+      el = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
+      @placeholderEl.insertAfter(el)
 
   onDrop: (event) =>
     unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
@@ -145,14 +152,26 @@ class TabBarView extends View
     rootView.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
 
   getDropTargetIndex: (event) ->
-    el = $(event.target).closest('.sortable')
-    el = $(event.target).find('.sortable').last()  if el.length == 0
+    target = $(event.target)
+    li = target.parents('li')
+    target = li if li.length
+    return unless target.is('.tab-bar') or target.parents('.tab-bar').length
+
+    return if target.is('.placeholder')
+
+    sortables = @find('.sortable')
+    el = target.closest('.sortable')
+    el = sortables.last() if el.length == 0
+
+    console.log el.find('.title').text()
+
+    return unless el
 
     elementCenter = el.offset().left + el.width() / 2
 
     if event.originalEvent.pageX < elementCenter
-      el.index()
-    else if el.next().length > 0
-      el.next().index()
+      sortables.index(el)
+    else if el.next('.sortable').length > 0
+      sortables.index(el.next('.sortable'))
     else
-      el.index() + 1
+      sortables.index(el) + 1
