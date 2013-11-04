@@ -9,6 +9,7 @@ class TabBarView extends View
   initialize: (@pane) ->
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
+    @on 'dragleave', @onDragLeave
     @on 'dragover', @onDragOver
     @on 'drop', @onDrop
 
@@ -82,8 +83,6 @@ class TabBarView extends View
     el.addClass 'is-dragging'
     event.originalEvent.dataTransfer.setData 'sortable-index', el.index()
 
-    @placeholderEl = $('<li/>', class: 'placeholder')
-
     pane = $(event.target).closest('.pane')
     paneIndex = @paneContainer.indexOfPane(pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
@@ -93,11 +92,13 @@ class TabBarView extends View
       event.originalEvent.dataTransfer.setData 'text/uri-list', 'file://' + item.getPath()
       event.originalEvent.dataTransfer.setData 'text/plain', item.getPath()
 
+  onDragLeave: (event) =>
+    @removePlaceholderElement()
+
   onDragEnd: (event) =>
     @find(".is-dragging").removeClass 'is-dragging'
     @removeDropTargetClasses()
-    @placeholderEl.remove()
-    @placeholderEl = null
+    @removePlaceholderElement()
 
   onDragOver: (event) =>
     unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
@@ -111,13 +112,15 @@ class TabBarView extends View
 
     @removeDropTargetClasses()
 
-    sortableObjects = @find(".sortable")
+    tabBar = @getTabBar(event.target)
+    sortableObjects = tabBar.find(".sortable")
+
     if newDropTargetIndex < sortableObjects.length
       el = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
-      @placeholderEl.insertBefore(el)
+      @getPlaceholderElement().insertBefore(el)
     else
       el = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
-      @placeholderEl.insertAfter(el)
+      @getPlaceholderElement().insertAfter(el)
 
   onDrop: (event) =>
     unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
@@ -127,6 +130,7 @@ class TabBarView extends View
 
     @find(".is-dragging").removeClass 'is-dragging'
     @removeDropTargetClasses()
+    @removePlaceholderElement()
 
     event.stopPropagation()
 
@@ -153,13 +157,11 @@ class TabBarView extends View
 
   getDropTargetIndex: (event) ->
     target = $(event.target)
-    li = target.parents('li')
-    target = li if li.length
-    return unless target.is('.tab-bar') or target.parents('.tab-bar').length
+    tabBar = @getTabBar(event.target)
 
-    return if target.is('.placeholder')
+    return if @isPlaceholderElement(target)
 
-    sortables = @find('.sortable')
+    sortables = tabBar.find('.sortable')
     el = target.closest('.sortable')
     el = sortables.last() if el.length == 0
 
@@ -173,3 +175,18 @@ class TabBarView extends View
       sortables.index(el.next('.sortable'))
     else
       sortables.index(el) + 1
+
+  getPlaceholderElement: ->
+    @placeholderEl = $('<li/>', class: 'placeholder') unless @placeholderEl
+    @placeholderEl
+
+  removePlaceholderElement: ->
+    @placeholderEl.remove() if @placeholderEl
+    @placeholderEl = null
+
+  isPlaceholderElement: (element) ->
+    element.is('.placeholder')
+
+  getTabBar: (target) ->
+    target = $(target)
+    if target.is('.tab-bar') then target else target.parents('.tab-bar')
