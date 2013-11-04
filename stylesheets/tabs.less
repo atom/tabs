@@ -1,7 +1,7 @@
 @import "ui-variables";
 @import "octicon-mixins";
 
-@close-icon-size: 11px;
+@close-icon-size: 12px;
 
 .tab-bar {
   display: -webkit-flex;
@@ -31,7 +31,7 @@
     .close-icon {
       .octicon(x, @close-icon-size);
       position: absolute;
-      top: 0;
+      top: 1px;
       right: 10px;
       cursor: pointer;
     }
@@ -50,46 +50,33 @@
       border-radius: 12px;
     }
   }
-}
 
-/* Drag and Drop */
+  /* Drag and Drop */
+  .placeholder {
+    position: absolute;
+    top: 0;
+    z-index: 999;
+    display: inline-block;
+    width: 2px;
+    margin: -1px; padding: 0;
 
-.tab.is-drop-target:before, .tab.drop-target-is-after:after {
-  content: "";
-  position: absolute;
-  top: 0;
-  z-index: 999;
-  display: inline-block;
-  width: 2px;
-  height: @tab-height;
-  display: inline-block;
-  background: @background-color-info;
-}
+    height: @tab-height;
+    display: inline-block;
+    background: @background-color-info;
 
-.tab.is-drop-target:after, .tab.drop-target-is-after:before {
-  content: "";
-  position: absolute;
-  top: @tab-height;
-  z-index: 9999;
-  width: 4px;
-  height: 4px;
-  background: @background-color-info;
-  border-radius: 4px;
-  border: 1px solid transparent;
-}
+    list-style: none;
 
-.tab.is-drop-target:before {
-  left: -1px;
-}
-
-.tab.is-drop-target:after {
-  left: -2px;
-}
-
-.tab.drop-target-is-after:before {
-  right: -2px;
-}
-
-.tab.drop-target-is-after:after {
-  right: -1px;
+    &:after {
+      content: "";
+      position: absolute;
+      top: @tab-height;
+      margin: -1px;
+      z-index: 9999;
+      width: 4px;
+      height: 4px;
+      background: @background-color-info;
+      border-radius: 4px;
+      border: 1px solid transparent;
+    }
+  }
 }
