@@ -40,7 +40,7 @@ describe "TabBarView", ->
     tabBar = new TabBarView(pane)
 
   afterEach ->
-    unregisterDeserializer(TestView)
+    atom.deserializers.remove(TestView)
 
   describe ".initialize(pane)", ->
     it "creates a tab for each item on the tab bar's parent pane", ->
