@@ -3,18 +3,18 @@ TabBarView = require '../lib/tab-bar-view'
 
 describe "Tabs package main", ->
   beforeEach ->
-    window.rootView = new RootView
-    rootView.openSync('sample.js')
-    atom.activatePackage("tabs")
+    atom.rootView = new RootView
+    atom.rootView.openSync('sample.js')
+    atom.packages.activatePackage("tabs")
 
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
-      expect(rootView.panes.find('.pane').length).toBe 1
-      expect(rootView.panes.find('.pane > .tab-bar').length).toBe 1
-      pane = rootView.getActivePane()
+      expect(atom.rootView.panes.find('.pane').length).toBe 1
+      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 1
+      pane = atom.rootView.getActivePane()
       pane.splitRight(pane.copyActiveItem())
-      expect(rootView.find('.pane').length).toBe 2
-      expect(rootView.panes.find('.pane > .tab-bar').length).toBe 2
+      expect(atom.rootView.find('.pane').length).toBe 2
+      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 2
 
 describe "TabBarView", ->
   [item1, item2, editSession1, pane, tabBar] = []
@@ -28,12 +28,12 @@ describe "TabBarView", ->
     serialize: -> { deserializer: 'TestView', @title, @longTitle }
 
   beforeEach ->
-    window.rootView = new RootView
-    registerDeserializer(TestView)
+    atom.rootView = new RootView
+    atom.deserializers.add(TestView)
     item1 = new TestView('Item 1')
     item2 = new TestView('Item 2')
-    editSession1 = rootView.openSync('sample.js')
-    pane = rootView.getActivePane()
+    editSession1 = atom.rootView.openSync('sample.js')
+    pane = atom.rootView.getActivePane()
     pane.addItem(item1, 0)
     pane.addItem(item2, 2)
     pane.showItem(item2)
@@ -73,7 +73,7 @@ describe "TabBarView", ->
       expect(tabBar.tabAtIndex(1).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
-      editSession2 = project.openSync('sample.txt')
+      editSession2 = atom.project.openSync('sample.txt')
       editSession2.insertText('x')
       pane.showItem(editSession2)
       expect(tabBar.tabForItem(editSession2)).toHaveClass 'modified'
