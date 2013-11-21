@@ -16,7 +16,7 @@ describe "Tabs package main", ->
       expect(atom.rootView.find('.pane').length).toBe 2
       expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 2
 
-  describe ".deactivate", ->
+  describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->
       pane = atom.rootView.getActivePane()
       pane.splitRight(pane.copyActiveItem())
