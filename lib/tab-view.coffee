@@ -13,6 +13,16 @@ class TabView extends View
     @item.on? 'modified-status-changed', => @updateModifiedStatus()
     @updateTitle()
     @updateModifiedStatus()
+    @initializeTooltip()
+
+  initializeTooltip: ->
+    return unless @item.getPath
+    @setTooltip
+      title: @item.getPath()
+      delay:
+        show: 2000
+        hide: 100
+      placement: 'bottom'
 
   updateTitle: ->
     return if @updatingTitle
