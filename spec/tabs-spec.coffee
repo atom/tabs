@@ -1,35 +1,35 @@
-{_, $, RootView, View}  = require 'atom'
+{_, $, WorkspaceView, View}  = require 'atom'
 TabBarView = require '../lib/tab-bar-view'
 
 describe "Tabs package main", ->
   beforeEach ->
-    atom.rootView = new RootView
-    atom.rootView.openSync('sample.js')
+    atom.workspaceView = new WorkspaceView
+    atom.workspaceView.openSync('sample.js')
     atom.packages.activatePackage("tabs")
 
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
-      expect(atom.rootView.panes.find('.pane').length).toBe 1
-      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 1
-      pane = atom.rootView.getActivePane()
+      expect(atom.workspaceView.panes.find('.pane').length).toBe 1
+      expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 1
+      pane = atom.workspaceView.getActivePane()
       pane.splitRight(pane.copyActiveItem())
-      expect(atom.rootView.find('.pane').length).toBe 2
-      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 2
+      expect(atom.workspaceView.find('.pane').length).toBe 2
+      expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 2
 
   describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->
-      pane = atom.rootView.getActivePane()
+      pane = atom.workspaceView.getActivePane()
       pane.splitRight(pane.copyActiveItem())
-      expect(atom.rootView.panes.find('.pane').length).toBe 2
-      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 2
+      expect(atom.workspaceView.panes.find('.pane').length).toBe 2
+      expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 2
 
       atom.packages.deactivatePackage('tabs')
-      expect(atom.rootView.panes.find('.pane').length).toBe 2
-      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 0
+      expect(atom.workspaceView.panes.find('.pane').length).toBe 2
+      expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 0
 
       pane.splitRight(pane.copyActiveItem())
-      expect(atom.rootView.panes.find('.pane').length).toBe 3
-      expect(atom.rootView.panes.find('.pane > .tab-bar').length).toBe 0
+      expect(atom.workspaceView.panes.find('.pane').length).toBe 3
+      expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 0
 
 describe "TabBarView", ->
   [item1, item2, editSession1, pane, tabBar] = []
@@ -43,12 +43,12 @@ describe "TabBarView", ->
     serialize: -> { deserializer: 'TestView', @title, @longTitle }
 
   beforeEach ->
-    atom.rootView = new RootView
+    atom.workspaceView = new WorkspaceView
     atom.deserializers.add(TestView)
     item1 = new TestView('Item 1')
     item2 = new TestView('Item 2')
-    editSession1 = atom.rootView.openSync('sample.js')
-    pane = atom.rootView.getActivePane()
+    editSession1 = atom.workspaceView.openSync('sample.js')
+    pane = atom.workspaceView.getActivePane()
     pane.addItem(item1, 0)
     pane.addItem(item2, 2)
     pane.showItem(item2)

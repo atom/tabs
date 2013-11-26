@@ -152,8 +152,8 @@ class TabBarView extends View
     toPane.focus()
 
   removeDropTargetClasses: ->
-    atom.rootView.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
-    atom.rootView.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
+    atom.workspaceView.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
+    atom.workspaceView.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
 
   getDropTargetIndex: (event) ->
     target = $(event.target)
