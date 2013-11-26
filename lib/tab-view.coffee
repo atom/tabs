@@ -24,6 +24,9 @@ class TabView extends View
         hide: 100
       placement: 'bottom'
 
+  beforeRemove: ->
+    @destroyTooltip()
+
   updateTitle: ->
     return if @updatingTitle
     @updatingTitle = true
