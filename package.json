@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "main": "./lib/tabs",
   "description": "Display a selectable tab for each editor open.",
   "repository": {
