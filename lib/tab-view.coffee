@@ -52,16 +52,3 @@ class TabView extends View
     else
       @removeClass('modified') if @isModified
       @isModified = false
-
-  updateFileName: ->
-    fileNameText = @editSession.buffer.getBaseName()
-    if fileNameText?
-      duplicates = @editor.getEditSessions().filter (session) -> fileNameText is session.buffer.getBaseName()
-      if duplicates.length > 1
-        directory = path.basename(path.dirname(@editSession.getPath()))
-        fileNameText = "#{fileNameText} - #{directory}" if directory
-    else
-      fileNameText = 'untitled'
-
-    @fileName.text(fileNameText)
-    @fileName.attr('title', @editSession.getPath())
