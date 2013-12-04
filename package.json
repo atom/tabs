@@ -3,17 +3,8 @@
   "version": "0.15.0",
   "main": "./lib/tabs",
   "description": "Display a selectable tab for each editor open.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/atom/tabs.git"
-  },
-  "bugs": {
-    "url": "https://github.com/atom/tabs/issues"
-  },
+  "repository": "https://github.com/atom/tabs",
   "engines": {
     "atom": "*"
-  },
-  "publishConfig": {
-    "registry": "https://atom.cloudant.com/registry/_design/app/_rewrite"
   }
 }
