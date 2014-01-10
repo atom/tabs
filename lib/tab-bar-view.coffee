@@ -16,19 +16,22 @@ class TabBarView extends View
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
 
-    @pane.on 'pane:item-added', (e, item, index) =>
+    @subscribe @paneContainer, 'pane:removed', (pane) =>
+      @unsubscribe() if pane is @pane
+
+    @subscribe @pane, 'pane:item-added', (e, item, index) =>
       @addTabForItem(item, index)
       true
 
-    @pane.on 'pane:item-moved', (e, item, index) =>
+    @subscribe @pane, 'pane:item-moved', (e, item, index) =>
       @moveItemTabToIndex(item, index)
       true
 
-    @pane.on 'pane:item-removed', (e, item) =>
+    @subscribe @pane, 'pane:item-removed', (e, item) =>
       @removeTabForItem(item)
       true
 
-    @pane.on 'pane:active-item-changed', =>
+    @subscribe @pane, 'pane:active-item-changed', =>
       @updateActiveTab()
       true
 
