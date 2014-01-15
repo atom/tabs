@@ -291,6 +291,32 @@ describe "TabBarView", ->
         expect(pane2.activeItem).toBe item1
         expect(pane2.focus).toHaveBeenCalled()
 
+      describe "when the tab is dragged to an empty pane", ->
+        it "removes the tab and item from their original pane and moves them to the target pane", ->
+          pane2.destroyItems()
+
+          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [item1, editor1, item2]
+          expect(pane.activeItem).toBe item2
+
+          expect(tabBar2.getTabs().map (tab) -> tab.text()).toEqual []
+          expect(pane2.getItems()).toEqual []
+          expect(pane2.activeItem).toBeUndefined()
+          spyOn(pane2, 'focus')
+
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar2)
+          tabBar.onDragStart(dragStartEvent)
+          tabBar.onDrop(dropEvent)
+
+          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [editor1, item2]
+          expect(pane.activeItem).toBe item2
+
+          expect(tabBar2.getTabs().map (tab) -> tab.text()).toEqual ["Item 1"]
+          expect(pane2.getItems()).toEqual [item1]
+          expect(pane2.activeItem).toBe item1
+          expect(pane2.focus).toHaveBeenCalled()
+
     describe "when a non-tab is dragged to pane", ->
       it "has no effect", ->
         expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
