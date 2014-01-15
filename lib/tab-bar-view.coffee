@@ -179,7 +179,7 @@ class TabBarView extends View
     el = target.closest('.sortable')
     el = sortables.last() if el.length == 0
 
-    return unless el
+    return 0 unless el.length
 
     elementCenter = el.offset().left + el.width() / 2
 
