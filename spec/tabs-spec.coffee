@@ -5,7 +5,9 @@ describe "Tabs package main", ->
   beforeEach ->
     atom.workspaceView = new WorkspaceView
     atom.workspaceView.openSync('sample.js')
-    atom.packages.activatePackage("tabs")
+
+    waitsForPromise ->
+      atom.packages.activatePackage("tabs")
 
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
