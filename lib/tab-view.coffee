@@ -9,20 +9,27 @@ class TabView extends View
       @div class: 'close-icon'
 
   initialize: (@item, @pane) ->
-    @item.on? 'title-changed', => @updateTitle()
-    @item.on? 'modified-status-changed', => @updateModifiedStatus()
+    @item.on? 'title-changed', =>
+      @updateTitle()
+      @updateTooltip()
+
+    @item.on? 'modified-status-changed', =>
+      @updateModifiedStatus()
+
     @updateTitle()
     @updateModifiedStatus()
-    @initializeTooltip()
+    @updateTooltip()
 
-  initializeTooltip: ->
-    return unless @item.getPath
-    @setTooltip
-      title: @item.getPath()
-      delay:
-        show: 2000
-        hide: 100
-      placement: 'bottom'
+  updateTooltip: ->
+    @destroyTooltip()
+
+    if itemPath = @item.getPath?()
+      @setTooltip
+        title: @item.getPath()
+        delay:
+          show: 2000
+          hide: 100
+        placement: 'bottom'
 
   beforeRemove: ->
     @destroyTooltip()
