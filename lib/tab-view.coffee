@@ -25,7 +25,7 @@ class TabView extends View
 
     if itemPath = @item.getPath?()
       @setTooltip
-        title: @item.getPath()
+        title: itemPath
         delay:
           show: 2000
           hide: 100
