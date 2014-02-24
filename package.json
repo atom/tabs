@@ -3,6 +3,7 @@
   "version": "0.21.0",
   "main": "./lib/tabs",
   "description": "Display a selectable tab for each editor open.",
+  "license": "MIT",
   "repository": "https://github.com/atom/tabs",
   "engines": {
     "atom": "*"
