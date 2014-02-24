@@ -1,4 +1,4 @@
-{_, $, WorkspaceView, View}  = require 'atom'
+{$, WorkspaceView, View}  = require 'atom'
 TabBarView = require '../lib/tab-bar-view'
 
 describe "Tabs package main", ->
