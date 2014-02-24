@@ -1,4 +1,5 @@
 {$, View} = require 'atom'
+_ = require 'underscore-plus'
 TabView = require './tab-view'
 
 module.exports =
