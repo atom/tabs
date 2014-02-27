@@ -48,6 +48,12 @@ class TabBarView extends View
       @pane.destroyItem(tab.item)
       false
 
+    @on 'mouseup', '.tab', (e) =>
+      if e.which is 2
+        tab = $(e.target).closest('.tab').view()
+        @pane.destroyItem(tab.item)
+      false
+
     @pane.prepend(this)
 
   addTabForItem: (item, index) ->
