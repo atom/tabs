@@ -48,9 +48,9 @@ class TabBarView extends View
       @pane.destroyItem(tab.item)
       false
 
-    @on 'mouseup', '.tab', (e) =>
-      if e.which is 2
-        tab = $(e.target).closest('.tab').view()
+    @on 'mouseup', '.tab', ({target, which}) =>
+      if which is 2
+        tab = $(target).closest('.tab').view()
         @pane.destroyItem(tab.item)
       false
 
