@@ -8,6 +8,10 @@ class TabBarView extends View
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
   initialize: (@pane) ->
+    @command 'tabs:close-tab', => @closeTab(true)
+    @command 'tabs:close-other-tabs', => @closeOtherTabs()
+    @command 'tabs:close-tabs-to-right', => @closeTabsToRight()
+
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
     @on 'dragleave', @onDragLeave
@@ -38,10 +42,15 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @on 'click', '.tab', (e) =>
-      tab = $(e.target).closest('.tab').view()
-      @pane.showItem(tab.item)
-      @pane.focus()
+    @on 'mousedown', '.tab', (e) =>
+      tab = $(e.target).closest('.tab')
+      view = tab.view()
+      if e.which is 3 or (e.which is 1 and e.ctrlKey is true)
+        $('.right-clicked').removeClass('right-clicked')
+        tab.addClass('right-clicked')
+      else if e.which is 1 and $(e.target).attr('class') isnt 'close-icon'
+        @pane.showItem(view.item)
+        @pane.focus()
 
     @on 'click', '.tab .close-icon', (e) =>
       tab = $(e.target).closest('.tab').view()
@@ -86,6 +95,21 @@ class TabBarView extends View
 
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.activeItem))
+
+  closeTab: (tab) ->
+    if tab is true then tab = @children('.right-clicked').view()
+    @pane.destroyItem(tab.item)
+
+  closeOtherTabs: ->
+    tabs = @getTabs()
+    active = @children('.right-clicked').view()
+    @closeTab tab for tab in tabs when tab isnt active
+
+  closeTabsToRight: ->
+    tabs = @getTabs()
+    active = @children('.right-clicked').view()
+    index = tabs.indexOf(active)
+    @closeTab tab for tab, i in tabs when i > index
 
   shouldAllowDrag: ->
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
