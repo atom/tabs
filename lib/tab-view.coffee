@@ -16,7 +16,7 @@ class TabView extends View
     @item.on? 'modified-status-changed', =>
       @updateModifiedStatus()
 
-    @item.addClass("preview") if @item.isPreview
+    @addClass("preview") if @item.isPreview
 
     @updateTitle()
     @updateModifiedStatus()
