@@ -351,3 +351,14 @@ describe "TabBarView", ->
 
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual 'file://' + editor1.getPath()
+
+    describe "when the tab bar is double clicked", ->
+      it "opens a new empty editor", ->
+        newFileHandler = jasmine.createSpy('newFileHandler')
+        atom.workspaceView.on('application:new-file', newFileHandler)
+
+        tabBar.getTabs()[0].dblclick()
+        expect(newFileHandler.callCount).toBe 0
+
+        tabBar.dblclick()
+        expect(newFileHandler.callCount).toBe 1
