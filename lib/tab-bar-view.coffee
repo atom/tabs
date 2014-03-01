@@ -38,6 +38,11 @@ class TabBarView extends View
 
     @updateActiveTab()
 
+    @on 'dblclick', ({target}) =>
+      if target is @[0]
+        @pane.trigger('application:new-file')
+        false
+
     @on 'click', '.tab', (e) =>
       tab = $(e.target).closest('.tab').view()
       @pane.showItem(tab.item)
