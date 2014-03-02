@@ -114,12 +114,14 @@ class TabBarView extends View
   closeOtherTabs: ->
     tabs = @getTabs()
     active = @children('.right-clicked').view()
+    return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: ->
     tabs = @getTabs()
     active = @children('.right-clicked').view()
     index = tabs.indexOf(active)
+    return if index is -1
     @closeTab tab for tab, i in tabs when i > index
 
   shouldAllowDrag: ->
