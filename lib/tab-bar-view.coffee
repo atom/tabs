@@ -8,7 +8,7 @@ class TabBarView extends View
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
   initialize: (@pane) ->
-    @command 'tabs:close-tab', => @closeTab(true)
+    @command 'tabs:close-tab', => @closeTab()
     @command 'tabs:close-other-tabs', => @closeOtherTabs()
     @command 'tabs:close-tabs-to-right', => @closeTabsToRight()
 
@@ -42,13 +42,13 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @on 'mousedown', '.tab', (e) =>
-      tab = $(e.target).closest('.tab')
+    @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
+      tab = $(target).closest('.tab')
       view = tab.view()
-      if e.which is 3 or (e.which is 1 and e.ctrlKey is true)
-        $('.right-clicked').removeClass('right-clicked')
+      if which is 3 or (which is 1 and ctrlKey is true)
+        @find('.right-clicked').removeClass('right-clicked')
         tab.addClass('right-clicked')
-      else if e.which is 1 and $(e.target).attr('class') isnt 'close-icon'
+      else if which is 1 and not target.classList.contains('close-icon')
         @pane.showItem(view.item)
         @pane.focus()
 
@@ -57,8 +57,8 @@ class TabBarView extends View
         @pane.trigger('application:new-file')
         false
 
-    @on 'click', '.tab .close-icon', (e) =>
-      tab = $(e.target).closest('.tab').view()
+    @on 'click', '.tab .close-icon', ({target}) =>
+      tab = $(target).closest('.tab').view()
       @pane.destroyItem(tab.item)
       false
 
@@ -108,7 +108,7 @@ class TabBarView extends View
     @setActiveTab(@tabForItem(@pane.activeItem))
 
   closeTab: (tab) ->
-    if tab is true then tab = @children('.right-clicked').view()
+    tab ?= @children('.right-clicked').view()
     @pane.destroyItem(tab.item)
 
   closeOtherTabs: ->
