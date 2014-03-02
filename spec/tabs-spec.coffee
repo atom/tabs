@@ -116,10 +116,10 @@ describe "TabBarView", ->
     it "shows the associated item on the pane and focuses the pane", ->
       spyOn(pane, 'focus')
 
-      tabBar.tabAtIndex(0).click()
+      tabBar.tabAtIndex(0).trigger {type: 'mousedown', which: 1}
       expect(pane.activeItem).toBe pane.getItems()[0]
 
-      tabBar.tabAtIndex(2).click()
+      tabBar.tabAtIndex(2).trigger {type: 'mousedown', which: 1}
       expect(pane.activeItem).toBe pane.getItems()[2]
 
       expect(pane.focus.callCount).toBe 2
@@ -191,6 +191,35 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 1", "Item 2"]
       pane.moveItem(item1, 2)
       expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 2", "Item 1"]
+
+  describe "context menu commands", ->
+    describe "when tabs:close-tab is fired", ->
+      it "closes the active tab", ->
+        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        tabBar.trigger 'tabs:close-tab'
+        expect(pane.getItems().length).toBe 2
+        expect(pane.getItems().indexOf(item2)).toBe -1
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+
+    describe "when tabs:close-other-tabs is fired", ->
+      it "closes all other tabs except the active tab", ->
+        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        tabBar.trigger 'tabs:close-other-tabs'
+        expect(pane.getItems().length).toBe 1
+        expect(tabBar.getTabs().length).toBe 1
+        expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+
+    describe "when tabs:close-tabs-to-right is fired", ->
+      it "closes only the tabs to the right of the active tab", ->
+        pane.showItem(editor1)
+        $(tabBar.tabForItem(editor1)).trigger {type: 'mousedown', which: 3}
+        tabBar.trigger 'tabs:close-tabs-to-right'
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
 
   describe "dragging and dropping tabs", ->
     buildDragEvents = (dragged, dropTarget) ->

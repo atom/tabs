@@ -8,6 +8,10 @@ class TabBarView extends View
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
   initialize: (@pane) ->
+    @command 'tabs:close-tab', => @closeTab()
+    @command 'tabs:close-other-tabs', => @closeOtherTabs()
+    @command 'tabs:close-tabs-to-right', => @closeTabsToRight()
+
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
     @on 'dragleave', @onDragLeave
@@ -38,18 +42,23 @@ class TabBarView extends View
 
     @updateActiveTab()
 
+    @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
+      tab = $(target).closest('.tab')
+      view = tab.view()
+      if which is 3 or (which is 1 and ctrlKey is true)
+        @find('.right-clicked').removeClass('right-clicked')
+        tab.addClass('right-clicked')
+      else if which is 1 and not target.classList.contains('close-icon')
+        @pane.showItem(view.item)
+        @pane.focus()
+
     @on 'dblclick', ({target}) =>
       if target is @[0]
         @pane.trigger('application:new-file')
         false
 
-    @on 'click', '.tab', (e) =>
-      tab = $(e.target).closest('.tab').view()
-      @pane.showItem(tab.item)
-      @pane.focus()
-
-    @on 'click', '.tab .close-icon', (e) =>
-      tab = $(e.target).closest('.tab').view()
+    @on 'click', '.tab .close-icon', ({target}) =>
+      tab = $(target).closest('.tab').view()
       @pane.destroyItem(tab.item)
       false
 
@@ -97,6 +106,21 @@ class TabBarView extends View
 
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.activeItem))
+
+  closeTab: (tab) ->
+    tab ?= @children('.right-clicked').view()
+    @pane.destroyItem(tab.item)
+
+  closeOtherTabs: ->
+    tabs = @getTabs()
+    active = @children('.right-clicked').view()
+    @closeTab tab for tab in tabs when tab isnt active
+
+  closeTabsToRight: ->
+    tabs = @getTabs()
+    active = @children('.right-clicked').view()
+    index = tabs.indexOf(active)
+    @closeTab tab for tab, i in tabs when i > index
 
   shouldAllowDrag: ->
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
