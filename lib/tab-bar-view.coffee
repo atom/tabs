@@ -52,9 +52,20 @@ class TabBarView extends View
         @pane.showItem(view.item)
         @pane.focus()
 
+    @on 'dblclick', ({target}) =>
+      if target is @[0]
+        @pane.trigger('application:new-file')
+        false
+
     @on 'click', '.tab .close-icon', (e) =>
       tab = $(e.target).closest('.tab').view()
       @pane.destroyItem(tab.item)
+      false
+
+    @on 'mouseup', '.tab', ({target, which}) =>
+      if which is 2
+        tab = $(target).closest('.tab').view()
+        @pane.destroyItem(tab.item)
       false
 
     @pane.prepend(this)

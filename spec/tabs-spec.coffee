@@ -124,6 +124,16 @@ describe "TabBarView", ->
 
       expect(pane.focus.callCount).toBe 2
 
+    it "closes the tab when middle clicked", ->
+      event = $.Event 'mouseup'
+      event.which = 2
+      tabBar.tabForItem(editor1).trigger(event)
+      expect(pane.getItems().length).toBe 2
+      expect(pane.getItems().indexOf(editor1)).toBe -1
+      expect(editor1.destroyed).toBeTruthy()
+      expect(tabBar.getTabs().length).toBe 2
+      expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
       tabBar.tabForItem(editor1).find('.close-icon').click()
@@ -370,3 +380,14 @@ describe "TabBarView", ->
 
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual 'file://' + editor1.getPath()
+
+    describe "when the tab bar is double clicked", ->
+      it "opens a new empty editor", ->
+        newFileHandler = jasmine.createSpy('newFileHandler')
+        atom.workspaceView.on('application:new-file', newFileHandler)
+
+        tabBar.getTabs()[0].dblclick()
+        expect(newFileHandler.callCount).toBe 0
+
+        tabBar.dblclick()
+        expect(newFileHandler.callCount).toBe 1
