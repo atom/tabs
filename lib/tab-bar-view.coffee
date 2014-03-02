@@ -43,13 +43,12 @@ class TabBarView extends View
     @updateActiveTab()
 
     @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
-      tab = $(target).closest('.tab')
-      view = tab.view()
+      tab = $(target).closest('.tab').view()
       if which is 3 or (which is 1 and ctrlKey is true)
         @find('.right-clicked').removeClass('right-clicked')
         tab.addClass('right-clicked')
       else if which is 1 and not target.classList.contains('close-icon')
-        @pane.showItem(view.item)
+        @pane.showItem(tab.item)
         @pane.focus()
 
     @on 'dblclick', ({target}) =>
