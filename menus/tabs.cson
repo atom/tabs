@@ -1,5 +1,19 @@
+'menu': [
+  {
+    'label': 'View'
+    'submenu': [
+      {
+        'label': 'Toggle Tab Bar'
+        'command': 'tabs:toggle'
+      }
+    ]
+  }
+]
+
 'context-menu':
   '.tab':
     'Close Tab': 'tabs:close-tab'
     'Close Other Tabs': 'tabs:close-other-tabs'
     'Close Tabs to the Right': 'tabs:close-tabs-to-right'
+  '.tab-bar':
+    'Hide Tab Bar': 'tabs:toggle'

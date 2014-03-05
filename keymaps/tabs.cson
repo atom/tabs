@@ -1,0 +1,2 @@
+'.platform-darwin':
+  'cmd-ctrl-t': 'tabs:toggle'
