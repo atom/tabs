@@ -2,6 +2,8 @@ _ = require 'underscore-plus'
 TabBarView = require './tab-bar-view'
 
 module.exports =
+  configDefaults:
+    maximumOpenedTabs: null
   activate: ->
     @paneSubscription = atom.workspaceView.eachPane (pane) =>
       tabBarView = new TabBarView(pane)

@@ -84,6 +84,7 @@ class TabBarView extends View
     else
       @append(tab)
     tab.updateTitle()
+    @closeOverflowingTabs()
 
   removeTabForItem: (item) ->
     @tabForItem(item).remove()
@@ -102,6 +103,7 @@ class TabBarView extends View
     if tabView? and not tabView.hasClass('active')
       @find(".tab.active").removeClass('active')
       tabView.addClass('active')
+      tabView.updateActivationIndex()
 
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.activeItem))
@@ -241,3 +243,11 @@ class TabBarView extends View
   getTabBar: (target) ->
     target = $(target)
     if target.is('.tab-bar') then target else target.parents('.tab-bar')
+
+  closeOverflowingTabs: ()->
+    maxTabs = atom.config.getInt 'tabs.maximumOpenedTabs' ? Infinity
+    @closeLastActivatedTab() while @getTabs().length > maxTabs
+
+  closeLastActivatedTab: ()->
+    lastOpenedTab = _.min @getTabs(), (tab)-> tab.activationIndex
+    @closeTab lastOpenedTab
