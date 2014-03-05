@@ -71,6 +71,13 @@ describe "TabBarView", ->
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
 
+  describe "when tabs:toggle is triggered", ->
+    it "shows and hides the tab bar", ->
+      atom.workspaceView.trigger 'tabs:toggle'
+      expect(tabBar).toBeHidden
+      atom.workspaceView.trigger 'tabs:toggle'
+      expect(tabBar).toBeVisible
+
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
       pane.showItem(item1)

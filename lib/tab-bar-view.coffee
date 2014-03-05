@@ -8,6 +8,9 @@ class TabBarView extends View
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
   initialize: (@pane) ->
+    atom.workspaceView.command 'tabs:toggle', ->
+      atom.workspaceView.find('.tab-bar').toggleClass('hidden')
+
     @command 'tabs:close-tab', => @closeTab()
     @command 'tabs:close-other-tabs', => @closeOtherTabs()
     @command 'tabs:close-tabs-to-right', => @closeTabsToRight()
