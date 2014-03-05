@@ -391,3 +391,31 @@ describe "TabBarView", ->
 
         tabBar.dblclick()
         expect(newFileHandler.callCount).toBe 1
+
+    describe "when a maximum tabs number is set", ->
+      beforeEach ()-> atom.config.set 'tabs.maximumOpenedTabs', 4
+      afterEach ()-> atom.config.set 'tabs.maximumOpenedTabs', null
+      it "allow tabs to be added below limit", ()->
+        expect(tabBar.find('.tab').length).toBe 3
+        item3 = new TestView('Item 3')
+        pane.showItem(item3)
+        expect(tabBar.find('.tab').length).toBe 4
+      it "restrains the number of tabs below limit, removing the latest activated", ()->
+        item3 = new TestView('Item 3')
+
+        pane.showItem item1 # -> should be closed
+        pane.showItem item2
+        pane.showItem item3
+        pane.showItem editor1
+
+        expect(tabBar.find('.tab').length).toBe 4
+        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
+        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+
+        item4 = new TestView('Item 4')
+        pane.showItem(item3)
+        pane.showItem(item4)
+        expect(tabBar.find('.tab').length).toBe 4
+        expect(tabBar.find('.tab:contains(Item 1)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+        expect(tabBar.find('.tab:contains(Item 4)')).toExist()

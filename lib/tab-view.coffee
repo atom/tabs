@@ -3,6 +3,7 @@ path = require 'path'
 
 module.exports =
 class TabView extends View
+  @activationCounter = 0
   @content: ->
     @li class: 'tab sortable', =>
       @div class: 'title', outlet: 'title'
@@ -59,3 +60,6 @@ class TabView extends View
     else
       @removeClass('modified') if @isModified
       @isModified = false
+
+  updateActivationIndex: ()->
+    @activationIndex = TabView.activationCounter++
