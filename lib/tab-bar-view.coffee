@@ -50,6 +50,7 @@ class TabBarView extends View
       else if which is 1 and not target.classList.contains('close-icon')
         @pane.showItem(tab.item)
         @pane.focus()
+      false
 
     @on 'dblclick', ({target}) =>
       if target is @[0]
