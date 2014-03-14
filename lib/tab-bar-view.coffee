@@ -48,6 +48,9 @@ class TabBarView extends View
         @find('.right-clicked').removeClass('right-clicked')
         tab.addClass('right-clicked')
         false
+      else if which is 2
+        @pane.destroyItem(tab.item)
+        false
 
     @on 'dblclick', ({target}) =>
       if target is @[0]
@@ -59,14 +62,12 @@ class TabBarView extends View
       @pane.destroyItem(tab.item)
       false
 
-    @on 'mouseup', '.tab', ({target, which}) =>
+    @on 'click', '.tab', ({target, which}) =>
       tab = $(target).closest('.tab').view()
-      if which is 2
-        @pane.destroyItem(tab.item)
-      else if which is 1 and not target.classList.contains('close-icon')
+      if which is 1 and not target.classList.contains('close-icon')
         @pane.showItem(tab.item)
         @pane.focus()
-      false
+        false
 
     @pane.prepend(this)
 

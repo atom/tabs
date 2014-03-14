@@ -116,16 +116,16 @@ describe "TabBarView", ->
     it "shows the associated item on the pane and focuses the pane", ->
       spyOn(pane, 'focus')
 
-      tabBar.tabAtIndex(0).trigger {type: 'mouseup', which: 1}
+      tabBar.tabAtIndex(0).trigger {type: 'click', which: 1}
       expect(pane.activeItem).toBe pane.getItems()[0]
 
-      tabBar.tabAtIndex(2).trigger {type: 'mouseup', which: 1}
+      tabBar.tabAtIndex(2).trigger {type: 'click', which: 1}
       expect(pane.activeItem).toBe pane.getItems()[2]
 
       expect(pane.focus.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
-      event = $.Event 'mouseup'
+      event = $.Event 'mousedown'
       event.which = 2
       tabBar.tabForItem(editor1).trigger(event)
       expect(pane.getItems().length).toBe 2
