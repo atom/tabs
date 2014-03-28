@@ -1,4 +1,5 @@
 {$, View} = require 'atom'
+_ = require 'underscore-plus'
 path = require 'path'
 
 module.exports =
@@ -25,7 +26,7 @@ class TabView extends View
 
     if itemPath = @item.getPath?()
       @setTooltip
-        title: itemPath
+        title: _.escape(itemPath)
         delay:
           show: 2000
           hide: 100
