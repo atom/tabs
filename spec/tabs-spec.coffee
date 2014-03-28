@@ -1,5 +1,7 @@
 {$, WorkspaceView, View}  = require 'atom'
+_ = require 'underscore-plus'
 TabBarView = require '../lib/tab-bar-view'
+TabView = require '../lib/tab-view'
 
 describe "Tabs package main", ->
   beforeEach ->
@@ -70,6 +72,13 @@ describe "TabBarView", ->
 
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
+
+    it "escapes html in the tooltip title", ->
+      spyOn(TabView.prototype, 'setTooltip')
+      item3 = new TestView('Item 3')
+      item3.getPath = -> "<img src='oh-my.jpg' />"
+      pane.showItem(item3)
+      expect(TabView.prototype.setTooltip.argsForCall[0][0].title).toBe _.escape(item3.getPath())
 
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
