@@ -11,6 +11,7 @@ class TabBarView extends View
     @command 'tabs:close-tab', => @closeTab()
     @command 'tabs:close-other-tabs', => @closeOtherTabs()
     @command 'tabs:close-tabs-to-right', => @closeTabsToRight()
+    @command 'tabs:close-tabs-unmodified', => @closeUnmodifiedTabs()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -124,6 +125,13 @@ class TabBarView extends View
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
+
+  closeUnmodifiedTabs: ->
+    repo = atom.project.getRepo()
+    if repo?
+      tabs = @getTabs()
+      console.log tabs[0]
+      @closeTab tab for tab in tabs when not repo.isPathModified(tab.item.getPath()) and not repo.isPathNew(tab.item.getPath())
 
   shouldAllowDrag: ->
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
