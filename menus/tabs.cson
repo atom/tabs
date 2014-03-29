@@ -3,3 +3,4 @@
     'Close Tab': 'tabs:close-tab'
     'Close Other Tabs': 'tabs:close-other-tabs'
     'Close Tabs to the Right': 'tabs:close-tabs-to-right'
+    'Close Unmodified': 'tabs:close-tabs-unmodified'
