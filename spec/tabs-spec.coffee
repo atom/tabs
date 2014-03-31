@@ -46,6 +46,7 @@ describe "TabBarView", ->
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
+    atom.workspace = atom.workspaceView.model
     atom.deserializers.add(TestView)
     item1 = new TestView('Item 1')
     item2 = new TestView('Item 2')
@@ -380,6 +381,28 @@ describe "TabBarView", ->
 
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual 'file://' + editor1.getPath()
+
+    describe "when a tab is dragged to another Atom window", ->
+      it "closes the tab in the first window and opens the tab in the second window", ->
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
+        tabBar.onDragStart(dragStartEvent)
+        tabBar.onDropOnOtherWindow(1, 0)
+
+        expect(pane.getItems()).toEqual [item1, item2]
+        expect(pane.activeItem).toBe item2
+
+        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+
+        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+        tabBar.onDrop(dropEvent)
+
+        waitsFor ->
+          tabBar.moveItemBetweenPanes.callCount > 0
+
+        runs ->
+          editor = atom.workspace.getActiveEditor()
+          expect(editor.getPath()).toBe editor1.getPath()
+          expect(pane.getItems()).toEqual [item1, editor, item2]
 
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->

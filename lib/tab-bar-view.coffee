@@ -208,29 +208,37 @@ class TabBarView extends View
 
     fromProcessId = parseInt(dataTransfer.getData('from-process-id'))
     fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
-    fromIndex = parseInt(dataTransfer.getData('sortable-index'))
+    fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
 
     @clearDropTarget()
+
     if fromProcessId is @getProcessId()
       fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
       toIndex = @getDropTargetIndex(event)
       toPane = $(event.target).closest('.pane').view()
       {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
-
-      if item?
-        if toPane is fromPane
-          toIndex-- if fromIndex < toIndex
-          toPane.moveItem(item, toIndex)
-        else
-          fromPane.moveItemToPane(item, toPane, toIndex--)
-        toPane.showItem(item)
-        toPane.focus()
+      @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
       if droppedPath = dataTransfer.getData('text/plain')
-        atom.workspace.open(droppedPath)
+        atom.workspace.open(droppedPath).then (item) =>
+          toPane = $(event.target).closest('.pane').view()
+          toIndex = @getDropTargetIndex(event)
+          fromPane = atom.workspaceView.getActivePaneView()
+          fromIndex = fromPane.getActiveItemIndex()
+          @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item)
+          BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
+
         atom.focus()
-        BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
+
+  moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
+    if toPane is fromPane
+      toIndex-- if fromIndex < toIndex
+      toPane.moveItem(item, toIndex)
+    else
+      fromPane.moveItemToPane(item, toPane, toIndex--)
+    toPane.showItem(item)
+    toPane.focus()
 
   removeDropTargetClasses: ->
     atom.workspaceView.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
