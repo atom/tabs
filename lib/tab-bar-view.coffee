@@ -77,6 +77,8 @@ class TabBarView extends View
   moveItemTabToIndex: (item, index) ->
     tab = @tabForItem(item)
     tab.detach()
+
+    tab.removeClass("preview") if item.isPreview is false
     @insertTabAtIndex(tab, index)
 
   insertTabAtIndex: (tab, index) ->
