@@ -224,9 +224,9 @@ class TabBarView extends View
         atom.workspace.open(droppedPath).then (item) =>
           toPane = $(event.target).closest('.pane').view()
           toIndex = @getDropTargetIndex(event)
-          fromPane = atom.workspaceView.getActivePaneView()
-          fromIndex = fromPane.getActiveItemIndex()
-          @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item)
+          activePane = atom.workspaceView.getActivePaneView()
+          activeItemIndex = activePane.getActiveItemIndex()
+          @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
           BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
 
         atom.focus()
