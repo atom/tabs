@@ -232,7 +232,7 @@ class TabBarView extends View
           activeItemIndex = activePane.getActiveItemIndex()
           @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
 
-          # Let window where the drag started know that the tab was dropped
+          # Let the window where the drag started know that the tab was dropped
           BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
 
         atom.focus()
