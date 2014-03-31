@@ -188,9 +188,11 @@ class TabBarView extends View
       @getPlaceholderElement().insertAfter(el)
 
   onDropOnOtherWindow: (fromItemIndex, fromPaneIndex) =>
-    if fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
-      if item = fromPane.itemAtIndex(fromItemIndex)
-        fromPane.removeItem(item)
+    fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
+    return unless @pane.is(fromPane)
+
+    if itemToRemove = fromPane.itemAtIndex(fromItemIndex)
+      fromPane.removeItem(itemToRemove)
 
     @clearDropTarget()
 
