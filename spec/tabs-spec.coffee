@@ -374,20 +374,20 @@ describe "TabBarView", ->
         expect(pane.focus).not.toHaveBeenCalled()
 
     describe "when a tab is dragged out of application", ->
-      it "should carry file's information", ->
+      it "should carry the file's information", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(1))
         tabBar.onDragStart(dragStartEvent)
 
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual 'file://' + editor1.getPath()
 
-    describe "when the tab bar is double clicked", ->
-      it "opens a new empty editor", ->
-        newFileHandler = jasmine.createSpy('newFileHandler')
-        atom.workspaceView.on('application:new-file', newFileHandler)
+  describe "when the tab bar is double clicked", ->
+    it "opens a new empty editor", ->
+      newFileHandler = jasmine.createSpy('newFileHandler')
+      atom.workspaceView.on('application:new-file', newFileHandler)
 
-        tabBar.getTabs()[0].dblclick()
-        expect(newFileHandler.callCount).toBe 0
+      tabBar.getTabs()[0].dblclick()
+      expect(newFileHandler.callCount).toBe 0
 
-        tabBar.dblclick()
-        expect(newFileHandler.callCount).toBe 1
+      tabBar.dblclick()
+      expect(newFileHandler.callCount).toBe 1
