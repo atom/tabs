@@ -157,6 +157,11 @@ class TabBarView extends View
       event.originalEvent.dataTransfer.setData 'text/uri-list', 'file://' + item.getPath()
       event.originalEvent.dataTransfer.setData 'text/plain', item.getPath()
 
+      if item.isModified?() and item.getText?
+        console.log 'setting'
+        event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
+        event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
+
   onDragLeave: (event) =>
     @removePlaceholderElement()
 
@@ -212,6 +217,8 @@ class TabBarView extends View
     fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
     fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
+    hasUnsavedChanges = dataTransfer.getData('has-unsaved-changes') is 'true'
+    modifiedText = dataTransfer.getData('modified-text')
 
     @clearDropTarget()
 
@@ -231,8 +238,9 @@ class TabBarView extends View
           activePane = atom.workspaceView.getActivePaneView()
           activeItemIndex = activePane.getActiveItemIndex()
           @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
+          item.setText?(modifiedText) if hasUnsavedChanges
 
-          if not isNaN(fromProcessId) and not isNan(fromProcessId)
+          if not isNaN(fromProcessId) and not isNaN(fromProcessId)
             # Let the window where the drag started know that the tab was dropped
             BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
 
