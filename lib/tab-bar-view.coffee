@@ -202,13 +202,14 @@ class TabBarView extends View
   onDrop: (event) =>
     event.preventDefault()
     event.stopPropagation()
+    {dataTransfer} = event.originalEvent
 
-    return unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
+    return unless dataTransfer.getData('atom-event') is 'true'
 
-    fromProcessId = parseInt(event.originalEvent.dataTransfer.getData('from-process-id'))
-    fromRoutingId = parseInt(event.originalEvent.dataTransfer.getData('from-routing-id'))
-    fromIndex = parseInt(event.originalEvent.dataTransfer.getData('sortable-index'))
-    fromPaneIndex = parseInt(event.originalEvent.dataTransfer.getData('from-pane-index'))
+    fromProcessId = parseInt(dataTransfer.getData('from-process-id'))
+    fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
+    fromIndex = parseInt(dataTransfer.getData('sortable-index'))
+    fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
 
     @clearDropTarget()
     if fromProcessId is @getProcessId()
@@ -226,7 +227,7 @@ class TabBarView extends View
         toPane.showItem(item)
         toPane.focus()
     else
-      if droppedPath = event.originalEvent.dataTransfer.getData('text/plain')
+      if droppedPath = dataTransfer.getData('text/plain')
         atom.workspace.open(droppedPath)
         atom.focus()
         BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
