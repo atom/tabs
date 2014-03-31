@@ -176,16 +176,14 @@ class TabBarView extends View
       @getPlaceholderElement().insertAfter(el)
 
   onDrop: (event) =>
-    unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
-      event.preventDefault()
-      event.stopPropagation()
-      return
+    event.preventDefault()
+    event.stopPropagation()
+
+    return unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
 
     @find(".is-dragging").removeClass 'is-dragging'
     @removeDropTargetClasses()
     @removePlaceholderElement()
-
-    event.stopPropagation()
 
     dataTransfer  = event.originalEvent.dataTransfer
     fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
