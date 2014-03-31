@@ -224,11 +224,15 @@ class TabBarView extends View
     else
       if droppedPath = dataTransfer.getData('text/plain')
         atom.workspace.open(droppedPath).then (item) =>
+          # Move the item from the pane it was opened on to the target pane
+          # where it was dropped onto
           toPane = $(event.target).closest('.pane').view()
           toIndex = @getDropTargetIndex(event)
           activePane = atom.workspaceView.getActivePaneView()
           activeItemIndex = activePane.getActiveItemIndex()
           @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
+
+          # Let window where the drag started know that the tab was dropped
           BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
 
         atom.focus()
