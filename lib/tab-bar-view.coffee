@@ -217,15 +217,17 @@ class TabBarView extends View
     fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
     fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
+
     hasUnsavedChanges = dataTransfer.getData('has-unsaved-changes') is 'true'
     modifiedText = dataTransfer.getData('modified-text')
+
+    toIndex = @getDropTargetIndex(event)
+    toPane = $(event.target).closest('.pane').view()
 
     @clearDropTarget()
 
     if fromProcessId is @getProcessId()
       fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
-      toIndex = @getDropTargetIndex(event)
-      toPane = $(event.target).closest('.pane').view()
       {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
@@ -233,8 +235,6 @@ class TabBarView extends View
         atom.workspace.open(droppedPath).then (item) =>
           # Move the item from the pane it was opened on to the target pane
           # where it was dropped onto
-          toPane = $(event.target).closest('.pane').view()
-          toIndex = @getDropTargetIndex(event)
           activePane = atom.workspaceView.getActivePaneView()
           activeItemIndex = activePane.getActiveItemIndex()
           @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
