@@ -165,9 +165,7 @@ class TabBarView extends View
     @removePlaceholderElement()
 
   onDragEnd: (event) =>
-    @find('.is-dragging').removeClass('is-dragging')
-    @removeDropTargetClasses()
-    @removePlaceholderElement()
+    @clearDropTarget()
 
   onDragOver: (event) =>
     unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
