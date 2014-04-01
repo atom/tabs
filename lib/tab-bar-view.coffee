@@ -158,7 +158,6 @@ class TabBarView extends View
       event.originalEvent.dataTransfer.setData 'text/plain', item.getPath()
 
       if item.isModified?() and item.getText?
-        console.log 'setting'
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
         event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
 
