@@ -386,7 +386,7 @@ describe "TabBarView", ->
       it "closes the tab in the first window and opens the tab in the second window", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
         tabBar.onDragStart(dragStartEvent)
-        tabBar.onDropOnOtherWindow(1, 0)
+        tabBar.onDropOnOtherWindow(pane.model.id, 1)
 
         expect(pane.getItems()).toEqual [item1, item2]
         expect(pane.activeItem).toBe item2
@@ -408,7 +408,7 @@ describe "TabBarView", ->
         editor1.setText('I came from another window')
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
         tabBar.onDragStart(dragStartEvent)
-        tabBar.onDropOnOtherWindow(1, 0)
+        tabBar.onDropOnOtherWindow(pane.model.id, 1)
 
         dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
 

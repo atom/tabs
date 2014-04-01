@@ -149,6 +149,7 @@ class TabBarView extends View
     pane = $(event.target).closest('.pane')
     paneIndex = @paneContainer.indexOfPane(pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
+    event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.model.id
     event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
@@ -189,12 +190,10 @@ class TabBarView extends View
       element = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
       @getPlaceholderElement().insertAfter(element)
 
-  onDropOnOtherWindow: (fromItemIndex, fromPaneIndex) =>
-    fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
-    return unless @pane.is(fromPane)
-
-    if itemToRemove = fromPane.itemAtIndex(fromItemIndex)
-      fromPane.removeItem(itemToRemove)
+  onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
+    if @pane.model.id is fromPaneId
+      if itemToRemove = @pane.itemAtIndex(fromItemIndex)
+        @pane.removeItem(itemToRemove)
 
     @clearDropTarget()
 
@@ -212,6 +211,7 @@ class TabBarView extends View
 
     fromProcessId = parseInt(dataTransfer.getData('from-process-id'))
     fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
+    fromPaneId    = parseInt(dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
 
@@ -239,7 +239,7 @@ class TabBarView extends View
 
           if not isNaN(fromProcessId) and not isNaN(fromProcessId)
             # Let the window where the drag started know that the tab was dropped
-            BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromIndex, fromPaneIndex)
+            BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromPaneId, fromIndex)
 
         atom.focus()
 
