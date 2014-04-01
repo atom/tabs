@@ -48,6 +48,7 @@ describe "TabBarView", ->
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
+    atom.workspace = atom.workspaceView.model
     atom.deserializers.add(TestView)
     item1 = new TestView('Item 1')
     item2 = new TestView('Item 2')
@@ -383,20 +384,59 @@ describe "TabBarView", ->
         expect(pane.focus).not.toHaveBeenCalled()
 
     describe "when a tab is dragged out of application", ->
-      it "should carry file's information", ->
+      it "should carry the file's information", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(1))
         tabBar.onDragStart(dragStartEvent)
 
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual 'file://' + editor1.getPath()
 
-    describe "when the tab bar is double clicked", ->
-      it "opens a new empty editor", ->
-        newFileHandler = jasmine.createSpy('newFileHandler')
-        atom.workspaceView.on('application:new-file', newFileHandler)
+    describe "when a tab is dragged to another Atom window", ->
+      it "closes the tab in the first window and opens the tab in the second window", ->
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
+        tabBar.onDragStart(dragStartEvent)
+        tabBar.onDropOnOtherWindow(pane.model.id, 1)
 
-        tabBar.getTabs()[0].dblclick()
-        expect(newFileHandler.callCount).toBe 0
+        expect(pane.getItems()).toEqual [item1, item2]
+        expect(pane.activeItem).toBe item2
 
-        tabBar.dblclick()
-        expect(newFileHandler.callCount).toBe 1
+        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+
+        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+        tabBar.onDrop(dropEvent)
+
+        waitsFor ->
+          tabBar.moveItemBetweenPanes.callCount > 0
+
+        runs ->
+          editor = atom.workspace.getActiveEditor()
+          expect(editor.getPath()).toBe editor1.getPath()
+          expect(pane.getItems()).toEqual [item1, editor, item2]
+
+      it "transfers the text of the editor when it is modified", ->
+        editor1.setText('I came from another window')
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
+        tabBar.onDragStart(dragStartEvent)
+        tabBar.onDropOnOtherWindow(pane.model.id, 1)
+
+        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+
+        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+        tabBar.onDrop(dropEvent)
+
+        waitsFor ->
+          tabBar.moveItemBetweenPanes.callCount > 0
+
+        runs ->
+          expect(atom.workspace.getActiveEditor().getText()).toBe 'I came from another window'
+
+  describe "when the tab bar is double clicked", ->
+    it "opens a new empty editor", ->
+      newFileHandler = jasmine.createSpy('newFileHandler')
+      atom.workspaceView.on('application:new-file', newFileHandler)
+
+      tabBar.getTabs()[0].dblclick()
+      expect(newFileHandler.callCount).toBe 0
+
+      tabBar.dblclick()
+      expect(newFileHandler.callCount).toBe 1

@@ -1,3 +1,6 @@
+BrowserIpc = require('remote').require('ipc')
+RendererIpc = require('ipc')
+
 {$, View} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
@@ -69,7 +72,12 @@ class TabBarView extends View
         @pane.focus()
         false
 
+    RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
+
     @pane.prepend(this)
+
+  beforeRemove: ->
+    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
 
   addTabForItem: (item, index) ->
     @insertTabAtIndex(new TabView(item, @pane), index)
@@ -92,7 +100,7 @@ class TabBarView extends View
     tab.updateTitle() for tab in @getTabs()
 
   getTabs: ->
-    @children('.tab').toArray().map (elt) -> $(elt).view()
+    @children('.tab').toArray().map (element) -> $(element).view()
 
   tabAtIndex: (index) ->
     @children(".tab:eq(#{index})").view()
@@ -125,33 +133,40 @@ class TabBarView extends View
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
 
-  shouldAllowDrag: ->
-    (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
+  getProcessId: ->
+    @processId ?= atom.getCurrentWindow().getProcessId()
+
+  getRoutingId: ->
+    @routingId ?= atom.getCurrentWindow().getRoutingId()
 
   onDragStart: (event) =>
-    if @shouldAllowDrag()
-      event.originalEvent.dataTransfer.setData 'atom-event', 'true'
+    event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
-    el = $(event.target).closest('.sortable')
-    el.addClass 'is-dragging'
-    event.originalEvent.dataTransfer.setData 'sortable-index', el.index()
+    element = $(event.target).closest('.sortable')
+    element.addClass 'is-dragging'
+    event.originalEvent.dataTransfer.setData 'sortable-index', element.index()
 
     pane = $(event.target).closest('.pane')
     paneIndex = @paneContainer.indexOfPane(pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
+    event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.model.id
+    event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
+    event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
-    item = @pane.getItems()[el.index()]
+    item = @pane.getItems()[element.index()]
     if item.getPath?
       event.originalEvent.dataTransfer.setData 'text/uri-list', 'file://' + item.getPath()
       event.originalEvent.dataTransfer.setData 'text/plain', item.getPath()
+
+      if item.isModified?() and item.getText?
+        event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
+        event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
 
   onDragLeave: (event) =>
     @removePlaceholderElement()
 
   onDragEnd: (event) =>
-    @find(".is-dragging").removeClass 'is-dragging'
-    @removeDropTargetClasses()
-    @removePlaceholderElement()
+    @clearDropTarget()
 
   onDragOver: (event) =>
     unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
@@ -169,33 +184,66 @@ class TabBarView extends View
     sortableObjects = tabBar.find(".sortable")
 
     if newDropTargetIndex < sortableObjects.length
-      el = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
-      @getPlaceholderElement().insertBefore(el)
+      element = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
+      @getPlaceholderElement().insertBefore(element)
     else
-      el = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
-      @getPlaceholderElement().insertAfter(el)
+      element = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
+      @getPlaceholderElement().insertAfter(element)
 
-  onDrop: (event) =>
-    unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
-      event.preventDefault()
-      event.stopPropagation()
-      return
+  onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
+    if @pane.model.id is fromPaneId
+      if itemToRemove = @pane.itemAtIndex(fromItemIndex)
+        @pane.removeItem(itemToRemove)
 
+    @clearDropTarget()
+
+  clearDropTarget: ->
     @find(".is-dragging").removeClass 'is-dragging'
     @removeDropTargetClasses()
     @removePlaceholderElement()
 
+  onDrop: (event) =>
+    event.preventDefault()
     event.stopPropagation()
+    {dataTransfer} = event.originalEvent
 
-    dataTransfer  = event.originalEvent.dataTransfer
+    return unless dataTransfer.getData('atom-event') is 'true'
+
+    fromProcessId = parseInt(dataTransfer.getData('from-process-id'))
+    fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
+    fromPaneId    = parseInt(dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
-    fromPane      = @paneContainer.paneAtIndex(fromPaneIndex)
-    toIndex       = @getDropTargetIndex(event)
-    toPane        = $(event.target).closest('.pane').view()
-    draggedTab    = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view()
-    item          = draggedTab.item
 
+    hasUnsavedChanges = dataTransfer.getData('has-unsaved-changes') is 'true'
+    modifiedText = dataTransfer.getData('modified-text')
+
+    toIndex = @getDropTargetIndex(event)
+    toPane = $(event.target).closest('.pane').view()
+
+    @clearDropTarget()
+
+    if fromProcessId is @getProcessId()
+      fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
+      {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
+      @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
+    else
+      if droppedPath = dataTransfer.getData('text/plain')
+        atom.workspace.open(droppedPath).then (item) =>
+          # Move the item from the pane it was opened on to the target pane
+          # where it was dropped onto
+          activePane = atom.workspaceView.getActivePaneView()
+          activeItemIndex = activePane.getActiveItemIndex()
+          @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
+          item.setText?(modifiedText) if hasUnsavedChanges
+
+          if not isNaN(fromProcessId) and not isNaN(fromProcessId)
+            # Let the window where the drag started know that the tab was dropped
+            BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromPaneId, fromIndex)
+
+        atom.focus()
+
+  moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
     if toPane is fromPane
       toIndex-- if fromIndex < toIndex
       toPane.moveItem(item, toIndex)
@@ -215,26 +263,25 @@ class TabBarView extends View
     return if @isPlaceholderElement(target)
 
     sortables = tabBar.find('.sortable')
-    el = target.closest('.sortable')
-    el = sortables.last() if el.length == 0
+    element = target.closest('.sortable')
+    element = sortables.last() if element.length == 0
 
-    return 0 unless el.length
+    return 0 unless element.length
 
-    elementCenter = el.offset().left + el.width() / 2
+    elementCenter = element.offset().left + element.width() / 2
 
     if event.originalEvent.pageX < elementCenter
-      sortables.index(el)
-    else if el.next('.sortable').length > 0
-      sortables.index(el.next('.sortable'))
+      sortables.index(element)
+    else if element.next('.sortable').length > 0
+      sortables.index(element.next('.sortable'))
     else
-      sortables.index(el) + 1
+      sortables.index(element) + 1
 
   getPlaceholderElement: ->
-    @placeholderEl = $('<li/>', class: 'placeholder') unless @placeholderEl
-    @placeholderEl
+    @placeholderEl ?= $('<li/>', class: 'placeholder')
 
   removePlaceholderElement: ->
-    @placeholderEl.remove() if @placeholderEl
+    @placeholderEl?.remove()
     @placeholderEl = null
 
   isPlaceholderElement: (element) ->
