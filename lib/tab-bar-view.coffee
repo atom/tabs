@@ -1,4 +1,4 @@
-BrowserIpc = require('remote').require('ipc')
+BrowserIpc = null # Defer require until actually used
 RendererIpc = require('ipc')
 
 {$, View} = require 'atom'
@@ -239,6 +239,7 @@ class TabBarView extends View
 
           if not isNaN(fromProcessId) and not isNaN(fromProcessId)
             # Let the window where the drag started know that the tab was dropped
+            BrowserIpc ?= require('remote').require('ipc')
             BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromPaneId, fromIndex)
 
         atom.focus()
