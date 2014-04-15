@@ -68,7 +68,7 @@ class TabBarView extends View
     @on 'click', '.tab', ({target, which}) =>
       tab = $(target).closest('.tab').view()
       if which is 1 and not target.classList.contains('close-icon')
-        @pane.showItem(tab.item)
+        @pane.activateItem(tab.item)
         @pane.focus()
         false
 
@@ -250,7 +250,7 @@ class TabBarView extends View
       toPane.moveItem(item, toIndex)
     else
       fromPane.moveItemToPane(item, toPane, toIndex--)
-    toPane.showItem(item)
+    toPane.activateItem(item)
     toPane.focus()
 
   removeDropTargetClasses: ->

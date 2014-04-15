@@ -56,7 +56,7 @@ describe "TabBarView", ->
     pane = atom.workspaceView.getActivePane()
     pane.addItem(item1, 0)
     pane.addItem(item2, 2)
-    pane.showItem(item2)
+    pane.activateItem(item2)
     tabBar = new TabBarView(pane)
 
   afterEach ->
@@ -78,31 +78,31 @@ describe "TabBarView", ->
       spyOn(TabView.prototype, 'setTooltip')
       item3 = new TestView('Item 3')
       item3.getPath = -> "<img src='oh-my.jpg' />"
-      pane.showItem(item3)
+      pane.activateItem(item3)
       expect(TabView.prototype.setTooltip.argsForCall[0][0].title).toBe _.escape(item3.getPath())
 
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
-      pane.showItem(item1)
+      pane.activateItem(item1)
       expect(tabBar.find('.active').length).toBe 1
       expect(tabBar.find('.tab:eq(0)')).toHaveClass 'active'
 
-      pane.showItem(item2)
+      pane.activateItem(item2)
       expect(tabBar.find('.active').length).toBe 1
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
 
   describe "when a new item is added to the pane", ->
     it "adds a tab for the new item at the same index as the item in the pane", ->
-      pane.showItem(item1)
+      pane.activateItem(item1)
       item3 = new TestView('Item 3')
-      pane.showItem(item3)
+      pane.activateItem(item3)
       expect(tabBar.find('.tab').length).toBe 4
       expect(tabBar.tabAtIndex(1).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
       editor2 = atom.project.openSync('sample.txt')
       editor2.insertText('x')
-      pane.showItem(editor2)
+      pane.activateItem(editor2)
       expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
 
   describe "when an item is removed from the pane", ->
@@ -116,7 +116,7 @@ describe "TabBarView", ->
       item2.longTitle = '2'
       item2a = new TestView('Item 2')
       item2a.longTitle = '2a'
-      pane.showItem(item2a)
+      pane.activateItem(item2a)
       expect(tabBar.tabForItem(item2)).toHaveText '2'
       expect(tabBar.tabForItem(item2a)).toHaveText '2a'
       pane.removeItem(item2a)
@@ -223,7 +223,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
-        pane.showItem(editor1)
+        pane.activateItem(editor1)
         $(tabBar.tabForItem(editor1)).trigger {type: 'mousedown', which: 3}
         tabBar.trigger 'tabs:close-tabs-to-right'
         expect(pane.getItems().length).toBe 2
