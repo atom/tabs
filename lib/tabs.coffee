@@ -3,15 +3,15 @@ TabBarView = require './tab-bar-view'
 
 module.exports =
   activate: ->
-    @paneSubscription = atom.workspaceView.eachPane (pane) =>
-      tabBarView = new TabBarView(pane)
+    @paneSubscription = atom.workspaceView.eachPaneView (paneView) =>
+      tabBarView = new TabBarView(paneView)
       @tabBarViews ?= []
       @tabBarViews.push(tabBarView)
-      onPaneRemoved = (event, removedPane) =>
-        return unless pane is removedPane
+      onPaneViewRemoved = (event, removedPaneView) =>
+        return unless paneView is removedPaneView
         _.remove(@tabBarViews, tabBarView)
-        atom.workspaceView.off('pane:removed', onPaneRemoved)
-      atom.workspaceView.on('pane:removed', onPaneRemoved)
+        atom.workspaceView.off('pane:removed', onPaneViewRemoved)
+      atom.workspaceView.on('pane:removed', onPaneViewRemoved)
       tabBarView
 
   deactivate: ->
