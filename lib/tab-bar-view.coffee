@@ -156,7 +156,7 @@ class TabBarView extends View
     item = @pane.getItems()[element.index()]
     if item.getPath?
       event.originalEvent.dataTransfer.setData 'text/uri-list', 'file://' + item.getPath()
-      event.originalEvent.dataTransfer.setData 'text/plain', item.getPath()
+      event.originalEvent.dataTransfer.setData 'text/plain', item.getPath() ? ''
 
       if item.isModified?() and item.getText?
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
@@ -228,21 +228,21 @@ class TabBarView extends View
       {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      if droppedPath = dataTransfer.getData('text/plain')
-        atom.workspace.open(droppedPath).then (item) =>
-          # Move the item from the pane it was opened on to the target pane
-          # where it was dropped onto
-          activePane = atom.workspaceView.getActivePaneView()
-          activeItemIndex = activePane.getActiveItemIndex()
-          @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
-          item.setText?(modifiedText) if hasUnsavedChanges
+      droppedPath = dataTransfer.getData('text/plain')
+      atom.workspace.open(droppedPath).then (item) =>
+        # Move the item from the pane it was opened on to the target pane
+        # where it was dropped onto
+        activePane = atom.workspaceView.getActivePaneView()
+        activeItemIndex = activePane.getActiveItemIndex()
+        @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
+        item.setText?(modifiedText) if hasUnsavedChanges
 
-          if not isNaN(fromProcessId) and not isNaN(fromProcessId)
-            # Let the window where the drag started know that the tab was dropped
-            BrowserIpc ?= require('remote').require('ipc')
-            BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromPaneId, fromIndex)
+        if not isNaN(fromProcessId) and not isNaN(fromProcessId)
+          # Let the window where the drag started know that the tab was dropped
+          BrowserIpc ?= require('remote').require('ipc')
+          BrowserIpc.sendChannel(fromProcessId, fromRoutingId, 'tab:dropped', fromPaneId, fromIndex)
 
-        atom.focus()
+      atom.focus()
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
     if toPane is fromPane

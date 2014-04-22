@@ -235,7 +235,7 @@ describe "TabBarView", ->
     buildDragEvents = (dragged, dropTarget) ->
       dataTransfer =
         data: {}
-        setData: (key, value) -> @data[key] = value
+        setData: (key, value) -> @data[key] = "#{value}" # Drag events stringify data values
         getData: (key) -> @data[key]
 
       dragStartEvent = $.Event()
@@ -429,6 +429,26 @@ describe "TabBarView", ->
 
         runs ->
           expect(atom.workspace.getActiveEditor().getText()).toBe 'I came from another window'
+
+      it "allows untitled editors to be moved between windows", ->
+        editor1.getBuffer().setPath(null)
+        editor1.setText('I have no path')
+
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
+        tabBar.onDragStart(dragStartEvent)
+        tabBar.onDropOnOtherWindow(pane.model.id, 1)
+
+        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+
+        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+        tabBar.onDrop(dropEvent)
+
+        waitsFor ->
+          tabBar.moveItemBetweenPanes.callCount > 0
+
+        runs ->
+          expect(atom.workspace.getActiveEditor().getText()).toBe 'I have no path'
+          expect(atom.workspace.getActiveEditor().getPath()).toBeUndefined()
 
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->
