@@ -14,10 +14,14 @@ class TabView extends View
       @updateTitle()
       @updateTooltip()
 
+    @item.on? 'icon-changed', =>
+      @updateIcon()
+
     @item.on? 'modified-status-changed', =>
       @updateModifiedStatus()
 
     @updateTitle()
+    @updateIcon()
     @updateModifiedStatus()
     @updateTooltip()
 
@@ -49,6 +53,13 @@ class TabView extends View
 
     @title.text(title)
     @updatingTitle = false
+
+  updateIcon: ->
+    @title.removeClass (index, css) ->
+      (css.match(/\bicon(-\w+)?/g) || []).join(' ')
+
+    if @item.getIcon && iconName = @item.getIcon()
+      @title.addClass "icon icon-#{iconName}"
 
   getSiblingTabs: ->
     @siblings('.tab').views()
