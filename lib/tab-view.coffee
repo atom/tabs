@@ -55,11 +55,11 @@ class TabView extends View
     @updatingTitle = false
 
   updateIcon: ->
-    @title.removeClass (index, css) ->
-      (css.match(/\bicon(-\w+)?/g) || []).join(' ')
+    if @iconName
+      @title.removeClass "icon icon-#{@iconName}"
 
-    if @item.getIcon && iconName = @item.getIcon()
-      @title.addClass "icon icon-#{iconName}"
+    if @iconName = @item.getIconName?()
+      @title.addClass "icon icon-#{@iconName}"
 
   getSiblingTabs: ->
     @siblings('.tab').views()
