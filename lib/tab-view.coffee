@@ -20,6 +20,8 @@ class TabView extends View
     @item.on? 'modified-status-changed', =>
       @updateModifiedStatus()
 
+    @subscribe atom.config.observe 'tabs.showIcons', => @updateIconVisibility()
+
     @updateTitle()
     @updateIcon()
     @updateModifiedStatus()
@@ -63,6 +65,12 @@ class TabView extends View
 
   getSiblingTabs: ->
     @siblings('.tab').views()
+
+  updateIconVisibility: ->
+    if atom.config.get "tabs.showIcons"
+      @title.removeClass("hide-icon")
+    else
+      @title.addClass("hide-icon")
 
   updateModifiedStatus: ->
     if @item.isModified?()
