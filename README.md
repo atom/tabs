@@ -1,4 +1,4 @@
-# Tabs package
+# Tabs package [![Build Status](https://travis-ci.org/atom/tabs.svg?branch=master)](https://travis-ci.org/atom/tabs)
 
 Display selectable tabs above the editor.
 
