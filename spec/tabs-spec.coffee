@@ -39,18 +39,19 @@ describe "TabBarView", ->
   [item1, item2, editor1, pane, tabBar] = []
 
   class TestView extends View
-    @deserialize: ({title, longTitle}) -> new TestView(title, longTitle)
+    @deserialize: ({title, longTitle, iconName}) -> new TestView(title, longTitle, iconName)
     @content: (title) -> @div title
-    initialize: (@title, @longTitle) ->
+    initialize: (@title, @longTitle, @iconName) ->
     getTitle: -> @title
     getLongTitle: -> @longTitle
-    serialize: -> { deserializer: 'TestView', @title, @longTitle }
+    getIconName: -> @iconName
+    serialize: -> { deserializer: 'TestView', @title, @longTitle, @iconName }
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
     atom.workspace = atom.workspaceView.model
     atom.deserializers.add(TestView)
-    item1 = new TestView('Item 1')
+    item1 = new TestView('Item 1', undefined, "squirrel")
     item2 = new TestView('Item 2')
     editor1 = atom.workspaceView.openSync('sample.js')
     pane = atom.workspaceView.getActivePane()
@@ -175,6 +176,83 @@ describe "TabBarView", ->
 
       expect(tabBar.tabForItem(item1)).toHaveText "Grumpy Old Man"
       expect(tabBar.tabForItem(item2)).toHaveText "Old Man"
+
+  describe "when an item has an icon defined", ->
+    it "displays the icon on the tab", ->
+      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon"
+      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon-squirrel"
+
+    it "hides the icon from the tab if the icon is removed", ->
+      item1.getIconName = null
+      item1.trigger 'icon-changed'
+      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon"
+      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon-squirrel"
+
+    it "updates the icon on the tab if the icon is changed", ->
+      item1.getIconName = ->
+        "zap"
+      item1.trigger 'icon-changed'
+      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon"
+      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon-zap"
+
+    describe "when showIcon is set to true in package settings", ->
+      beforeEach ->
+        spyOn(tabBar.tabForItem(item1), 'updateIconVisibility').andCallThrough()
+
+        atom.config.set("tabs.showIcons", true)
+
+        waitsFor ->
+          tabBar.tabForItem(item1).updateIconVisibility.callCount > 0
+
+        runs ->
+          tabBar.tabForItem(item1).updateIconVisibility.reset()
+
+      it "doesn't hide the icon", ->
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "hide-icon"
+
+      it "hides the icon from the tab when showIcon is changed to false", ->
+        atom.config.set("tabs.showIcons", false)
+
+        waitsFor ->
+          tabBar.tabForItem(item1).updateIconVisibility.callCount > 0
+
+        runs ->
+          expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "hide-icon"
+
+    describe "when showIcon is set to false in package settings", ->
+      beforeEach ->
+        spyOn(tabBar.tabForItem(item1), 'updateIconVisibility').andCallThrough()
+
+        atom.config.set("tabs.showIcons", false)
+
+        waitsFor ->
+          tabBar.tabForItem(item1).updateIconVisibility.callCount > 0
+
+        runs ->
+          tabBar.tabForItem(item1).updateIconVisibility.reset()
+
+      it "hides the icon", ->
+        expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "hide-icon"
+
+      it "shows the icon on the tab when showIcon is changed to true", ->
+        atom.config.set("tabs.showIcons", true)
+
+        waitsFor ->
+          tabBar.tabForItem(item1).updateIconVisibility.callCount > 0
+
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "hide-icon"
+
+  describe "when the item doesn't have an icon defined", ->
+    it "doesn't display an icon on the tab", ->
+      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveClass "icon"
+      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveClass "icon-squirrel"
+
+    it "shows the icon on the tab if an icon is defined", ->
+      item2.getIconName = ->
+        "squirrel"
+      item2.trigger 'icon-changed'
+      expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon"
+      expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon-squirrel"
 
   describe "when a tab item's modified status changes", ->
     it "adds or removes the 'modified' class to the tab based on the status", ->

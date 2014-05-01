@@ -14,10 +14,16 @@ class TabView extends View
       @updateTitle()
       @updateTooltip()
 
+    @item.on? 'icon-changed', =>
+      @updateIcon()
+
     @item.on? 'modified-status-changed', =>
       @updateModifiedStatus()
 
+    @subscribe atom.config.observe 'tabs.showIcons', => @updateIconVisibility()
+
     @updateTitle()
+    @updateIcon()
     @updateModifiedStatus()
     @updateTooltip()
 
@@ -50,8 +56,21 @@ class TabView extends View
     @title.text(title)
     @updatingTitle = false
 
+  updateIcon: ->
+    if @iconName
+      @title.removeClass "icon icon-#{@iconName}"
+
+    if @iconName = @item.getIconName?()
+      @title.addClass "icon icon-#{@iconName}"
+
   getSiblingTabs: ->
     @siblings('.tab').views()
+
+  updateIconVisibility: ->
+    if atom.config.get "tabs.showIcons"
+      @title.removeClass("hide-icon")
+    else
+      @title.addClass("hide-icon")
 
   updateModifiedStatus: ->
     if @item.isModified?()

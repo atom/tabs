@@ -28,6 +28,12 @@
       text-overflow: ellipsis;
     }
 
+    .hide-icon {
+      &.icon:before {
+        display: none;
+      }
+    }
+
     .close-icon {
       .octicon(x, @close-icon-size);
       position: absolute;

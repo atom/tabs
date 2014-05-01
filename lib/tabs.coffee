@@ -2,6 +2,9 @@ _ = require 'underscore-plus'
 TabBarView = require './tab-bar-view'
 
 module.exports =
+  configDefaults:
+    showIcons: true
+
   activate: ->
     @paneSubscription = atom.workspaceView.eachPaneView (paneView) =>
       tabBarView = new TabBarView(paneView)
