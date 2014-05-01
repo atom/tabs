@@ -24,7 +24,7 @@ class TabBarView extends View
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
 
-    @subscribe @paneContainer, 'pane:removed', (pane) =>
+    @subscribe @paneContainer, 'pane:removed', (e, pane) =>
       @unsubscribe() if pane is @pane
 
     @subscribe @pane, 'pane:item-added', (e, item, index) =>
@@ -76,8 +76,9 @@ class TabBarView extends View
 
     @pane.prepend(this)
 
-  beforeRemove: ->
+  unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
+    super
 
   addTabForItem: (item, index) ->
     @insertTabAtIndex(new TabView(item, @pane), index)
