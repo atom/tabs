@@ -137,12 +137,11 @@ class TabBarView extends View
     @closeTab tab for tab, i in tabs when i > index
 
   closeSavedTabs: ->
-    tabs = @getTabs()
-    @closeTab tab for tab in tabs when not tab.item.isModified()
+    for tab in @getTabs()
+      @closeTab(tab) unless tab.item.isModified?()
 
   closeAllTabs: ->
-    tabs = @getTabs()
-    @closeTab tab for tab in tabs
+    @closeTab(tab) for tab in @getTabs()
 
   getProcessId: ->
     @processId ?= atom.getCurrentWindow().getProcessId()

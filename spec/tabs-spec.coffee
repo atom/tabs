@@ -309,6 +309,19 @@ describe "TabBarView", ->
         expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
         expect(tabBar.find('.tab:contains(Item 1)')).toExist()
 
+    describe "when tabs:close-all-tabs is fired", ->
+      it "closes all the tabs", ->
+        expect(pane.getItems().length).toBeGreaterThan 0
+        tabBar.trigger 'tabs:close-all-tabs'
+        expect(pane.getItems().length).toBe 0
+
+    describe "when tabs:close-saved-tabs is fired", ->
+      it "closes all the saved tabs", ->
+        item1.isModified = -> true
+        tabBar.trigger 'tabs:close-saved-tabs'
+        expect(pane.getItems().length).toBe 1
+        expect(pane.getItems()[0]).toBe item1
+
   describe "dragging and dropping tabs", ->
     buildDragEvents = (dragged, dropTarget) ->
       dataTransfer =
