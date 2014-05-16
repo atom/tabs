@@ -57,6 +57,10 @@ class TabBarView extends View
         @pane.destroyItem(tab.item)
         false
 
+    @on 'mouseup', '.tab', ({target, which}) =>
+      if which is 2
+        false
+
     @on 'dblclick', ({target}) =>
       if target is @[0]
         @pane.trigger('application:new-file')
