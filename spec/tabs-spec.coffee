@@ -1,5 +1,6 @@
 {$, WorkspaceView, View}  = require 'atom'
 _ = require 'underscore-plus'
+path = require 'path'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
 
@@ -69,8 +70,16 @@ describe "TabBarView", ->
       expect(tabBar.find('.tab').length).toBe 3
 
       expect(tabBar.find('.tab:eq(0) .title').text()).toBe item1.getTitle()
+      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveAttr('data-name')
+      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveAttr('data-path')
+
       expect(tabBar.find('.tab:eq(1) .title').text()).toBe editor1.getTitle()
+      expect(tabBar.find('.tab:eq(1) .title')).toHaveAttr('data-name', path.basename(editor1.getPath()))
+      expect(tabBar.find('.tab:eq(1) .title')).toHaveAttr('data-path', editor1.getPath())
+
       expect(tabBar.find('.tab:eq(2) .title').text()).toBe item2.getTitle()
+      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveAttr('data-name')
+      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveAttr('data-path')
 
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'

@@ -11,6 +11,7 @@ class TabView extends View
 
   initialize: (@item, @pane) ->
     @item.on? 'title-changed', =>
+      @updateDataAttributes()
       @updateTitle()
       @updateTooltip()
 
@@ -22,6 +23,7 @@ class TabView extends View
 
     @subscribe atom.config.observe 'tabs.showIcons', => @updateIconVisibility()
 
+    @updateDataAttributes()
     @updateTitle()
     @updateIcon()
     @updateModifiedStatus()
@@ -40,6 +42,19 @@ class TabView extends View
 
   beforeRemove: ->
     @destroyTooltip()
+
+  updateDataAttributes: ->
+    return if @updatingDataAttributes
+    @updatingDataAttributes = true
+
+    if @item.getPath?
+      itemPath = @item.getPath()
+      name = path.basename(itemPath)
+      @title.attr('data-name', name)
+      @title.attr('data-path', itemPath)
+
+    @updatingDataAttributes = false
+
 
   updateTitle: ->
     return if @updatingTitle
