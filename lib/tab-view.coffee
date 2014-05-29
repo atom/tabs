@@ -44,14 +44,9 @@ class TabView extends View
     @destroyTooltip()
 
   updateDataAttributes: ->
-    return if @updatingDataAttributes
-    @updatingDataAttributes = true
-
     if itemPath = @item.getPath?()
       @title.attr('data-name', path.basename(itemPath))
       @title.attr('data-path', itemPath)
-
-    @updatingDataAttributes = false
 
   updateTitle: ->
     return if @updatingTitle
