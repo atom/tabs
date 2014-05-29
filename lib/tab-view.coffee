@@ -47,10 +47,8 @@ class TabView extends View
     return if @updatingDataAttributes
     @updatingDataAttributes = true
 
-    if @item.getPath?
-      itemPath = @item.getPath()
-      name = path.basename(itemPath)
-      @title.attr('data-name', name)
+    if itemPath = @item.getPath?()
+      @title.attr('data-name', path.basename(itemPath))
       @title.attr('data-path', itemPath)
 
     @updatingDataAttributes = false
