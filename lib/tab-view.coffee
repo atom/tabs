@@ -55,7 +55,6 @@ class TabView extends View
 
     @updatingDataAttributes = false
 
-
   updateTitle: ->
     return if @updatingTitle
     @updatingTitle = true
