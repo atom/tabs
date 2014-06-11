@@ -117,7 +117,9 @@ class TabBarView extends View
       tabView.addClass('active')
 
   updateActiveTab: ->
-    @setActiveTab(@tabForItem(@pane.activeItem))
+    tab = @tabForItem(@pane.activeItem)
+    tab.lastActiveAt = new Date()
+    @setActiveTab(tab)
 
   closeTab: (tab) ->
     tab ?= @children('.right-clicked').view()

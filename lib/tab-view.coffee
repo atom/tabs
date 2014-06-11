@@ -10,7 +10,9 @@ class TabView extends View
       @div class: 'close-icon'
 
   initialize: (@item, @pane) ->
+    @lastActiveAt   = new Date()
     @lastModifiedAt = null
+
     @item.on? 'title-changed', =>
       @updateDataAttributes()
       @updateTitle()
