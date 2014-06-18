@@ -1,5 +1,5 @@
 BrowserWindow = null # Defer require until actually used
-RendererIpc = require('ipc')
+RendererIpc = require 'ipc'
 
 {$, View} = require 'atom'
 _ = require 'underscore-plus'
