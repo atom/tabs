@@ -206,7 +206,7 @@ class TabBarView extends View
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
     if @pane.model.id is fromPaneId
       if itemToRemove = @pane.itemAtIndex(fromItemIndex)
-        @pane.removeItem(itemToRemove)
+        @pane.destroyItem(itemToRemove)
 
     @clearDropTarget()
 

@@ -7,7 +7,9 @@ TabView = require '../lib/tab-view'
 describe "Tabs package main", ->
   beforeEach ->
     atom.workspaceView = new WorkspaceView
-    atom.workspaceView.openSync('sample.js')
+
+    waitsForPromise ->
+      atom.workspace.open('sample.js')
 
     waitsForPromise ->
       atom.packages.activatePackage("tabs")
@@ -16,14 +18,14 @@ describe "Tabs package main", ->
     it "appends a tab bar all existing and new panes", ->
       expect(atom.workspaceView.panes.find('.pane').length).toBe 1
       expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 1
-      pane = atom.workspaceView.getActivePane()
+      pane = atom.workspaceView.getActivePaneView()
       pane.splitRight(pane.copyActiveItem())
       expect(atom.workspaceView.find('.pane').length).toBe 2
       expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 2
 
   describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->
-      pane = atom.workspaceView.getActivePane()
+      pane = atom.workspaceView.getActivePaneView()
       pane.splitRight(pane.copyActiveItem())
       expect(atom.workspaceView.panes.find('.pane').length).toBe 2
       expect(atom.workspaceView.panes.find('.pane > .tab-bar').length).toBe 2
@@ -54,12 +56,17 @@ describe "TabBarView", ->
     atom.deserializers.add(TestView)
     item1 = new TestView('Item 1', undefined, "squirrel")
     item2 = new TestView('Item 2')
-    editor1 = atom.workspaceView.openSync('sample.js')
-    pane = atom.workspaceView.getActivePane()
-    pane.addItem(item1, 0)
-    pane.addItem(item2, 2)
-    pane.activateItem(item2)
-    tabBar = new TabBarView(pane)
+
+    waitsForPromise ->
+      atom.workspace.open('sample.js')
+
+    runs ->
+      editor1 = atom.workspace.getActiveEditor()
+      pane = atom.workspaceView.getActivePaneView()
+      pane.addItem(item1, 0)
+      pane.addItem(item2, 2)
+      pane.activateItem(item2)
+      tabBar = new TabBarView(pane)
 
   afterEach ->
     atom.deserializers.remove(TestView)
@@ -110,14 +117,19 @@ describe "TabBarView", ->
       expect(tabBar.tabAtIndex(1).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
-      editor2 = atom.project.openSync('sample.txt')
-      editor2.insertText('x')
-      pane.activateItem(editor2)
-      expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
+      editor2 = null
+
+      waitsForPromise ->
+        atom.project.open('sample.txt').then (o) -> editor2 = o
+
+      runs ->
+        editor2.insertText('x')
+        pane.activateItem(editor2)
+        expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
 
   describe "when an item is removed from the pane", ->
     it "removes the item's tab from the tab bar", ->
-      pane.removeItem(item2)
+      pane.destroyItem(item2)
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
 
@@ -129,7 +141,7 @@ describe "TabBarView", ->
       pane.activateItem(item2a)
       expect(tabBar.tabForItem(item2)).toHaveText '2'
       expect(tabBar.tabForItem(item2a)).toHaveText '2a'
-      pane.removeItem(item2a)
+      pane.destroyItem(item2a)
       expect(tabBar.tabForItem(item2)).toHaveText 'Item 2'
 
   describe "when a tab is clicked", ->
