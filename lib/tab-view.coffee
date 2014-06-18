@@ -10,6 +10,9 @@ class TabView extends View
       @div class: 'close-icon'
 
   initialize: (@item, @pane) ->
+    @lastActiveAt   = new Date()
+    @lastModifiedAt = null
+
     @item.on? 'title-changed', =>
       @updateDataAttributes()
       @updateTitle()
@@ -83,6 +86,7 @@ class TabView extends View
     if @item.isModified?()
       @addClass('modified') unless @isModified
       @isModified = true
+      @lastModifiedAt = new Date()
     else
       @removeClass('modified') if @isModified
       @isModified = false
