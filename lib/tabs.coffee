@@ -4,6 +4,7 @@ TabBarView = require './tab-bar-view'
 module.exports =
   configDefaults:
     showIcons: true
+    moveLastOpenedTabToFront: false
 
   activate: ->
     @paneSubscription = atom.workspaceView.eachPaneView (paneView) =>

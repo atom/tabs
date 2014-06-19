@@ -116,6 +116,11 @@ class TabBarView extends View
       @find(".tab.active").removeClass('active')
       tabView.addClass('active')
 
+      if atom.config.get "tabs.moveLastOpenedTabToFront"
+        index = @children(".tab").index(tabView)
+        item = @pane.itemAtIndex(index)
+        @pane.moveItem item, 0
+
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.activeItem))
 
