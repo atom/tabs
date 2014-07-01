@@ -4,6 +4,7 @@ TabBarView = require './tab-bar-view'
 module.exports =
   configDefaults:
     showIcons: true
+    changeTabsWithMouseWheel: if process.platform == 'linux' then true else false
 
   activate: ->
     @paneSubscription = atom.workspaceView.eachPaneView (paneView) =>

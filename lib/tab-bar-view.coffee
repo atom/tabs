@@ -45,6 +45,8 @@ class TabBarView extends View
       @updateActiveTab()
       true
 
+    @subscribe atom.config.observe 'tabs.changeTabsWithMouseWheel', => @updateScrollTabs()
+
     @updateActiveTab()
 
     @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
@@ -312,3 +314,16 @@ class TabBarView extends View
   getTabBar: (target) ->
     target = $(target)
     if target.is('.tab-bar') then target else target.parents('.tab-bar')
+
+  updateScrollTabs: ->
+    @updateScrollTabsHandler ?= ({originalEvent}) =>
+      delta = Math.max(-1, Math.min(1, originalEvent.wheelDelta))
+      if delta < 0
+        @pane.activateNextItem()
+      else
+        @pane.activatePreviousItem()
+
+    if atom.config.get 'tabs.changeTabsWithMouseWheel'
+      @on 'wheel', @updateScrollTabsHandler
+    else
+      @off 'wheel', @updateScrollTabsHandler

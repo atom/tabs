@@ -572,3 +572,47 @@ describe "TabBarView", ->
 
       tabBar.dblclick()
       expect(newFileHandler.callCount).toBe 1
+
+  describe "when the mouse wheel is used on the tab bar", ->
+    buildWheelEvent = (direction) ->
+      wheelEvent = $.Event("wheel", {originalEvent: {wheelDelta: direction}})
+
+    describe "when changeTabsWithMouseWheel is true in package settings", ->
+      beforeEach ->
+        atom.config.set("tabs.changeTabsWithMouseWheel", true)
+
+      describe "when the mouse wheel scrolls up one unit", ->
+        it "changes the active tab to the previous tab", ->
+          expect(pane.activeItem).toBe item2
+
+          tabBar.trigger(buildWheelEvent(1))
+
+          expect(pane.activeItem).toBe editor1
+
+      describe "when the mouse wheel scrolls down one unit", ->
+        it "changes the active tab to the previous tab", ->
+          expect(pane.activeItem).toBe item2
+
+          tabBar.trigger(buildWheelEvent(-1))
+
+          expect(pane.activeItem).toBe item1
+
+    describe "when changeTabsWithMouseWheel is false in package settings", ->
+      beforeEach ->
+        atom.config.set("tabs.changeTabsWithMouseWheel", false)
+
+      describe "when the mouse wheel scrolls up one unit", ->
+        it "does not change the active tab", ->
+          expect(pane.activeItem).toBe item2
+
+          tabBar.trigger(buildWheelEvent(1))
+
+          expect(pane.activeItem).toBe item2
+
+      describe "when the mouse wheel scrolls down one unit", ->
+        it "does not change the active tab", ->
+          expect(pane.activeItem).toBe item2
+
+          tabBar.trigger(buildWheelEvent(-1))
+
+          expect(pane.activeItem).toBe item2
