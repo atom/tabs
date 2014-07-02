@@ -315,15 +315,15 @@ class TabBarView extends View
     target = $(target)
     if target.is('.tab-bar') then target else target.parents('.tab-bar')
 
-  updateScrollTabs: ->
-    @updateScrollTabsHandler ?= ({originalEvent}) =>
-      delta = Math.max(-1, Math.min(1, originalEvent.wheelDelta))
-      if delta < 0
-        @pane.activateNextItem()
-      else
-        @pane.activatePreviousItem()
-
-    if atom.config.get 'tabs.changeTabsWithMouseWheel'
-      @on 'wheel', @updateScrollTabsHandler
+  onMouseWheel: (event) =>
+    delta = Math.max(-1, Math.min(1, event.originalEvent.wheelDelta))
+    if delta < 0
+      @pane.activateNextItem()
     else
-      @off 'wheel', @updateScrollTabsHandler
+      @pane.activatePreviousItem()
+
+  updateScrollTabs: ->
+    if atom.config.get 'tabs.changeTabsWithMouseWheel'
+      @on 'wheel', @onMouseWheel
+    else
+      @off 'wheel', @onMouseWheel
