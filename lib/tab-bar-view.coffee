@@ -45,7 +45,9 @@ class TabBarView extends View
       @updateActiveTab()
       true
 
-    @subscribe atom.config.observe 'tabs.changeTabsWithMouseWheel', => @updateScrollTabs()
+    @subscribe atom.config.observe 'tabs.tabScrollingDelay', => @updateTabScrollingDelay()
+
+    @subscribe atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
 
     @updateActiveTab()
 
@@ -259,6 +261,26 @@ class TabBarView extends View
 
       atom.focus()
 
+  onMouseWheel: ({originalEvent}) =>
+    if originalEvent.wheelDelta < 0
+      @pane.activateNextItem()
+    else
+      @pane.activatePreviousItem()
+
+  updateTabScrolling: ->
+    @tabScrolling = atom.config.get('tabs.tabScrolling')
+    @tabScrollingDelay ?= atom.config.get('tabs.tabScrollingDelay')
+    if @tabScrolling
+      @on 'wheel', _.debounce(@onMouseWheel, @tabScrollingDelay, true)
+    else
+      @off 'wheel'
+
+  updateTabScrollingDelay: ->
+    @tabScrollingDelay = atom.config.get('tabs.tabScrollingDelay')
+    if @tabScrolling
+      @off 'wheel'
+      @on 'wheel', _.debounce(@onMouseWheel, @tabScrollingDelay, true)
+
   browserWindowForProcessIdAndRoutingId: (processId, routingId) ->
     BrowserWindow ?= require('remote').require('browser-window')
     for browserWindow in BrowserWindow.getAllWindows()
@@ -314,16 +336,3 @@ class TabBarView extends View
   getTabBar: (target) ->
     target = $(target)
     if target.is('.tab-bar') then target else target.parents('.tab-bar')
-
-  onMouseWheel: (event) =>
-    delta = Math.max(-1, Math.min(1, event.originalEvent.wheelDelta))
-    if delta < 0
-      @pane.activateNextItem()
-    else
-      @pane.activatePreviousItem()
-
-  updateScrollTabs: ->
-    if atom.config.get 'tabs.changeTabsWithMouseWheel'
-      @on 'wheel', @onMouseWheel
-    else
-      @off 'wheel', @onMouseWheel
