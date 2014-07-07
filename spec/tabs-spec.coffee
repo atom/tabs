@@ -572,3 +572,49 @@ describe "TabBarView", ->
 
       tabBar.dblclick()
       expect(newFileHandler.callCount).toBe 1
+
+  describe "when the mouse wheel is used on the tab bar", ->
+    buildWheelEvent = (delta) ->
+      $.Event "wheel", {originalEvent: {wheelDelta: delta}}
+
+    describe "when tabScrolling is true in package settings", ->
+      beforeEach ->
+        atom.config.set("tabs.tabScrolling", true)
+        atom.config.set("tabs.tabScrollingThreshold", 120)
+
+      describe "when the mouse wheel scrolls up", ->
+        it "changes the active tab to the previous tab", ->
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(120))
+          expect(pane.activeItem).toBe editor1
+
+        it "changes the active tab to the previous tab only after the wheelDelta crosses the threshold", ->
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(50))
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(50))
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(50))
+          expect(pane.activeItem).toBe editor1
+
+      describe "when the mouse wheel scrolls down", ->
+        it "changes the active tab to the previous tab", ->
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(-120))
+          expect(pane.activeItem).toBe item1
+
+    describe "when tabScrolling is false in package settings", ->
+      beforeEach ->
+        atom.config.set("tabs.tabScrolling", false)
+
+      describe "when the mouse wheel scrolls up one unit", ->
+        it "does not change the active tab", ->
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(120))
+          expect(pane.activeItem).toBe item2
+
+      describe "when the mouse wheel scrolls down one unit", ->
+        it "does not change the active tab", ->
+          expect(pane.activeItem).toBe item2
+          tabBar.trigger(buildWheelEvent(-120))
+          expect(pane.activeItem).toBe item2

@@ -45,6 +45,9 @@ class TabBarView extends View
       @updateActiveTab()
       true
 
+    @subscribe atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
+    @subscribe atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
+
     @updateActiveTab()
 
     @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
@@ -256,6 +259,28 @@ class TabBarView extends View
           browserWindow?.webContents.send('tab:dropped', fromPaneId, fromIndex)
 
       atom.focus()
+
+  onMouseWheel: ({originalEvent}) =>
+    @wheelDelta ?= 0
+    @wheelDelta += originalEvent.wheelDelta
+
+    if @wheelDelta <= -@tabScrollingThreshold
+      @wheelDelta = 0
+      @pane.activateNextItem()
+    else if @wheelDelta >= @tabScrollingThreshold
+      @wheelDelta = 0
+      @pane.activatePreviousItem()
+
+  updateTabScrollingThreshold: ->
+    @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
+
+  updateTabScrolling: ->
+    @tabScrolling = atom.config.get('tabs.tabScrolling')
+    @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
+    if @tabScrolling
+      @on 'wheel', @onMouseWheel
+    else
+      @off 'wheel'
 
   browserWindowForProcessIdAndRoutingId: (processId, routingId) ->
     BrowserWindow ?= require('remote').require('browser-window')

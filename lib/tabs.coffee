@@ -4,6 +4,8 @@ TabBarView = require './tab-bar-view'
 module.exports =
   configDefaults:
     showIcons: true
+    tabScrolling: if process.platform == 'linux' then true else false
+    tabScrollingThreshold: 120
 
   activate: ->
     @paneSubscription = atom.workspaceView.eachPaneView (paneView) =>
