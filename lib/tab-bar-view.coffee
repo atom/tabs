@@ -171,7 +171,6 @@ class TabBarView extends View
 
     item = @pane.getItems()[element.index()]
     if item.getPath?
-      event.originalEvent.dataTransfer.setData 'text/uri-list', 'file://' + item.getPath()
       event.originalEvent.dataTransfer.setData 'text/plain', item.getPath() ? ''
 
       if item.isModified?() and item.getText?
