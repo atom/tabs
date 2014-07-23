@@ -253,7 +253,7 @@ class TabBarView extends View
         @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
         item.setText?(modifiedText) if hasUnsavedChanges
 
-        if not isNaN(fromProcessId) and not isNaN(fromProcessId)
+        if not isNaN(fromProcessId) and not isNaN(fromRoutingId)
           # Let the window where the drag started know that the tab was dropped
           browserWindow = @browserWindowForProcessIdAndRoutingId(fromProcessId, fromRoutingId)
           browserWindow?.webContents.send('tab:dropped', fromPaneId, fromIndex)
