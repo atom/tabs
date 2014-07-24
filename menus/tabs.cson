@@ -5,3 +5,5 @@
     'Close Tabs to the Right': 'tabs:close-tabs-to-right'
     'Close Saved Tabs': 'tabs:close-saved-tabs'
     'Close All Tabs': 'tabs:close-all-tabs'
+  '.tab-bar':
+    'Reopen Closed Tab': 'pane:reopen-closed-item'
