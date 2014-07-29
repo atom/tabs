@@ -170,7 +170,6 @@ class TabBarView extends View
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
     item = @pane.getItems()[element.index()]
-    console.log(item.getUri?())
     if item.getUri?
       event.originalEvent.dataTransfer.setData 'text/urilist', item.getUri?() ? ''
 
@@ -245,7 +244,6 @@ class TabBarView extends View
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
       droppedUri = dataTransfer.getData('text/urilist')
-      console.log(droppedUri)
       atom.workspace.open(droppedUri).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
