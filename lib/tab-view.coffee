@@ -49,19 +49,19 @@ class TabView extends View
       @title.attr('data-path', itemPath)
 
   updateTitle: ->
-    return if @updatingTitle
-    @updatingTitle = true
-
-    title = @item.getTitle()
-    useLongTitle = false
-    for tab in @getSiblingTabs()
-      if tab.item.getTitle() is title
-        tab.updateTitle()
-        useLongTitle = true
-    title = @item.getLongTitle?() ? title if useLongTitle
-
-    @title.text(title)
-    @updatingTitle = false
+    tabs = [this]
+    collectTabs= (parent, tabs)->
+      for tab in parent.getSiblingTabs()
+        if (tabs.indexOf(tab) != -1  and 
+            tab.item.getTitle() is parent.item.getTitle())
+          parent.useLongTitle = true
+          tabs.push(tab)
+          collectTabs(tab, tabs)
+    collectTabs this, tabs
+    for tab in tabs
+      tab.title.text(tab.useLongTitle and tab.item.getLongTitle() or
+                     tab.item.getTitle())
+      delete tab.useLongTitle
 
   updateIcon: ->
     if @iconName
