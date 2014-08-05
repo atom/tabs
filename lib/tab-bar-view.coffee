@@ -104,6 +104,7 @@ class TabBarView extends View
   removeTabForItem: (item) ->
     @tabForItem(item).remove()
     tab.updateTitle() for tab in @getTabs()
+    return
 
   getTabs: ->
     @children('.tab').toArray().map (element) -> $(element).view()
