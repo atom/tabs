@@ -172,7 +172,10 @@ class TabBarView extends View
 
     item = @pane.getItems()[element.index()]
     if item.getUri?
-      event.originalEvent.dataTransfer.setData 'text/uri-list', item.getUri?() ? ''
+      if process.platform isnt 'linux' # see #69
+        event.originalEvent.dataTransfer.setData 'text/uri-list', item.getUri?() ? ''
+      else
+        event.originalEvent.dataTransfer.setData 'text/plain', item.getUri?() ? ''
 
       if item.isModified?() and item.getText?
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
@@ -244,7 +247,10 @@ class TabBarView extends View
       {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      droppedUri = dataTransfer.getData('text/uri-list')
+      if process.platform isnt 'linux' # see #69
+        droppedUri = dataTransfer.getData('text/uri-list')
+      else
+        droppedUri = dataTransfer.getData('text/plain')
       atom.workspace.open(droppedUri).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
