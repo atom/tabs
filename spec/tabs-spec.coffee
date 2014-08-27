@@ -500,10 +500,10 @@ describe "TabBarView", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(1))
         tabBar.onDragStart(dragStartEvent)
 
-        if process.platform isnt 'linux' # data is not set on linux, see #69
-          expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual editor1.getUri()
-        else
+        if process.platform is 'linux' # data is not set on linux, see #69
           expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getUri()
+        else
+          expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual editor1.getUri()
 
     describe "when a tab is dragged to another Atom window", ->
       it "closes the tab in the first window and opens the tab in the second window", ->

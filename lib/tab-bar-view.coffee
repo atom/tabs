@@ -172,10 +172,10 @@ class TabBarView extends View
 
     item = @pane.getItems()[element.index()]
     if item.getUri?
-      if process.platform isnt 'linux' # see #69
-        event.originalEvent.dataTransfer.setData 'text/uri-list', item.getUri?() ? ''
-      else
+      if process.platform is 'linux' # see #69
         event.originalEvent.dataTransfer.setData 'text/plain', item.getUri?() ? ''
+      else
+        event.originalEvent.dataTransfer.setData 'text/uri-list', item.getUri?() ? ''
 
       if item.isModified?() and item.getText?
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
