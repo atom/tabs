@@ -171,10 +171,11 @@ class TabBarView extends View
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
     item = @pane.getItems()[element.index()]
-    if item.getPath?
-      if process.platform isnt 'linux' # See #69
-        event.originalEvent.dataTransfer.setData 'text/uri-list', "file://#{item.getPath()}"
-      event.originalEvent.dataTransfer.setData 'text/plain', item.getPath() ? ''
+    if item.getUri?
+      if process.platform isnt 'linux' # see #69
+        event.originalEvent.dataTransfer.setData 'text/uri-list', item.getUri?() ? ''
+      else
+        event.originalEvent.dataTransfer.setData 'text/plain', item.getUri?() ? ''
 
       if item.isModified?() and item.getText?
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
@@ -246,8 +247,11 @@ class TabBarView extends View
       {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      droppedPath = dataTransfer.getData('text/plain')
-      atom.workspace.open(droppedPath).then (item) =>
+      if process.platform isnt 'linux' # see #69
+        droppedUri = dataTransfer.getData('text/uri-list')
+      else
+        droppedUri = dataTransfer.getData('text/plain')
+      atom.workspace.open(droppedUri).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
         activePane = atom.workspaceView.getActivePaneView()
