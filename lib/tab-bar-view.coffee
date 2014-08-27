@@ -171,15 +171,22 @@ class TabBarView extends View
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
     item = @pane.getItems()[element.index()]
-    if item.getUri?
-      if process.platform is 'linux' # see #69
-        event.originalEvent.dataTransfer.setData 'text/plain', item.getUri?() ? ''
-      else
-        event.originalEvent.dataTransfer.setData 'text/uri-list', item.getUri?() ? ''
+    if typeof item.getUri is 'function' or typeof item.getPath is 'function'
+      itemUri = item.getUri?() ? item.getPath?() ? ''
+      event.originalEvent.dataTransfer.setData 'text/plain', itemUri
+      if process.platform isnt 'linux' # see #69
+        itemUri = "file://#{itemUri}" unless @uriHasProtocol(itemUri)
+        event.originalEvent.dataTransfer.setData 'text/uri-list', itemUri
 
       if item.isModified?() and item.getText?
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
         event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
+
+  uriHasProtocol: (uri) ->
+    try
+      require('url').parse(uri).protocol?
+    catch error
+      false
 
   onDragLeave: (event) =>
     @removePlaceholderElement()
@@ -247,10 +254,7 @@ class TabBarView extends View
       {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      if process.platform isnt 'linux' # see #69
-        droppedUri = dataTransfer.getData('text/uri-list')
-      else
-        droppedUri = dataTransfer.getData('text/plain')
+      droppedUri = dataTransfer.getData('text/plain')
       atom.workspace.open(droppedUri).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
