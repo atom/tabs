@@ -4,7 +4,7 @@ TabBarView = require './tab-bar-view'
 module.exports =
   configDefaults:
     showIcons: true
-    tabScrolling: if process.platform == 'linux' then true else false
+    tabScrolling: process.platform is 'linux'
     tabScrollingThreshold: 120
 
   activate: ->
