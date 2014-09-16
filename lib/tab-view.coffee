@@ -73,7 +73,7 @@ class TabView extends HTMLElement
     @mouseEnterSubscription?.dispose()
     @configSubscription?.off() # Not a Disposable yet
 
-    @destroyTooltip() if @hasBeenMousedOver
+    $(this).destroyTooltip() if @hasBeenMousedOver
     @remove()
 
   updateDataAttributes: ->
