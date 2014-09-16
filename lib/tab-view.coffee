@@ -35,7 +35,9 @@ class TabView extends View
       @mouseEnterSubscription.dispose()
       @hasBeenMousedOver = true
       @updateTooltip()
-      @trigger 'mouseenter' # Trigger again so the tooltip shows
+
+      # Trigger again so the tooltip shows
+      @element.dispatchEvent(new CustomEvent('mouseenter', bubbles: true))
 
     @mouseEnterSubscription = dispose: =>
       @element.removeEventListener('mouseenter', onMouseEnter)
