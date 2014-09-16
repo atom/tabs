@@ -192,7 +192,7 @@ class TabBarView extends View
       false
 
   onDragLeave: (event) =>
-    @removePlaceholderElement()
+    @removePlaceholder()
 
   onDragEnd: (event) =>
     @clearDropTarget()
@@ -214,10 +214,10 @@ class TabBarView extends View
 
     if newDropTargetIndex < sortableObjects.length
       element = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
-      @getPlaceholderElement().insertBefore(element)
+      @getPlaceholder().insertBefore(element)
     else
       element = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
-      @getPlaceholderElement().insertAfter(element)
+      @getPlaceholder().insertAfter(element)
 
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
     if @pane.model.id is fromPaneId
@@ -229,7 +229,7 @@ class TabBarView extends View
   clearDropTarget: ->
     @find(".is-dragging").removeClass 'is-dragging'
     @removeDropTargetClasses()
-    @removePlaceholderElement()
+    @removePlaceholder()
 
   onDrop: (event) =>
     event.preventDefault()
@@ -320,7 +320,7 @@ class TabBarView extends View
     target = $(event.target)
     tabBar = @getTabBar(event.target)
 
-    return if @isPlaceholderElement(target)
+    return if @isPlaceholder(target)
 
     sortables = tabBar.find('.sortable')
     element = target.closest('.sortable')
@@ -337,14 +337,14 @@ class TabBarView extends View
     else
       sortables.index(element) + 1
 
-  getPlaceholderElement: ->
+  getPlaceholder: ->
     @placeholderEl ?= $('<li/>', class: 'placeholder')
 
-  removePlaceholderElement: ->
+  removePlaceholder: ->
     @placeholderEl?.remove()
     @placeholderEl = null
 
-  isPlaceholderElement: (element) ->
+  isPlaceholder: (element) ->
     element.is('.placeholder')
 
   getTabBar: (target) ->
