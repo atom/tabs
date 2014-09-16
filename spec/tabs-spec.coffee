@@ -501,7 +501,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
 
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
-        if process.platform isnt 'linux' # data is not set on linux, see #69
+        if process.platform is 'darwin'
           expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
 
     describe "when a tab is dragged to another Atom window", ->

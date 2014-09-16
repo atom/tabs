@@ -174,7 +174,8 @@ class TabBarView extends View
     if typeof item.getUri is 'function' or typeof item.getPath is 'function'
       itemUri = item.getUri?() ? item.getPath?() ? ''
       event.originalEvent.dataTransfer.setData 'text/plain', itemUri
-      if process.platform isnt 'linux' # see #69
+
+      if process.platform is 'darwin' # see #69
         itemUri = "file://#{itemUri}" unless @uriHasProtocol(itemUri)
         event.originalEvent.dataTransfer.setData 'text/uri-list', itemUri
 
