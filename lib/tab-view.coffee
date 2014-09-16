@@ -17,7 +17,7 @@ class TabView extends View
     @item.on? 'icon-changed', =>
       @updateIcon()
 
-    @item.on? 'modified-status-changed', =>
+    @modifiedSubscription = @item.onDidChangeModified? =>
       @updateModifiedStatus()
 
     @subscribe atom.config.observe 'tabs.showIcons', => @updateIconVisibility()
@@ -49,6 +49,7 @@ class TabView extends View
 
   beforeRemove: ->
     @titleSubscription?.dispose()
+    @modifiedSubscription?.dispose()
     @destroyTooltip() if @hasBeenMousedOver
 
   updateDataAttributes: ->
