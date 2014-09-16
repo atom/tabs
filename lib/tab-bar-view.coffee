@@ -119,7 +119,7 @@ class TabBarView extends View
 
   setActiveTab: (tabView) ->
     if tabView? and not tabView.classList.contains('active')
-      @find(".tab.active").removeClass('active')
+      @element.querySelector('.tab.active')?.classList.remove('active')
       tabView.classList.add('active')
 
   updateActiveTab: ->
