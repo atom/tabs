@@ -8,7 +8,7 @@ class TabView extends View
       @div class: 'title', outlet: 'title'
       @div class: 'close-icon'
 
-  initialize: (@item, @pane) ->
+  initialize: (@item) ->
     @handleEvents()
     @updateDataAttributes()
     @updateTitle()
