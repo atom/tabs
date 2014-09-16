@@ -27,12 +27,21 @@ class TabView extends View
     @updateTitle()
     @updateIcon()
     @updateModifiedStatus()
+    @setupTooltip()
 
+  setupTooltip: ->
     # Defer creating the tooltip until the tab is moused over
-    @one 'mouseenter', =>
+    onMouseEnter = =>
+      @mouseEnterSubscription.dispose()
       @hasBeenMousedOver = true
       @updateTooltip()
       @trigger 'mouseenter' # Trigger again so the tooltip shows
+
+    @mouseEnterSubscription = dispose: =>
+      @element.removeEventListener('mouseenter', onMouseEnter)
+      @mouseEnterSubscription = null
+
+    @element.addEventListener('mouseenter', onMouseEnter)
 
   updateTooltip: ->
     return unless @hasBeenMousedOver
@@ -52,6 +61,7 @@ class TabView extends View
     @titleSubscription?.dispose()
     @modifiedSubscription?.dispose()
     @iconSubscription?.dispose()
+    @mouseEnterSubscription?.dispose()
     @configSubscription?.off() # Not a Disposable yet
 
     @destroyTooltip() if @hasBeenMousedOver
