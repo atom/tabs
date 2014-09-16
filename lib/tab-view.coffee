@@ -27,9 +27,16 @@ class TabView extends View
     @updateTitle()
     @updateIcon()
     @updateModifiedStatus()
-    @updateTooltip()
+
+    # Defer creating the tooltip until the tab is moused over
+    @one 'mouseenter', =>
+      @hasBeenMousedOver = true
+      @updateTooltip()
+      @trigger 'mouseenter' # Trigger again so the tooltip shows
 
   updateTooltip: ->
+    return unless @hasBeenMousedOver
+
     @destroyTooltip()
 
     if itemPath = @item.getPath?()
