@@ -48,7 +48,7 @@ class TabView extends View
         placement: 'bottom'
 
   beforeRemove: ->
-    @destroyTooltip()
+    @destroyTooltip() if @hasBeenMousedOver
 
   updateDataAttributes: ->
     if itemPath = @item.getPath?()
