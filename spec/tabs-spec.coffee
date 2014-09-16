@@ -49,6 +49,12 @@ describe "TabBarView", ->
     getLongTitle: -> @longTitle
     getIconName: -> @iconName
     serialize: -> { deserializer: 'TestView', @title, @longTitle, @iconName }
+    onDidChangeTitle: (callback) ->
+      @titleCallbacks ?= []
+      @titleCallbacks.push(callback)
+      dispose: => _.remove(@titleCallbacks, callback)
+    emitTitleChanged: ->
+      callback() for callback in @titleCallbacks ? []
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
@@ -177,16 +183,16 @@ describe "TabBarView", ->
     it "displays the long title on the tab if it's available from the item", ->
       item1.title = "Old Man"
       item1.longTitle = "Grumpy Old Man"
-      item1.trigger 'title-changed'
+      item1.emitTitleChanged()
       item2.title = "Old Man"
       item2.longTitle = "Jolly Old Man"
-      item2.trigger 'title-changed'
+      item2.emitTitleChanged()
 
       expect(tabBar.tabForItem(item1)).toHaveText "Grumpy Old Man"
       expect(tabBar.tabForItem(item2)).toHaveText "Jolly Old Man"
 
       item2.longTitle = undefined
-      item2.trigger 'title-changed'
+      item2.emitTitleChanged()
 
       expect(tabBar.tabForItem(item1)).toHaveText "Grumpy Old Man"
       expect(tabBar.tabForItem(item2)).toHaveText "Old Man"

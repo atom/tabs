@@ -9,7 +9,7 @@ class TabView extends View
       @div class: 'close-icon'
 
   initialize: (@item, @pane) ->
-    @item.on? 'title-changed', =>
+    @titleSubscription = @item.onDidChangeTitle? =>
       @updateDataAttributes()
       @updateTitle()
       @updateTooltip()
@@ -48,6 +48,7 @@ class TabView extends View
         placement: 'bottom'
 
   beforeRemove: ->
+    @titleSubscription?.dispose()
     @destroyTooltip() if @hasBeenMousedOver
 
   updateDataAttributes: ->
