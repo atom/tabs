@@ -22,16 +22,41 @@ class TabView extends HTMLElement
     @setupTooltip()
 
   handleEvents: ->
-    @titleSubscription = @item.onDidChangeTitle? =>
+    titleChangedHandler = =>
       @updateDataAttributes()
       @updateTitle()
       @updateTooltip()
 
-    @iconSubscription = @item.onDidChangeIcon? =>
+    if typeof @item.onDidChangeTitle is 'function'
+      @titleSubscription = @item.onDidChangeTitle(titleChangedHandler)
+    else
+      #TODO Remove once old events are no longer supported
+      @item.on('title-changed', titleChangedHandler)
+      @titleSubscription = dispose: =>
+        @item.off('title-changed', titleChangedHandler)
+
+    iconChangedHandler = =>
       @updateIcon()
 
-    @modifiedSubscription = @item.onDidChangeModified? =>
+    if typeof @item.onDidChangeIcon is 'function'
+      @iconSubscription = @item.onDidChangeIcon? =>
+        @updateIcon()
+    else if typeof @item.on is 'function'
+      #TODO Remove once old events are no longer supported
+      @item.on('icon-changed', iconChangedHandler)
+      @iconSubscription = dispose: =>
+        @item.off('icon-changed', iconChangedHandler)
+
+    modifiedHandler = =>
       @updateModifiedStatus()
+
+    if typeof @item.onDidChangeModified is 'function'
+      @modifiedSubscription = @item.onDidChangeModified(modifiedHandler)
+    else
+      #TODO Remove once old events are no longer supported
+      @item.on('modified-status-changed', modifiedHandler)
+      @modifiedSubscription = dispose: =>
+        @item.off('modified-status-changed', modifiedHandler)
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
