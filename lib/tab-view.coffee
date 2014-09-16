@@ -45,8 +45,8 @@ class TabView extends View
 
   updateDataAttributes: ->
     if itemPath = @item.getPath?()
-      @title.attr('data-name', path.basename(itemPath))
-      @title.attr('data-path', itemPath)
+      @title.element.dataset.name = path.basename(itemPath)
+      @title.element.dataset.path = itemPath
 
   updateTitle: ({updateSiblings, useLongTitle}={}) ->
     return if @updatingTitle
