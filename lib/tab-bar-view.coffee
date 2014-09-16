@@ -51,10 +51,10 @@ class TabBarView extends View
     @updateActiveTab()
 
     @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
-      tab = $(target).closest('.tab').view()
+      tab = $(target).closest('.tab')[0]
       if which is 3 or (which is 1 and ctrlKey is true)
         @find('.right-clicked').removeClass('right-clicked')
-        tab.addClass('right-clicked')
+        tab.classList.add('right-clicked')
         false
       else if which is 2
         @pane.destroyItem(tab.item)
@@ -66,12 +66,12 @@ class TabBarView extends View
         false
 
     @on 'click', '.tab .close-icon', ({target}) =>
-      tab = $(target).closest('.tab').view()
+      tab = $(target).closest('.tab')[0]
       @pane.destroyItem(tab.item)
       false
 
     @on 'click', '.tab', ({target, which}) =>
-      tab = $(target).closest('.tab').view()
+      tab = $(target).closest('.tab')[0]
       if which is 1 and not target.classList.contains('close-icon')
         @pane.activateItem(tab.item)
         @pane.focus()
@@ -86,56 +86,58 @@ class TabBarView extends View
     super
 
   addTabForItem: (item, index) ->
-    @insertTabAtIndex(new TabView(item, @pane), index)
+    tabView = new TabView()
+    tabView.initialize(item)
+    @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
     tab = @tabForItem(item)
-    tab.detach()
+    tab.remove()
     @insertTabAtIndex(tab, index)
 
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
     if followingTab
-      tab.insertBefore(followingTab)
+      $(tab).insertBefore(followingTab)
     else
       @append(tab)
     tab.updateTitle()
 
   removeTabForItem: (item) ->
-    @tabForItem(item).remove()
+    @tabForItem(item).destroy()
     tab.updateTitle() for tab in @getTabs()
     return
 
   getTabs: ->
-    @children('.tab').toArray().map (element) -> $(element).view()
+    @children('.tab').toArray()
 
   tabAtIndex: (index) ->
-    @children(".tab:eq(#{index})").view()
+    @children(".tab:eq(#{index})")[0]
 
   tabForItem: (item) ->
     _.detect @getTabs(), (tab) -> tab.item is item
 
   setActiveTab: (tabView) ->
-    if tabView? and not tabView.hasClass('active')
+    if tabView? and not tabView.classList.contains('active')
       @find(".tab.active").removeClass('active')
-      tabView.addClass('active')
+      tabView.classList.add('active')
 
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.activeItem))
 
   closeTab: (tab) ->
-    tab ?= @children('.right-clicked').view()
+    tab ?= @children('.right-clicked')[0]
     @pane.destroyItem(tab.item)
 
   closeOtherTabs: ->
     tabs = @getTabs()
-    active = @children('.right-clicked').view()
+    active = @children('.right-clicked')[0]
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: ->
     tabs = @getTabs()
-    active = @children('.right-clicked').view()
+    active = @children('.right-clicked')[0]
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
@@ -252,7 +254,7 @@ class TabBarView extends View
 
     if fromProcessId is @getProcessId()
       fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
-      {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})").view() ? {}
+      {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})")[0] ? {}
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
       droppedUri = dataTransfer.getData('text/plain')

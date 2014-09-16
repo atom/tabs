@@ -1,14 +1,19 @@
-{View} = require 'atom'
 path = require 'path'
+{$} = require 'atom'
 
 module.exports =
-class TabView extends View
-  @content: ->
-    @li class: 'tab sortable', =>
-      @div class: 'title', outlet: 'title'
-      @div class: 'close-icon'
-
+class TabView extends HTMLElement
   initialize: (@item) ->
+    @classList.add('tab', 'sortable')
+
+    @itemTitle = document.createElement('div')
+    @itemTitle.classList.add('title')
+    @appendChild(@itemTitle)
+
+    closeIcon = document.createElement('div')
+    closeIcon.classList.add('close-icon')
+    @appendChild(closeIcon)
+
     @handleEvents()
     @updateDataAttributes()
     @updateTitle()
@@ -39,21 +44,21 @@ class TabView extends View
       @updateTooltip()
 
       # Trigger again so the tooltip shows
-      @element.dispatchEvent(new CustomEvent('mouseenter', bubbles: true))
+      @dispatchEvent(new CustomEvent('mouseenter', bubbles: true))
 
     @mouseEnterSubscription = dispose: =>
-      @element.removeEventListener('mouseenter', onMouseEnter)
+      @removeEventListener('mouseenter', onMouseEnter)
       @mouseEnterSubscription = null
 
-    @element.addEventListener('mouseenter', onMouseEnter)
+    @addEventListener('mouseenter', onMouseEnter)
 
   updateTooltip: ->
     return unless @hasBeenMousedOver
 
-    @destroyTooltip()
+    $(this).destroyTooltip()
 
     if itemPath = @item.getPath?()
-      @setTooltip
+      $(this).setTooltip
         title: itemPath
         html: false
         delay:
@@ -61,7 +66,7 @@ class TabView extends View
           hide: 100
         placement: 'bottom'
 
-  beforeRemove: ->
+  destroy: ->
     @titleSubscription?.dispose()
     @modifiedSubscription?.dispose()
     @iconSubscription?.dispose()
@@ -69,11 +74,12 @@ class TabView extends View
     @configSubscription?.off() # Not a Disposable yet
 
     @destroyTooltip() if @hasBeenMousedOver
+    @remove()
 
   updateDataAttributes: ->
     if itemPath = @item.getPath?()
-      @title.element.dataset.name = path.basename(itemPath)
-      @title.element.dataset.path = itemPath
+      @itemTitle.dataset.name = path.basename(itemPath)
+      @itemTitle.dataset.path = itemPath
 
   updateTitle: ({updateSiblings, useLongTitle}={}) ->
     return if @updatingTitle
@@ -82,40 +88,42 @@ class TabView extends View
     if updateSiblings is false
       title = @item.getTitle()
       title = @item.getLongTitle?() ? title if useLongTitle
-      @title.text(title)
+      @itemTitle.textContent = title
     else
       title = @item.getTitle()
       useLongTitle = false
-      for tab in @getSiblingTabs()
+      for tab in @getTabs() when tab isnt this
         if tab.item.getTitle() is title
           tab.updateTitle(updateSiblings: false, useLongTitle: true)
           useLongTitle = true
       title = @item.getLongTitle?() ? title if useLongTitle
 
-      @title.text(title)
+      @itemTitle.textContent = title
 
     @updatingTitle = false
 
   updateIcon: ->
     if @iconName
-      @title.element.classList.remove('icon', "icon-#{@iconName}")
+      @itemTitle.classList.remove('icon', "icon-#{@iconName}")
 
     if @iconName = @item.getIconName?()
-      @title.element.classList.add('icon', "icon-#{@iconName}")
+      @itemTitle.classList.add('icon', "icon-#{@iconName}")
 
-  getSiblingTabs: ->
-    @siblings('.tab').views()
+  getTabs: ->
+    @parentElement?.querySelectorAll('.tab') ? []
 
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
-      @title.element.classList.remove('hide-icon')
+      @itemTitle.classList.remove('hide-icon')
     else
-      @title.element.classList.add('hide-icon')
+      @itemTitle.classList.add('hide-icon')
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      @element.classList.add('modified') unless @isModified
+      @classList.add('modified') unless @isModified
       @isModified = true
     else
-      @element.classList.remove('modified') if @isModified
+      @classList.remove('modified') if @isModified
       @isModified = false
+
+module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
