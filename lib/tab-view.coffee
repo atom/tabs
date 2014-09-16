@@ -14,7 +14,7 @@ class TabView extends View
       @updateTitle()
       @updateTooltip()
 
-    @item.on? 'icon-changed', =>
+    @iconSubscription = @item.onDidChangeIcon? =>
       @updateIcon()
 
     @modifiedSubscription = @item.onDidChangeModified? =>
@@ -50,6 +50,8 @@ class TabView extends View
   beforeRemove: ->
     @titleSubscription?.dispose()
     @modifiedSubscription?.dispose()
+    @iconSubscription?.dispose()
+
     @destroyTooltip() if @hasBeenMousedOver
 
   updateDataAttributes: ->

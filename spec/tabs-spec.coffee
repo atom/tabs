@@ -55,6 +55,12 @@ describe "TabBarView", ->
       dispose: => _.remove(@titleCallbacks, callback)
     emitTitleChanged: ->
       callback() for callback in @titleCallbacks ? []
+    onDidChangeIcon: (callback) ->
+      @iconCallbacks ?= []
+      @iconCallbacks.push(callback)
+      dispose: => _.remove(@iconCallbacks, callback)
+    emitIconChanged: ->
+      callback() for callback in @iconCallbacks ? []
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
@@ -204,14 +210,13 @@ describe "TabBarView", ->
 
     it "hides the icon from the tab if the icon is removed", ->
       item1.getIconName = null
-      item1.trigger 'icon-changed'
+      item1.emitIconChanged()
       expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon"
       expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon-squirrel"
 
     it "updates the icon on the tab if the icon is changed", ->
-      item1.getIconName = ->
-        "zap"
-      item1.trigger 'icon-changed'
+      item1.getIconName = -> "zap"
+      item1.emitIconChanged()
       expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon"
       expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon-zap"
 
@@ -268,9 +273,8 @@ describe "TabBarView", ->
       expect(tabBar.find('.tab:eq(2) .title')).not.toHaveClass "icon-squirrel"
 
     it "shows the icon on the tab if an icon is defined", ->
-      item2.getIconName = ->
-        "squirrel"
-      item2.trigger 'icon-changed'
+      item2.getIconName = -> "squirrel"
+      item2.emitIconChanged()
       expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon"
       expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon-squirrel"
 
