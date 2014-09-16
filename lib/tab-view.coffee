@@ -71,24 +71,24 @@ class TabView extends View
 
   updateIcon: ->
     if @iconName
-      @title.removeClass "icon icon-#{@iconName}"
+      @title.element.classList.remove('icon', "icon-#{@iconName}")
 
     if @iconName = @item.getIconName?()
-      @title.addClass "icon icon-#{@iconName}"
+      @title.element.classList.add('icon', "icon-#{@iconName}")
 
   getSiblingTabs: ->
     @siblings('.tab').views()
 
   updateIconVisibility: ->
-    if atom.config.get "tabs.showIcons"
-      @title.removeClass("hide-icon")
+    if atom.config.get 'tabs.showIcons'
+      @title.element.classList.remove('hide-icon')
     else
-      @title.addClass("hide-icon")
+      @title.element.classList.add('hide-icon')
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      @addClass('modified') unless @isModified
+      @element.classList.add('modified') unless @isModified
       @isModified = true
     else
-      @removeClass('modified') if @isModified
+      @element.classList.remove('modified') if @isModified
       @isModified = false
