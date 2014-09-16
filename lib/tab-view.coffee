@@ -9,6 +9,14 @@ class TabView extends View
       @div class: 'close-icon'
 
   initialize: (@item, @pane) ->
+    @handleEvents()
+    @updateDataAttributes()
+    @updateTitle()
+    @updateIcon()
+    @updateModifiedStatus()
+    @setupTooltip()
+
+  handleEvents: ->
     @titleSubscription = @item.onDidChangeTitle? =>
       @updateDataAttributes()
       @updateTitle()
@@ -22,12 +30,6 @@ class TabView extends View
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
-
-    @updateDataAttributes()
-    @updateTitle()
-    @updateIcon()
-    @updateModifiedStatus()
-    @setupTooltip()
 
   setupTooltip: ->
     # Defer creating the tooltip until the tab is moused over
