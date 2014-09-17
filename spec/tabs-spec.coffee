@@ -49,6 +49,18 @@ describe "TabBarView", ->
     getLongTitle: -> @longTitle
     getIconName: -> @iconName
     serialize: -> { deserializer: 'TestView', @title, @longTitle, @iconName }
+    onDidChangeTitle: (callback) ->
+      @titleCallbacks ?= []
+      @titleCallbacks.push(callback)
+      dispose: => _.remove(@titleCallbacks, callback)
+    emitTitleChanged: ->
+      callback() for callback in @titleCallbacks ? []
+    onDidChangeIcon: (callback) ->
+      @iconCallbacks ?= []
+      @iconCallbacks.push(callback)
+      dispose: => _.remove(@iconCallbacks, callback)
+    emitIconChanged: ->
+      callback() for callback in @iconCallbacks ? []
 
   beforeEach ->
     atom.workspaceView = new WorkspaceView
@@ -91,13 +103,6 @@ describe "TabBarView", ->
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
 
-    it "escapes html in the tooltip title", ->
-      spyOn(TabView.prototype, 'setTooltip')
-      item3 = new TestView('Item 3')
-      item3.getPath = -> "<img src='oh-my.jpg' />"
-      pane.activateItem(item3)
-      expect(TabView.prototype.setTooltip.argsForCall[0][0].title).toBe _.escape(item3.getPath())
-
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
       pane.activateItem(item1)
@@ -114,7 +119,7 @@ describe "TabBarView", ->
       item3 = new TestView('Item 3')
       pane.activateItem(item3)
       expect(tabBar.find('.tab').length).toBe 4
-      expect(tabBar.tabAtIndex(1).find('.title')).toHaveText 'Item 3'
+      expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
       editor2 = null
@@ -148,10 +153,10 @@ describe "TabBarView", ->
     it "shows the associated item on the pane and focuses the pane", ->
       spyOn(pane, 'focus')
 
-      tabBar.tabAtIndex(0).trigger {type: 'click', which: 1}
+      $(tabBar.tabAtIndex(0)).trigger {type: 'click', which: 1}
       expect(pane.activeItem).toBe pane.getItems()[0]
 
-      tabBar.tabAtIndex(2).trigger {type: 'click', which: 1}
+      $(tabBar.tabAtIndex(2)).trigger {type: 'click', which: 1}
       expect(pane.activeItem).toBe pane.getItems()[2]
 
       expect(pane.focus.callCount).toBe 2
@@ -159,7 +164,7 @@ describe "TabBarView", ->
     it "closes the tab when middle clicked", ->
       event = $.Event 'mousedown'
       event.which = 2
-      tabBar.tabForItem(editor1).trigger(event)
+      $(tabBar.tabForItem(editor1)).trigger(event)
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
       expect(editor1.destroyed).toBeTruthy()
@@ -168,7 +173,7 @@ describe "TabBarView", ->
 
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
-      tabBar.tabForItem(editor1).find('.close-icon').click()
+      $(tabBar.tabForItem(editor1)).find('.close-icon').click()
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
       expect(editor1.destroyed).toBeTruthy()
@@ -184,16 +189,16 @@ describe "TabBarView", ->
     it "displays the long title on the tab if it's available from the item", ->
       item1.title = "Old Man"
       item1.longTitle = "Grumpy Old Man"
-      item1.trigger 'title-changed'
+      item1.emitTitleChanged()
       item2.title = "Old Man"
       item2.longTitle = "Jolly Old Man"
-      item2.trigger 'title-changed'
+      item2.emitTitleChanged()
 
       expect(tabBar.tabForItem(item1)).toHaveText "Grumpy Old Man"
       expect(tabBar.tabForItem(item2)).toHaveText "Jolly Old Man"
 
       item2.longTitle = undefined
-      item2.trigger 'title-changed'
+      item2.emitTitleChanged()
 
       expect(tabBar.tabForItem(item1)).toHaveText "Grumpy Old Man"
       expect(tabBar.tabForItem(item2)).toHaveText "Old Man"
@@ -205,14 +210,13 @@ describe "TabBarView", ->
 
     it "hides the icon from the tab if the icon is removed", ->
       item1.getIconName = null
-      item1.trigger 'icon-changed'
+      item1.emitIconChanged()
       expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon"
       expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon-squirrel"
 
     it "updates the icon on the tab if the icon is changed", ->
-      item1.getIconName = ->
-        "zap"
-      item1.trigger 'icon-changed'
+      item1.getIconName = -> "zap"
+      item1.emitIconChanged()
       expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon"
       expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon-zap"
 
@@ -269,9 +273,8 @@ describe "TabBarView", ->
       expect(tabBar.find('.tab:eq(2) .title')).not.toHaveClass "icon-squirrel"
 
     it "shows the icon on the tab if an icon is defined", ->
-      item2.getIconName = ->
-        "squirrel"
-      item2.trigger 'icon-changed'
+      item2.getIconName = -> "squirrel"
+      item2.emitIconChanged()
       expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon"
       expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon-squirrel"
 
@@ -293,13 +296,13 @@ describe "TabBarView", ->
 
   describe "when a pane item moves to a new index", ->
     it "updates the order of the tabs to match the new item order", ->
-      expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
       pane.moveItem(item2, 1)
-      expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "Item 2", "sample.js"]
+      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
       pane.moveItem(editor1, 0)
-      expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 1", "Item 2"]
+      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
       pane.moveItem(item1, 2)
-      expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 2", "Item 1"]
+      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
     describe "when tabs:close-tab is fired", ->
@@ -351,19 +354,19 @@ describe "TabBarView", ->
         getData: (key) -> @data[key]
 
       dragStartEvent = $.Event()
-      dragStartEvent.target = dragged[0]
-      dragStartEvent.originalEvent = { dataTransfer }
+      dragStartEvent.target = dragged
+      dragStartEvent.originalEvent = {dataTransfer}
 
       dropEvent = $.Event()
-      dropEvent.target = dropTarget[0]
-      dropEvent.originalEvent = { dataTransfer }
+      dropEvent.target = dropTarget
+      dropEvent.originalEvent = {dataTransfer}
 
       [dragStartEvent, dropEvent]
 
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->
         it "moves the tab and its item, shows the tab's item, and focuses the pane", ->
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
           expect(pane.activeItem).toBe item2
           spyOn(pane, 'focus')
@@ -372,14 +375,14 @@ describe "TabBarView", ->
           tabBar.onDragStart(dragStartEvent)
           tabBar.onDrop(dropEvent)
 
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 1", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
           expect(pane.getItems()).toEqual [editor1, item1, item2]
           expect(pane.activeItem).toBe item1
           expect(pane.focus).toHaveBeenCalled()
 
       describe "when it is dropped on a tab that's earlier in the list", ->
         it "moves the tab and its item, shows the tab's item, and focuses the pane", ->
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
           expect(pane.activeItem).toBe item2
           spyOn(pane, 'focus')
@@ -388,14 +391,14 @@ describe "TabBarView", ->
           tabBar.onDragStart(dragStartEvent)
           tabBar.onDrop(dropEvent)
 
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "Item 2", "sample.js"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
           expect(pane.getItems()).toEqual [item1, item2, editor1]
           expect(pane.activeItem).toBe item2
           expect(pane.focus).toHaveBeenCalled()
 
       describe "when it is dropped on itself", ->
         it "doesn't move the tab or item, but does make it the active item and focuses the pane", ->
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
           expect(pane.activeItem).toBe item2
           spyOn(pane, 'focus')
@@ -404,14 +407,14 @@ describe "TabBarView", ->
           tabBar.onDragStart(dragStartEvent)
           tabBar.onDrop(dropEvent)
 
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
           expect(pane.activeItem).toBe item1
           expect(pane.focus).toHaveBeenCalled()
 
       describe "when it is dropped on the tab bar", ->
         it "moves the tab and its item to the end", ->
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
           expect(pane.activeItem).toBe item2
           spyOn(pane, 'focus')
@@ -420,7 +423,7 @@ describe "TabBarView", ->
           tabBar.onDragStart(dragStartEvent)
           tabBar.onDrop(dropEvent)
 
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 2", "Item 1"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
           expect(pane.getItems()).toEqual [editor1, item2, item1]
 
     describe "when a tab is dragged to a different pane", ->
@@ -432,11 +435,11 @@ describe "TabBarView", ->
         tabBar2 = new TabBarView(pane2)
 
       it "removes the tab and item from their original pane and moves them to the target pane", ->
-        expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
         expect(pane.getItems()).toEqual [item1, editor1, item2]
         expect(pane.activeItem).toBe item2
 
-        expect(tabBar2.getTabs().map (tab) -> tab.text()).toEqual ["Item 2"]
+        expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2"]
         expect(pane2.getItems()).toEqual [item2b]
         expect(pane2.activeItem).toBe item2b
         spyOn(pane2, 'focus')
@@ -445,11 +448,11 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDrop(dropEvent)
 
-        expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 2"]
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2"]
         expect(pane.getItems()).toEqual [editor1, item2]
         expect(pane.activeItem).toBe item2
 
-        expect(tabBar2.getTabs().map (tab) -> tab.text()).toEqual ["Item 2", "Item 1"]
+        expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2", "Item 1"]
         expect(pane2.getItems()).toEqual [item2b, item1]
         expect(pane2.activeItem).toBe item1
         expect(pane2.focus).toHaveBeenCalled()
@@ -458,11 +461,11 @@ describe "TabBarView", ->
         it "removes the tab and item from their original pane and moves them to the target pane", ->
           pane2.destroyItems()
 
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
           expect(pane.activeItem).toBe item2
 
-          expect(tabBar2.getTabs().map (tab) -> tab.text()).toEqual []
+          expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual []
           expect(pane2.getItems()).toEqual []
           expect(pane2.activeItem).toBeUndefined()
           spyOn(pane2, 'focus')
@@ -471,18 +474,18 @@ describe "TabBarView", ->
           tabBar.onDragStart(dragStartEvent)
           tabBar.onDrop(dropEvent)
 
-          expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["sample.js", "Item 2"]
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [editor1, item2]
           expect(pane.activeItem).toBe item2
 
-          expect(tabBar2.getTabs().map (tab) -> tab.text()).toEqual ["Item 1"]
+          expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1"]
           expect(pane2.getItems()).toEqual [item1]
           expect(pane2.activeItem).toBe item1
           expect(pane2.focus).toHaveBeenCalled()
 
     describe "when a non-tab is dragged to pane", ->
       it "has no effect", ->
-        expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
         expect(pane.getItems()).toEqual [item1, editor1, item2]
         expect(pane.activeItem).toBe item2
         spyOn(pane, 'focus')
@@ -490,7 +493,7 @@ describe "TabBarView", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar.tabAtIndex(0))
         tabBar.onDrop(dropEvent)
 
-        expect(tabBar.getTabs().map (tab) -> tab.text()).toEqual ["Item 1", "sample.js", "Item 2"]
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
         expect(pane.getItems()).toEqual [item1, editor1, item2]
         expect(pane.activeItem).toBe item2
         expect(pane.focus).not.toHaveBeenCalled()
@@ -568,7 +571,7 @@ describe "TabBarView", ->
       newFileHandler = jasmine.createSpy('newFileHandler')
       atom.workspaceView.on('application:new-file', newFileHandler)
 
-      tabBar.getTabs()[0].dblclick()
+      $(tabBar.getTabs()[0]).dblclick()
       expect(newFileHandler.callCount).toBe 0
 
       tabBar.dblclick()
