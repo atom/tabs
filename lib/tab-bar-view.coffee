@@ -98,9 +98,9 @@ class TabBarView extends View
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
     if followingTab
-      $(tab).insertBefore(followingTab)
+      @element.insertBefore(tab, followingTab)
     else
-      @append(tab)
+      @element.appendChild(tab)
     tab.updateTitle()
 
   removeTabForItem: (item) ->
