@@ -29,7 +29,7 @@ class TabView extends HTMLElement
 
     if typeof @item.onDidChangeTitle is 'function'
       @titleSubscription = @item.onDidChangeTitle(titleChangedHandler)
-    else
+    else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('title-changed', titleChangedHandler)
       @titleSubscription = dispose: =>
@@ -52,7 +52,7 @@ class TabView extends HTMLElement
 
     if typeof @item.onDidChangeModified is 'function'
       @modifiedSubscription = @item.onDidChangeModified(modifiedHandler)
-    else
+    else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('modified-status-changed', modifiedHandler)
       @modifiedSubscription = dispose: =>
