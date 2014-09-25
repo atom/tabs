@@ -33,7 +33,7 @@ class TabView extends HTMLElement
       #TODO Remove once old events are no longer supported
       @item.on('title-changed', titleChangedHandler)
       @titleSubscription = dispose: =>
-        @item.off('title-changed', titleChangedHandler)
+        @item.off?('title-changed', titleChangedHandler)
 
     iconChangedHandler = =>
       @updateIcon()
@@ -45,7 +45,7 @@ class TabView extends HTMLElement
       #TODO Remove once old events are no longer supported
       @item.on('icon-changed', iconChangedHandler)
       @iconSubscription = dispose: =>
-        @item.off('icon-changed', iconChangedHandler)
+        @item.off?('icon-changed', iconChangedHandler)
 
     modifiedHandler = =>
       @updateModifiedStatus()
@@ -56,7 +56,7 @@ class TabView extends HTMLElement
       #TODO Remove once old events are no longer supported
       @item.on('modified-status-changed', modifiedHandler)
       @modifiedSubscription = dispose: =>
-        @item.off('modified-status-changed', modifiedHandler)
+        @item.off?('modified-status-changed', modifiedHandler)
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
