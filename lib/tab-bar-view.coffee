@@ -17,6 +17,11 @@ class TabBarView extends View
     @command 'tabs:close-saved-tabs', => @closeSavedTabs()
     @command 'tabs:close-all-tabs', => @closeAllTabs()
 
+    @on 'tabs:split-up',    => @splitTab('splitUp')
+    @on 'tabs:split-down',  => @splitTab('splitDown')
+    @on 'tabs:split-left',  => @splitTab('splitLeft')
+    @on 'tabs:split-right', => @splitTab('splitRight')
+
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
     @on 'dragleave', @onDragLeave
@@ -128,6 +133,14 @@ class TabBarView extends View
   closeTab: (tab) ->
     tab ?= @children('.right-clicked')[0]
     @pane.destroyItem(tab.item)
+
+  splitTab: (fn) ->
+    if item = @children('.right-clicked')[0]?.item
+      if copiedItem = @copyItem(item)
+        @pane.getModel()[fn](items: [copiedItem])
+
+  copyItem: (item) ->
+    item.copy?() ? atom.deserializers.deserialize(item.serialize())
 
   closeOtherTabs: ->
     tabs = @getTabs()

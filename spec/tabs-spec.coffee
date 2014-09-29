@@ -346,6 +346,46 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
+    describe "when tabs:split-up is fired", ->
+      it "splits the selected tab up", ->
+        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        expect(atom.workspace.getPanes().length).toBe 1
+
+        tabBar.trigger 'tabs:split-up'
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(atom.workspace.getPanes()[1]).toBe pane.getModel()
+        expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
+
+    describe "when tabs:split-down is fired", ->
+      it "splits the selected tab down", ->
+        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        expect(atom.workspace.getPanes().length).toBe 1
+
+        tabBar.trigger 'tabs:split-down'
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(atom.workspace.getPanes()[0]).toBe pane.getModel()
+        expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
+
+    describe "when tabs:split-left is fired", ->
+      it "splits the selected tab to the left", ->
+        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        expect(atom.workspace.getPanes().length).toBe 1
+
+        tabBar.trigger 'tabs:split-left'
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(atom.workspace.getPanes()[1]).toBe pane.getModel()
+        expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
+
+    describe "when tabs:split-right is fired", ->
+      it "splits the selected tab to the right", ->
+        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        expect(atom.workspace.getPanes().length).toBe 1
+
+        tabBar.trigger 'tabs:split-right'
+        expect(atom.workspace.getPanes().length).toBe 2
+        expect(atom.workspace.getPanes()[0]).toBe pane.getModel()
+        expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
+
   describe "dragging and dropping tabs", ->
     buildDragEvents = (dragged, dropTarget) ->
       dataTransfer =
