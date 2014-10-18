@@ -246,7 +246,6 @@ class TabBarView extends View
 
   onDrop: (event) =>
     event.preventDefault()
-    event.stopPropagation()
     {dataTransfer} = event.originalEvent
 
     return unless dataTransfer.getData('atom-event') is 'true'
