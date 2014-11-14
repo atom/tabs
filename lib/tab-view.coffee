@@ -80,7 +80,7 @@ class TabView extends HTMLElement
   updateTooltip: ->
     return unless @hasBeenMousedOver
 
-    $(this).destroyTooltip()
+    @destroyTooltip()
 
     if itemPath = @item.getPath?()
       $(this).setTooltip
@@ -91,14 +91,17 @@ class TabView extends HTMLElement
           hide: 100
         placement: 'bottom'
 
+  destroyTooltip: ->
+    return unless @hasBeenMousedOver
+    $(this).destroyTooltip()
+
   destroy: ->
     @titleSubscription?.dispose()
     @modifiedSubscription?.dispose()
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.off() # Not a Disposable yet
-
-    $(this).destroyTooltip() if @hasBeenMousedOver
+    @destroyTooltip()
     @remove()
 
   updateDataAttributes: ->

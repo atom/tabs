@@ -176,6 +176,8 @@ class TabBarView extends View
 
     element = $(event.target).closest('.sortable')
     element.addClass 'is-dragging'
+    element[0].destroyTooltip()
+
     event.originalEvent.dataTransfer.setData 'sortable-index', element.index()
 
     pane = $(event.target).closest('.pane')
@@ -240,7 +242,9 @@ class TabBarView extends View
     @clearDropTarget()
 
   clearDropTarget: ->
-    @find(".is-dragging").removeClass 'is-dragging'
+    element = @find(".is-dragging")
+    element.removeClass 'is-dragging'
+    element[0]?.updateTooltip()
     @removeDropTargetClasses()
     @removePlaceholder()
 

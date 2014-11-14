@@ -411,9 +411,17 @@ describe "TabBarView", ->
           expect(pane.activeItem).toBe item2
           spyOn(pane, 'focus')
 
-          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar.tabAtIndex(1))
+          tabToDrag = tabBar.tabAtIndex(0)
+          spyOn(tabToDrag, 'destroyTooltip')
+          spyOn(tabToDrag, 'updateTooltip')
+          [dragStartEvent, dropEvent] = buildDragEvents(tabToDrag, tabBar.tabAtIndex(1))
           tabBar.onDragStart(dragStartEvent)
+
+          expect(tabToDrag.destroyTooltip).toHaveBeenCalled()
+          expect(tabToDrag.updateTooltip).not.toHaveBeenCalled()
+
           tabBar.onDrop(dropEvent)
+          expect(tabToDrag.updateTooltip).toHaveBeenCalled()
 
           expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
           expect(pane.getItems()).toEqual [editor1, item1, item2]
