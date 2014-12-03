@@ -308,7 +308,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
         $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
-        tabBar.trigger 'tabs:close-tab'
+        atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
         expect(tabBar.getTabs().length).toBe 2
@@ -317,7 +317,7 @@ describe "TabBarView", ->
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
         $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
-        tabBar.trigger 'tabs:close-other-tabs'
+        atom.commands.dispatch(tabBar.element, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
         expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
@@ -327,7 +327,7 @@ describe "TabBarView", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
         $(tabBar.tabForItem(editor1)).trigger {type: 'mousedown', which: 3}
-        tabBar.trigger 'tabs:close-tabs-to-right'
+        atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
         expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
@@ -336,13 +336,13 @@ describe "TabBarView", ->
     describe "when tabs:close-all-tabs is fired", ->
       it "closes all the tabs", ->
         expect(pane.getItems().length).toBeGreaterThan 0
-        tabBar.trigger 'tabs:close-all-tabs'
+        atom.commands.dispatch(tabBar.element, 'tabs:close-all-tabs')
         expect(pane.getItems().length).toBe 0
 
     describe "when tabs:close-saved-tabs is fired", ->
       it "closes all the saved tabs", ->
         item1.isModified = -> true
-        tabBar.trigger 'tabs:close-saved-tabs'
+        atom.commands.dispatch(tabBar.element, 'tabs:close-saved-tabs')
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
@@ -351,7 +351,7 @@ describe "TabBarView", ->
         $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
         expect(atom.workspace.getPanes().length).toBe 1
 
-        tabBar.trigger 'tabs:split-up'
+        atom.commands.dispatch(tabBar.element, 'tabs:split-up')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[1]).toBe pane.getModel()
         expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
@@ -361,7 +361,7 @@ describe "TabBarView", ->
         $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
         expect(atom.workspace.getPanes().length).toBe 1
 
-        tabBar.trigger 'tabs:split-down'
+        atom.commands.dispatch(tabBar.element, 'tabs:split-down')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[0]).toBe pane.getModel()
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
@@ -371,7 +371,7 @@ describe "TabBarView", ->
         $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
         expect(atom.workspace.getPanes().length).toBe 1
 
-        tabBar.trigger 'tabs:split-left'
+        atom.commands.dispatch(tabBar.element, 'tabs:split-left')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[1]).toBe pane.getModel()
         expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
@@ -381,7 +381,7 @@ describe "TabBarView", ->
         $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
         expect(atom.workspace.getPanes().length).toBe 1
 
-        tabBar.trigger 'tabs:split-right'
+        atom.commands.dispatch(tabBar.element, 'tabs:split-right')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[0]).toBe pane.getModel()
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()

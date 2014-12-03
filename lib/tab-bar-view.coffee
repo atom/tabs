@@ -2,6 +2,7 @@ BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
 {$, View} = require 'atom'
+{CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
@@ -11,16 +12,18 @@ class TabBarView extends View
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
   initialize: (@pane) ->
-    @command 'tabs:close-tab', => @closeTab()
-    @command 'tabs:close-other-tabs', => @closeOtherTabs()
-    @command 'tabs:close-tabs-to-right', => @closeTabsToRight()
-    @command 'tabs:close-saved-tabs', => @closeSavedTabs()
-    @command 'tabs:close-all-tabs', => @closeAllTabs()
+    @subscriptions = new CompositeDisposable
 
-    @on 'tabs:split-up',    => @splitTab('splitUp')
-    @on 'tabs:split-down',  => @splitTab('splitDown')
-    @on 'tabs:split-left',  => @splitTab('splitLeft')
-    @on 'tabs:split-right', => @splitTab('splitRight')
+    @subscriptions.add atom.commands.add @element,
+      'tabs:close-tab': => @closeTab()
+      'tabs:close-other-tabs': => @closeOtherTabs()
+      'tabs:close-tabs-to-right': => @closeTabsToRight()
+      'tabs:close-saved-tabs': => @closeSavedTabs()
+      'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:split-up': => @splitTab('splitUp')
+      'tabs:split-down': => @splitTab('splitDown')
+      'tabs:split-left': => @splitTab('splitLeft')
+      'tabs:split-right': => @splitTab('splitRight')
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -89,6 +92,7 @@ class TabBarView extends View
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     super
+    @subscriptions.dispose()
 
   addTabForItem: (item, index) ->
     tabView = new TabView()
