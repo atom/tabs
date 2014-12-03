@@ -34,27 +34,27 @@ class TabBarView extends View
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
 
-    @subscribe @paneContainer, 'pane:removed', (e, pane) =>
+    @paneContainer.on 'pane:removed.tabs', (e, pane) =>
       @unsubscribe() if pane is @pane
 
-    @subscribe @pane, 'pane:item-added', (e, item, index) =>
+    @pane.on 'pane:item-added.tabs', (e, item, index) =>
       @addTabForItem(item, index)
       true
 
-    @subscribe @pane, 'pane:item-moved', (e, item, index) =>
+    @pane.on 'pane:item-moved.tabs', (e, item, index) =>
       @moveItemTabToIndex(item, index)
       true
 
-    @subscribe @pane, 'pane:item-removed', (e, item) =>
+    @pane.on 'pane:item-removed.tabs', (e, item) =>
       @removeTabForItem(item)
       true
 
-    @subscribe @pane, 'pane:active-item-changed', =>
+    @pane.on 'pane:active-item-changed.tabs', =>
       @updateActiveTab()
       true
 
-    @subscribe atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
-    @subscribe atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
+    @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
+    @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
 
     @updateActiveTab()
 
@@ -91,7 +91,8 @@ class TabBarView extends View
 
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
-    super
+    @pane.off(".tabs")
+    @paneContainer.off(".tabs")
     @subscriptions.dispose()
 
   addTabForItem: (item, index) ->
