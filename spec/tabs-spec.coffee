@@ -75,7 +75,7 @@ describe "TabBarView", ->
       atom.workspace.open('sample.js')
 
     runs ->
-      editor1 = atom.workspace.getActiveEditor()
+      editor1 = atom.workspace.getActiveTextEditor()
       pane = atom.workspace.getActivePane()
       pane.addItem(item1, 0)
       pane.addItem(item2, 2)
@@ -575,7 +575,7 @@ describe "TabBarView", ->
           tabBar.moveItemBetweenPanes.callCount > 0
 
         runs ->
-          editor = atom.workspace.getActiveEditor()
+          editor = atom.workspace.getActiveTextEditor()
           expect(editor.getPath()).toBe editor1.getPath()
           expect(pane.getItems()).toEqual [item1, editor, item2]
 
@@ -594,7 +594,7 @@ describe "TabBarView", ->
           tabBar.moveItemBetweenPanes.callCount > 0
 
         runs ->
-          expect(atom.workspace.getActiveEditor().getText()).toBe 'I came from another window'
+          expect(atom.workspace.getActiveTextEditor().getText()).toBe 'I came from another window'
 
       it "allows untitled editors to be moved between windows", ->
         editor1.getBuffer().setPath(null)
@@ -613,8 +613,8 @@ describe "TabBarView", ->
           tabBar.moveItemBetweenPanes.callCount > 0
 
         runs ->
-          expect(atom.workspace.getActiveEditor().getText()).toBe 'I have no path'
-          expect(atom.workspace.getActiveEditor().getPath()).toBeUndefined()
+          expect(atom.workspace.getActiveTextEditor().getText()).toBe 'I have no path'
+          expect(atom.workspace.getActiveTextEditor().getPath()).toBeUndefined()
 
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->
