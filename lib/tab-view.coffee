@@ -1,5 +1,5 @@
 path = require 'path'
-{$} = require 'atom'
+{$} = require 'space-pen'
 
 module.exports =
 class TabView extends HTMLElement

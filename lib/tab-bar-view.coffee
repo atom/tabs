@@ -1,7 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
-{$, View} = require 'atom'
+{$, View} = require 'space-pen'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'

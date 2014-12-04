@@ -1,4 +1,4 @@
-{$, View}  = require 'atom'
+{$, View}  = require 'space-pen'
 _ = require 'underscore-plus'
 path = require 'path'
 TabBarView = require '../lib/tab-bar-view'
