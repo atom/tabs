@@ -100,7 +100,7 @@ class TabView extends HTMLElement
     @modifiedSubscription?.dispose()
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
-    @configSubscription?.off() # Not a Disposable yet
+    @configSubscription?.dispose()
     @destroyTooltip()
     @remove()
 
