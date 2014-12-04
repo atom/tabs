@@ -83,7 +83,7 @@ class TabView extends HTMLElement
     @destroyTooltip()
 
     if itemPath = @item.getPath?()
-      $(this).setTooltip
+      @tooltip = atom.tooltips.add this,
         title: itemPath
         html: false
         delay:
@@ -93,7 +93,7 @@ class TabView extends HTMLElement
 
   destroyTooltip: ->
     return unless @hasBeenMousedOver
-    $(this).destroyTooltip()
+    @tooltip?.dispose()
 
   destroy: ->
     @titleSubscription?.dispose()
