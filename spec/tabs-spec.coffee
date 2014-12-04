@@ -43,7 +43,7 @@ describe "Tabs package main", ->
       expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
 describe "TabBarView", ->
-  [item1, item2, editor1, pane, tabBar] = []
+  [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
 
   class TestView extends View
     @deserialize: ({title, longTitle, iconName}) -> new TestView(title, longTitle, iconName)
@@ -67,7 +67,7 @@ describe "TabBarView", ->
       callback() for callback in @iconCallbacks ? []
 
   beforeEach ->
-    atom.deserializers.add(TestView)
+    deserializerDisposable = atom.deserializers.add(TestView)
     item1 = new TestView('Item 1', undefined, "squirrel")
     item2 = new TestView('Item 2')
 
@@ -83,7 +83,7 @@ describe "TabBarView", ->
       tabBar = new TabBarView(pane)
 
   afterEach ->
-    atom.deserializers.remove(TestView)
+    deserializerDisposable.dispose()
 
   describe ".initialize(pane)", ->
     it "creates a tab for each item on the tab bar's parent pane", ->
