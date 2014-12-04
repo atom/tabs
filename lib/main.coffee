@@ -2,10 +2,16 @@ _ = require 'underscore-plus'
 TabBarView = require './tab-bar-view'
 
 module.exports =
-  configDefaults:
-    showIcons: true
-    tabScrolling: process.platform is 'linux'
-    tabScrollingThreshold: 120
+  config:
+    showIcons:
+      type: 'boolean'
+      default: true
+    tabScrolling:
+      type: 'boolean'
+      default: process.platform is 'linux'
+    tabScrollingThreshold:
+      type: 'integer'
+      default: 120
 
   activate: ->
     @tabBarViews = []
