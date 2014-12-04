@@ -8,17 +8,17 @@ module.exports =
     tabScrollingThreshold: 120
 
   activate: ->
-    @paneSubscription = atom.workspaceView.eachPaneView (paneView) =>
-      tabBarView = new TabBarView(paneView)
-      @tabBarViews ?= []
+    @tabBarViews = []
+
+    @paneSubscription = atom.workspace.observePanes (pane) =>
+      tabBarView = new TabBarView(pane)
+
+      paneElement = atom.views.getView(pane)
+      paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
+
       @tabBarViews.push(tabBarView)
-      onPaneViewRemoved = (event, removedPaneView) =>
-        return unless paneView is removedPaneView
-        _.remove(@tabBarViews, tabBarView)
-        atom.workspaceView.off('pane:removed', onPaneViewRemoved)
-      atom.workspaceView.on('pane:removed', onPaneViewRemoved)
-      tabBarView
+      pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
 
   deactivate: ->
-    @paneSubscription?.off()
-    tabBarView.remove() for tabBarView in @tabBarViews ? []
+    @paneSubscription.dispose()
+    tabBarView.remove() for tabBarView in @tabBarViews

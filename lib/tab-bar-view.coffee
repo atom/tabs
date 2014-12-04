@@ -34,24 +34,20 @@ class TabBarView extends View
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
 
-    @paneContainer.on 'pane:removed.tabs', (e, pane) =>
-      @unsubscribe() if pane is @pane
+    @subscriptions.add @pane.onDidDestroy =>
+      @unsubscribe()
 
-    @pane.on 'pane:item-added.tabs', (e, item, index) =>
+    @subscriptions.add @pane.onDidAddItem ({item, index}) =>
       @addTabForItem(item, index)
-      true
 
-    @pane.on 'pane:item-moved.tabs', (e, item, index) =>
-      @moveItemTabToIndex(item, index)
-      true
+    @subscriptions.add @pane.onDidMoveItem ({item, newIndex}) =>
+      @moveItemTabToIndex(item, newIndex)
 
-    @pane.on 'pane:item-removed.tabs', (e, item) =>
+    @subscriptions.add @pane.onDidRemoveItem ({item}) =>
       @removeTabForItem(item)
-      true
 
-    @pane.on 'pane:active-item-changed.tabs', =>
+    @subscriptions.add @pane.onDidChangeActiveItem =>
       @updateActiveTab()
-      true
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
@@ -69,8 +65,8 @@ class TabBarView extends View
         false
 
     @on 'dblclick', ({target}) =>
-      if target is @[0]
-        @pane.trigger('application:new-file')
+      if target is @element
+        atom.commands.dispatch(@element, 'application:new-file')
         false
 
     @on 'click', '.tab .close-icon', ({target}) =>
@@ -82,17 +78,13 @@ class TabBarView extends View
       tab = $(target).closest('.tab')[0]
       if which is 1 and not target.classList.contains('close-icon')
         @pane.activateItem(tab.item)
-        @pane.focus()
+        @pane.activate()
         false
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
 
-    @pane.prepend(this)
-
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
-    @pane.off(".tabs")
-    @paneContainer.off(".tabs")
     @subscriptions.dispose()
 
   addTabForItem: (item, index) ->
@@ -133,7 +125,7 @@ class TabBarView extends View
       tabView.classList.add('active')
 
   updateActiveTab: ->
-    @setActiveTab(@tabForItem(@pane.activeItem))
+    @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
   closeTab: (tab) ->
     tab ?= @children('.right-clicked')[0]
@@ -142,7 +134,7 @@ class TabBarView extends View
   splitTab: (fn) ->
     if item = @children('.right-clicked')[0]?.item
       if copiedItem = @copyItem(item)
-        @pane.getModel()[fn](items: [copiedItem])
+        @pane[fn](items: [copiedItem])
 
   copyItem: (item) ->
     item.copy?() ? atom.deserializers.deserialize(item.serialize())
@@ -185,14 +177,15 @@ class TabBarView extends View
 
     event.originalEvent.dataTransfer.setData 'sortable-index', element.index()
 
-    pane = $(event.target).closest('.pane')
-    paneIndex = @paneContainer.indexOfPane(pane)
+    paneIndex = @paneContainer.getPanes().indexOf(@pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
-    event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.model.id
+    event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
     event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
+
     item = @pane.getItems()[element.index()]
+
     if typeof item.getUri is 'function' or typeof item.getPath is 'function'
       itemUri = item.getUri?() ? item.getPath?() ? ''
       event.originalEvent.dataTransfer.setData 'text/plain', itemUri
@@ -240,8 +233,8 @@ class TabBarView extends View
       @getPlaceholder().insertAfter(element)
 
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
-    if @pane.model.id is fromPaneId
-      if itemToRemove = @pane.itemAtIndex(fromItemIndex)
+    if @pane.id is fromPaneId
+      if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
 
     @clearDropTarget()
@@ -269,21 +262,21 @@ class TabBarView extends View
     modifiedText = dataTransfer.getData('modified-text')
 
     toIndex = @getDropTargetIndex(event)
-    toPane = $(event.target).closest('.pane').view()
+    toPane = @pane
 
     @clearDropTarget()
 
     if fromProcessId is @getProcessId()
-      fromPane = @paneContainer.paneAtIndex(fromPaneIndex)
-      {item} = fromPane.find(".tab-bar .sortable:eq(#{fromIndex})")[0] ? {}
+      fromPane = @paneContainer.getPanes()[fromPaneIndex]
+      item = fromPane.getItems()[fromIndex]
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
       droppedUri = dataTransfer.getData('text/plain')
       atom.workspace.open(droppedUri).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
-        activePane = atom.workspaceView.getActivePaneView()
-        activeItemIndex = activePane.getActiveItemIndex()
+        activePane = atom.workspace.getActivePane()
+        activeItemIndex = activePane.getItems().indexOf(item)
         @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
         item.setText?(modifiedText) if hasUnsavedChanges
 
@@ -331,11 +324,12 @@ class TabBarView extends View
     else
       fromPane.moveItemToPane(item, toPane, toIndex--)
     toPane.activateItem(item)
-    toPane.focus()
+    toPane.activate()
 
   removeDropTargetClasses: ->
-    atom.workspaceView.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
-    atom.workspaceView.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
+    workspaceElement = $(atom.views.getView(atom.workspace))
+    workspaceElement.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
+    workspaceElement.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
 
   getDropTargetIndex: (event) ->
     target = $(event.target)
