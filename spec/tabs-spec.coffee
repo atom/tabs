@@ -65,6 +65,8 @@ describe "TabBarView", ->
       dispose: => _.remove(@iconCallbacks, callback)
     emitIconChanged: ->
       callback() for callback in @iconCallbacks ? []
+    onDidChangeModified: -> # to suppress deprecation warning
+      dispose: ->
 
   beforeEach ->
     deserializerDisposable = atom.deserializers.add(TestView)
