@@ -106,7 +106,7 @@ class TabBarView extends View
     tab.updateTitle()
 
   removeTabForItem: (item) ->
-    @tabForItem(item).destroy()
+    @tabForItem(item)?.destroy()
     tab.updateTitle() for tab in @getTabs()
     return
 
