@@ -9,7 +9,7 @@
     "atom": "*"
   },
   "dependencies": {
-    "space-pen": "^4.2.2",
+    "space-pen": "^5.0.0",
     "underscore-plus": "1.x"
   }
 }
