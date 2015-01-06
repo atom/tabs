@@ -93,9 +93,9 @@ class TabBarView extends View
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
-    tab = @tabForItem(item)
-    tab.remove()
-    @insertTabAtIndex(tab, index)
+    if tab = @tabForItem(item)
+      tab.remove()
+      @insertTabAtIndex(tab, index)
 
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
