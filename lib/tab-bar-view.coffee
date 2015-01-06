@@ -183,8 +183,8 @@ class TabBarView extends View
     event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
 
-
     item = @pane.getItems()[element.index()]
+    return unless item?
 
     if typeof item.getUri is 'function' or typeof item.getPath is 'function'
       itemUri = item.getUri?() ? item.getPath?() ? ''
