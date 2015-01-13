@@ -154,4 +154,4 @@ class TabView extends HTMLElement
       @classList.remove('modified') if @isModified
       @isModified = false
 
-module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
+module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype)
