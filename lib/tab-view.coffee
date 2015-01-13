@@ -138,7 +138,7 @@ class TabView extends HTMLElement
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
 
   getTabs: ->
-    @parentElement?.querySelectorAll('.tab') ? []
+    @parentElement?.querySelectorAll('tabs-tab') ? []
 
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
