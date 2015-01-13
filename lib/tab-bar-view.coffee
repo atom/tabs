@@ -8,8 +8,13 @@ TabView = require './tab-view'
 
 module.exports =
 class TabBarView extends View
-  @content: ->
-    @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
+  constructor: ->
+    # space-pen does not support custom elements, so this is a hack
+    rootElement = document.createElement('tabs-bar')
+    rootElement.setAttribute('tabindex', -1)
+    rootElement.classList.add('list-inline', 'tab-bar', 'inset-panel')
+    @element = rootElement
+    super
 
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
@@ -54,8 +59,8 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
-      tab = $(target).closest('.tab')[0]
+    @on 'mousedown', 'tabs-tab', ({target, which, ctrlKey}) =>
+      tab = $(target).closest('tabs-tab')[0]
       if which is 3 or (which is 1 and ctrlKey is true)
         @find('.right-clicked').removeClass('right-clicked')
         tab.classList.add('right-clicked')
@@ -69,13 +74,13 @@ class TabBarView extends View
         atom.commands.dispatch(@element, 'application:new-file')
         false
 
-    @on 'click', '.tab .close-icon', ({target}) =>
-      tab = $(target).closest('.tab')[0]
+    @on 'click', 'tabs-tab .close-icon', ({target}) =>
+      tab = $(target).closest('tabs-tab')[0]
       @pane.destroyItem(tab.item)
       false
 
-    @on 'click', '.tab', ({target, which}) =>
-      tab = $(target).closest('.tab')[0]
+    @on 'click', 'tabs-tab', ({target, which}) =>
+      tab = $(target).closest('tabs-tab')[0]
       if which is 1 and not target.classList.contains('close-icon')
         @pane.activateItem(tab.item)
         @pane.activate()
@@ -111,17 +116,17 @@ class TabBarView extends View
     return
 
   getTabs: ->
-    @children('.tab').toArray()
+    @children('tabs-tab').toArray()
 
   tabAtIndex: (index) ->
-    @children(".tab:eq(#{index})")[0]
+    @children("tabs-tab:eq(#{index})")[0]
 
   tabForItem: (item) ->
     _.detect @getTabs(), (tab) -> tab.item is item
 
   setActiveTab: (tabView) ->
     if tabView? and not tabView.classList.contains('active')
-      @element.querySelector('.tab.active')?.classList.remove('active')
+      @element.querySelector('tabs-tab.active')?.classList.remove('active')
       tabView.classList.add('active')
 
   updateActiveTab: ->
@@ -328,8 +333,8 @@ class TabBarView extends View
 
   removeDropTargetClasses: ->
     workspaceElement = $(atom.views.getView(atom.workspace))
-    workspaceElement.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
-    workspaceElement.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
+    workspaceElement.find('tabs-bar .is-drop-target').removeClass 'is-drop-target'
+    workspaceElement.find('tabs-bar .drop-target-is-after').removeClass 'drop-target-is-after'
 
   getDropTargetIndex: (event) ->
     target = $(event.target)
@@ -364,4 +369,4 @@ class TabBarView extends View
 
   getTabBar: (target) ->
     target = $(target)
-    if target.is('.tab-bar') then target else target.parents('.tab-bar')
+    if target.is('tabs-bar') then target else target.parents('tabs-bar')
