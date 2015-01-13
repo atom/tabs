@@ -8,8 +8,13 @@ TabView = require './tab-view'
 
 module.exports =
 class TabBarView extends View
-  @content: ->
-    @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
+  constructor: ->
+    # space-pen does not support custom elements, so this is a hack
+    rootElement = document.createElement('tabs-bar')
+    rootElement.setAttribute('tabindex', -1)
+    rootElement.classList.add('list-inline', 'tab-bar', 'inset-panel')
+    @element = rootElement
+    super
 
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
