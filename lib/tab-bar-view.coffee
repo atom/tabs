@@ -191,13 +191,19 @@ class TabBarView extends View
     item = @pane.getItems()[element.index()]
     return unless item?
 
-    if typeof item.getUri is 'function' or typeof item.getPath is 'function'
-      itemUri = item.getUri?() ? item.getPath?() ? ''
-      event.originalEvent.dataTransfer.setData 'text/plain', itemUri
+    if typeof item.getURI is 'function'
+      itemURI = item.getURI() ? ''
+    else if typeof item.getPath is 'function'
+      itemURI = item.getPath() ? ''
+    else if typeof item.getUri is 'function'
+      itemURI = item.getUri() ? ''
+
+    if itemURI?
+      event.originalEvent.dataTransfer.setData 'text/plain', itemURI
 
       if process.platform is 'darwin' # see #69
-        itemUri = "file://#{itemUri}" unless @uriHasProtocol(itemUri)
-        event.originalEvent.dataTransfer.setData 'text/uri-list', itemUri
+        itemURI = "file://#{itemURI}" unless @uriHasProtocol(itemURI)
+        event.originalEvent.dataTransfer.setData 'text/uri-list', itemURI
 
       if item.isModified?() and item.getText?
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
@@ -276,8 +282,8 @@ class TabBarView extends View
       item = fromPane.getItems()[fromIndex]
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      droppedUri = dataTransfer.getData('text/plain')
-      atom.workspace.open(droppedUri).then (item) =>
+      droppedURI = dataTransfer.getData('text/plain')
+      atom.workspace.open(droppedURI).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
         activePane = atom.workspace.getActivePane()
