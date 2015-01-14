@@ -138,7 +138,7 @@ class TabView extends HTMLElement
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
 
   getTabs: ->
-    @parentElement?.querySelectorAll('tabs-tab') ? []
+    @parentElement?.querySelectorAll('.tab') ? []
 
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
@@ -154,4 +154,4 @@ class TabView extends HTMLElement
       @classList.remove('modified') if @isModified
       @isModified = false
 
-module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype)
+module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
