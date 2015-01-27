@@ -111,7 +111,6 @@ class TabBarView extends View
     @tabForItem(item)?.destroy()
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
-    return
 
   updateTabBarVisibility: ->
     if @hideTabBarWhenOnlyOneTabIsOpen and not @shouldAllowDrag()
