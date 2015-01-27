@@ -51,7 +51,7 @@ class TabBarView extends View
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
-    @subscriptions.add atom.config.observe 'tabs.hideTabBarWhenOnlyOneTabIsOpen', => @updateSingleTabBehavior()
+    @subscriptions.add atom.config.observe 'tabs.hideTabBarWhenOnlyOneTabIsOpen', => @updateTabBarVisibility()
 
     @updateActiveTab()
 
@@ -113,7 +113,7 @@ class TabBarView extends View
     @updateTabBarVisibility()
 
   updateTabBarVisibility: ->
-    if @hideTabBarWhenOnlyOneTabIsOpen and not @shouldAllowDrag()
+    if atom.config.get('tabs.hideTabBarWhenOnlyOneTabIsOpen') and not @shouldAllowDrag()
       @element.classList.add('hidden')
     else
       @element.classList.remove('hidden')
@@ -322,10 +322,6 @@ class TabBarView extends View
       @on 'wheel', @onMouseWheel
     else
       @off 'wheel'
-
-  updateSingleTabBehavior: ->
-    @hideTabBarWhenOnlyOneTabIsOpen = atom.config.get('tabs.hideTabBarWhenOnlyOneTabIsOpen')
-    @updateTabBarVisibility()
 
   browserWindowForProcessIdAndRoutingId: (processId, routingId) ->
     BrowserWindow ?= require('remote').require('browser-window')
