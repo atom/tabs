@@ -6,6 +6,9 @@ module.exports =
     showIcons:
       type: 'boolean'
       default: true
+    hideTabBarWhenOnlyOneTabIsOpen:
+      type: 'boolean'
+      default: false
     tabScrolling:
       type: 'boolean'
       default: process.platform is 'linux'
