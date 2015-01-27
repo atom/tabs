@@ -326,6 +326,7 @@ class TabBarView extends View
 
   updateSingleTabBehavior: ->
     @hideTabBarWhenOnlyOneTabIsOpen = atom.config.get('tabs.hideTabBarWhenOnlyOneTabIsOpen')
+    @updateTabBarVisibility()
 
   browserWindowForProcessIdAndRoutingId: (processId, routingId) ->
     BrowserWindow ?= require('remote').require('browser-window')
