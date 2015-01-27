@@ -674,3 +674,29 @@ describe "TabBarView", ->
           expect(pane.getActiveItem()).toBe item2
           tabBar.trigger(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item2
+
+    describe "when hideTabBarWhenOnlyOneTabIsOpen is true in package settings", ->
+      beforeEach ->
+        atom.config.set("tabs.hideTabBarWhenOnlyOneTabIsOpen", true)
+
+      describe "when 2 tabs are open", ->
+        it "shows the tab bar", ->
+          expect(tabBar).not.toHaveClass 'hidden'
+
+      describe "when 1 tab is open", ->
+        it "hides the tab bar", ->
+          atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
+          expect(tabBar).toHaveClass 'hidden'
+
+    describe "when hideSingleTabBar is false in package settings", ->
+      beforeEach ->
+        atom.config.set("tabs.hideTabBarWhenOnlyOneTabIsOpen", false)
+
+      describe "when 2 tabs are open", ->
+        it "shows the tab bar", ->
+          expect(tabBar).not.toHaveClass 'hidden'
+
+      describe "when 1 tab is open", ->
+        it "shows the tab bar", ->
+          atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
+          expect(tabBar).not.toHaveClass 'hidden'
