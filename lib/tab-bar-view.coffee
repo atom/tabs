@@ -51,7 +51,7 @@ class TabBarView extends View
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
-    @subscriptions.add atom.config.observe 'tabs.hideTabBarWhenOnlyOneTabIsOpen', => @updateTabBarVisibility()
+    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
     @updateActiveTab()
 
@@ -113,7 +113,7 @@ class TabBarView extends View
     @updateTabBarVisibility()
 
   updateTabBarVisibility: ->
-    if atom.config.get('tabs.hideTabBarWhenOnlyOneTabIsOpen') and not @shouldAllowDrag()
+    if !atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @element.classList.add('hidden')
     else
       @element.classList.remove('hidden')
