@@ -5,6 +5,8 @@ module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
     @classList.add('tab', 'sortable')
+    if itemPath = @item.getPath?()
+      @classList.add('has-path')
 
     @itemTitle = document.createElement('div')
     @itemTitle.classList.add('title')
