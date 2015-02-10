@@ -112,7 +112,7 @@ class TabView extends HTMLElement
       delete @itemTitle.dataset.name
       delete @itemTitle.dataset.path
 
-    if itemClass = @item.constructor.name
+    if itemClass = @item.constructor?.name
       @dataset.type = itemClass
     else
       delete @dataset.type
