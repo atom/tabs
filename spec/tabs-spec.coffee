@@ -95,14 +95,17 @@ describe "TabBarView", ->
       expect(tabBar.find('.tab:eq(0) .title').text()).toBe item1.getTitle()
       expect(tabBar.find('.tab:eq(0) .title')).not.toHaveAttr('data-name')
       expect(tabBar.find('.tab:eq(0) .title')).not.toHaveAttr('data-path')
+      expect(tabBar.find('.tab:eq(0)')).toHaveAttr('data-type', 'TestView')
 
       expect(tabBar.find('.tab:eq(1) .title').text()).toBe editor1.getTitle()
       expect(tabBar.find('.tab:eq(1) .title')).toHaveAttr('data-name', path.basename(editor1.getPath()))
       expect(tabBar.find('.tab:eq(1) .title')).toHaveAttr('data-path', editor1.getPath())
+      expect(tabBar.find('.tab:eq(1)')).toHaveAttr('data-type', 'TextEditor')
 
       expect(tabBar.find('.tab:eq(2) .title').text()).toBe item2.getTitle()
       expect(tabBar.find('.tab:eq(2) .title')).not.toHaveAttr('data-name')
       expect(tabBar.find('.tab:eq(2) .title')).not.toHaveAttr('data-path')
+      expect(tabBar.find('.tab:eq(2)')).toHaveAttr('data-type', 'TestView')
 
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'

@@ -108,6 +108,14 @@ class TabView extends HTMLElement
     if itemPath = @item.getPath?()
       @itemTitle.dataset.name = path.basename(itemPath)
       @itemTitle.dataset.path = itemPath
+    else
+      delete @itemTitle.dataset.name
+      delete @itemTitle.dataset.path
+
+    if itemClass = @item.constructor?.name
+      @dataset.type = itemClass
+    else
+      delete @dataset.type
 
   updateTitle: ({updateSiblings, useLongTitle}={}) ->
     return if @updatingTitle
