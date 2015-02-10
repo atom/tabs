@@ -87,7 +87,7 @@ class TabView extends HTMLElement
         title: itemPath
         html: false
         delay:
-          show: 2000
+          show: 1000
           hide: 100
         placement: 'bottom'
 
