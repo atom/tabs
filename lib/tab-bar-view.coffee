@@ -75,8 +75,11 @@ class TabBarView extends View
       @pane.destroyItem(tab.item)
       false
 
-    @on 'click', '.tab', ({target, which}) =>
+    @on 'click', '.tab', ({target, which, shiftKey}) =>
       tab = $(target).closest('.tab')[0]
+      if which is 1 and shiftKey
+        @pane.destroyItem(tab.item)
+        return false
       if which is 1 and not target.classList.contains('close-icon')
         @pane.activateItem(tab.item)
         @pane.activate()
