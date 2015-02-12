@@ -178,6 +178,17 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
 
+    it "closes the tab when shift clicked", ->
+      event = $.Event 'click'
+      event.which = 1
+      event.shiftKey = true
+      $(tabBar.tabForItem(editor1)).trigger(event)
+      expect(pane.getItems().length).toBe 2
+      expect(pane.getItems().indexOf(editor1)).toBe -1
+      expect(editor1.destroyed).toBeTruthy()
+      expect(tabBar.getTabs().length).toBe 2
+      expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
       $(tabBar.tabForItem(editor1)).find('.close-icon').click()
