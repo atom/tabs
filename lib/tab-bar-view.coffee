@@ -219,7 +219,10 @@ class TabBarView extends View
       false
 
   onDragLeave: (event) =>
+    event.stopPropagation()
+    event.preventDefault()
     @removePlaceholder()
+    RendererIpc.send('command', 'application:new-window')
 
   onDragEnd: (event) =>
     @clearDropTarget()
