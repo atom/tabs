@@ -12,6 +12,10 @@
     {label: 'Split Down', command: 'tabs:split-down'}
     {label: 'Split Left', command: 'tabs:split-left'}
     {label: 'Split Right', command: 'tabs:split-right'}
+    
+    {type: 'separator'}
+    
+    {label: 'Open this tab in new window', command: 'tabs:open-tab-in-new-window'}
   ]
 
   '.tab-bar': [

@@ -24,6 +24,7 @@ class TabBarView extends View
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
+      'tabs:open-tab-in-new-window': => @openTabInNewWindow()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -138,6 +139,18 @@ class TabBarView extends View
   closeTab: (tab) ->
     tab ?= @children('.right-clicked')[0]
     @pane.destroyItem(tab.item)
+    
+  openTabInNewWindow: (tab) ->
+    tab ?= @children('.right-clicked')[0]
+    item = tab.item
+    @closeTab(tab)
+    if typeof item.getURI is 'function'
+      itemURI = item.getURI() ? ''
+    else if typeof item.getPath is 'function'
+      itemURI = item.getPath() ? ''
+    else if typeof item.getUri is 'function'
+      itemURI = item.getUri() ? ''
+    atom.open({pathsToOpen: [itemURI], newWindow: true})
 
   splitTab: (fn) ->
     if item = @children('.right-clicked')[0]?.item
@@ -177,6 +190,7 @@ class TabBarView extends View
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) =>
+
     event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
     element = $(event.target).closest('.sortable')
@@ -190,6 +204,7 @@ class TabBarView extends View
     event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
     event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
+
 
     item = @pane.getItems()[element.index()]
     return unless item?
@@ -219,12 +234,10 @@ class TabBarView extends View
       false
 
   onDragLeave: (event) =>
-    event.stopPropagation()
-    event.preventDefault()
+    console.log("leaving")
     @removePlaceholder()
-    RendererIpc.send('command', 'application:new-window')
 
-  onDragEnd: (event) =>
+  onDragEnd: (event) => 
     @clearDropTarget()
 
   onDragOver: (event) =>
@@ -253,6 +266,7 @@ class TabBarView extends View
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
+        @droppedOnOtherWindow = true
 
     @clearDropTarget()
 
