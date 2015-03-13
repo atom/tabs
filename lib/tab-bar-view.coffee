@@ -234,7 +234,6 @@ class TabBarView extends View
       false
 
   onDragLeave: (event) =>
-    console.log("leaving")
     @removePlaceholder()
 
   onDragEnd: (event) => 
