@@ -160,10 +160,10 @@ describe "TabBarView", ->
     it "shows the associated item on the pane and focuses the pane", ->
       spyOn(pane, 'activate')
 
-      $(tabBar.tabAtIndex(0)).trigger {type: 'click', which: 1}
+      $(tabBar.tabAtIndex(0)).trigger {type: 'mousedown', which: 1}
       expect(pane.getActiveItem()).toBe pane.getItems()[0]
 
-      $(tabBar.tabAtIndex(2)).trigger {type: 'click', which: 1}
+      $(tabBar.tabAtIndex(2)).trigger {type: 'mousedown', which: 1}
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
 
       expect(pane.activate.callCount).toBe 2
