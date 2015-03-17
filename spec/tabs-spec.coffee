@@ -187,7 +187,7 @@ describe "TabBarView", ->
       $(tabBar.tabAtIndex(0)).trigger {type: 'mousedown', which: 1, ctrlKey: true}
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
 
-      expect(pane.activate.callCount).toBe 0
+      expect(pane.activate).not.toHaveBeenCalled()
 
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
