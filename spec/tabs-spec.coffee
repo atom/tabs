@@ -178,6 +178,17 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
 
+    it "doesn't switch tab when right (or ctrl-left) clicked", ->
+      spyOn(pane, 'activate')
+
+      $(tabBar.tabAtIndex(0)).trigger {type: 'mousedown', which: 3}
+      expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
+
+      $(tabBar.tabAtIndex(0)).trigger {type: 'mousedown', which: 1, ctrlKey: true}
+      expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
+
+      expect(pane.activate).not.toHaveBeenCalled()
+
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
       $(tabBar.tabForItem(editor1)).find('.close-icon').click()
