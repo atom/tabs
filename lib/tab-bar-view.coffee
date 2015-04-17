@@ -187,7 +187,6 @@ class TabBarView extends View
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) =>
-
     event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
     element = $(event.target).closest('.sortable')
@@ -201,7 +200,6 @@ class TabBarView extends View
     event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
     event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
     event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
-
 
     item = @pane.getItems()[element.index()]
     return unless item?
@@ -233,7 +231,7 @@ class TabBarView extends View
   onDragLeave: (event) =>
     @removePlaceholder()
 
-  onDragEnd: (event) => 
+  onDragEnd: (event) =>
     @clearDropTarget()
 
   onDragOver: (event) =>
