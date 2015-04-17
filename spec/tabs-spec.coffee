@@ -3,6 +3,7 @@ _ = require 'underscore-plus'
 path = require 'path'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
+{triggerMouseDownEvent, buildDragEvents, buildWheelEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   workspaceElement = null
@@ -160,23 +161,39 @@ describe "TabBarView", ->
     it "shows the associated item on the pane and focuses the pane", ->
       spyOn(pane, 'activate')
 
-      $(tabBar.tabAtIndex(0)).trigger {type: 'click', which: 1}
+      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 1)
       expect(pane.getActiveItem()).toBe pane.getItems()[0]
+      expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
-      $(tabBar.tabAtIndex(2)).trigger {type: 'click', which: 1}
+      event = triggerMouseDownEvent(tabBar.tabAtIndex(2), which: 1)
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
+      expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
       expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
-      event = $.Event 'mousedown'
-      event.which = 2
-      $(tabBar.tabForItem(editor1)).trigger(event)
+      event = triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 2)
+
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
       expect(editor1.destroyed).toBeTruthy()
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+
+      expect(event.preventDefault).toHaveBeenCalled()
+
+    it "doesn't switch tab when right (or ctrl-left) clicked", ->
+      spyOn(pane, 'activate')
+
+      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 3)
+      expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
+      expect(event.preventDefault).toHaveBeenCalled()
+
+      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 1, ctrlKey: true)
+      expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
+      expect(event.preventDefault).toHaveBeenCalled()
+
+      expect(pane.activate).not.toHaveBeenCalled()
 
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
@@ -314,7 +331,7 @@ describe "TabBarView", ->
   describe "context menu commands", ->
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
-        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
@@ -323,7 +340,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
-        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
@@ -333,7 +350,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
-        $(tabBar.tabForItem(editor1)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
@@ -355,7 +372,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
-        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-up')
@@ -365,7 +382,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-down is fired", ->
       it "splits the selected tab down", ->
-        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-down')
@@ -375,7 +392,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-left is fired", ->
       it "splits the selected tab to the left", ->
-        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-left')
@@ -385,7 +402,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-right is fired", ->
       it "splits the selected tab to the right", ->
-        $(tabBar.tabForItem(item2)).trigger {type: 'mousedown', which: 3}
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-right')
@@ -394,22 +411,6 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
   describe "dragging and dropping tabs", ->
-    buildDragEvents = (dragged, dropTarget) ->
-      dataTransfer =
-        data: {}
-        setData: (key, value) -> @data[key] = "#{value}" # Drag events stringify data values
-        getData: (key) -> @data[key]
-
-      dragStartEvent = $.Event()
-      dragStartEvent.target = dragged
-      dragStartEvent.originalEvent = {dataTransfer}
-
-      dropEvent = $.Event()
-      dropEvent.target = dropTarget
-      dropEvent.originalEvent = {dataTransfer}
-
-      [dragStartEvent, dropEvent]
-
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->
         it "moves the tab and its item, shows the tab's item, and focuses the pane", ->
@@ -633,9 +634,6 @@ describe "TabBarView", ->
       expect(newFileHandler.callCount).toBe 1
 
   describe "when the mouse wheel is used on the tab bar", ->
-    buildWheelEvent = (delta) ->
-      $.Event "wheel", {originalEvent: {wheelDelta: delta}}
-
     describe "when tabScrolling is true in package settings", ->
       beforeEach ->
         atom.config.set("tabs.tabScrolling", true)

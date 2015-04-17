@@ -62,6 +62,10 @@ class TabBarView extends View
         @find('.right-clicked').removeClass('right-clicked')
         tab.classList.add('right-clicked')
         false
+      else if which is 1 and not target.classList.contains('close-icon')
+        @pane.activateItem(tab.item)
+        @pane.activate()
+        true
       else if which is 2
         @pane.destroyItem(tab.item)
         false
@@ -75,13 +79,6 @@ class TabBarView extends View
       tab = $(target).closest('.tab')[0]
       @pane.destroyItem(tab.item)
       false
-
-    @on 'click', '.tab', ({target, which}) =>
-      tab = $(target).closest('.tab')[0]
-      if which is 1 and not target.classList.contains('close-icon')
-        @pane.activateItem(tab.item)
-        @pane.activate()
-        false
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
 
