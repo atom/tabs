@@ -73,6 +73,10 @@ class TabBarView extends View
       if target is @element
         atom.commands.dispatch(@element, 'application:new-file')
         false
+        
+    @on 'dblclick', '.tab', ({target}) =>
+      atom.commands.dispatch(@element, 'core:save')
+      false
 
     @on 'click', '.tab .close-icon', ({target}) =>
       tab = $(target).closest('.tab')[0]
