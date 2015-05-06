@@ -24,7 +24,7 @@ class TabBarView extends View
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
-      'tabs:open-tab-in-new-window': => @openTabInNewWindow()
+      'tabs:open-in-new-window': => @openTabInNewWindow()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd

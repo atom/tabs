@@ -15,7 +15,7 @@
     
     {type: 'separator'}
     
-    {label: 'Open In New Window', command: 'tabs:open-tab-in-new-window'}
+    {label: 'Open In New Window', command: 'tabs:open-in-new-window'}
   ]
 
   '.tab-bar': [
