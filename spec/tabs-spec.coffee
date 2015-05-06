@@ -410,6 +410,20 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[0]).toBe pane
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
+    describe "when tabs:open-in-new-window is fired", ->
+      it "opens new window, closes current tab", ->
+        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        expect(atom.workspace.getPanes().length).toBe 1
+
+        spyOn(atom,'open')
+        atom.commands.dispatch(tabBar.element, 'tabs:open-in-new-window')
+        expect(atom.open).toHaveBeenCalled()
+
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
+
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->
