@@ -24,7 +24,7 @@ class TabBarView extends View
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
-      'tabs:open-in-new-window': => @openTabInNewWindow()
+      'tabs:open-in-new-window': => @openInNewWindow()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -137,7 +137,7 @@ class TabBarView extends View
     tab ?= @children('.right-clicked')[0]
     @pane.destroyItem(tab.item)
     
-  openTabInNewWindow: (tab) ->
+  openInNewWindow: (tab) ->
     tab ?= @children('.right-clicked')[0]
     item = tab.item
     @closeTab(tab)
