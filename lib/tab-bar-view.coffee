@@ -140,14 +140,16 @@ class TabBarView extends View
   openInNewWindow: (tab) ->
     tab ?= @children('.right-clicked')[0]
     item = tab.item
-    @closeTab(tab)
+    return unless item?
     if typeof item.getURI is 'function'
-      itemURI = item.getURI() ? ''
+      itemURI = item.getURI()
     else if typeof item.getPath is 'function'
-      itemURI = item.getPath() ? ''
+      itemURI = item.getPath()
     else if typeof item.getUri is 'function'
-      itemURI = item.getUri() ? ''
+      itemURI = item.getUri()
+    return unless itemURI?
     atom.open({pathsToOpen: [itemURI], newWindow: true})
+    @closeTab(tab)
 
   splitTab: (fn) ->
     if item = @children('.right-clicked')[0]?.item
