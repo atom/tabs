@@ -148,7 +148,7 @@ class TabBarView extends View
     else if typeof item.getUri is 'function'
       itemURI = item.getUri()
     return unless itemURI?
-    atom.open({pathsToOpen: [itemURI], newWindow: true})
+    atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
     @closeTab(tab)
 
   splitTab: (fn) ->
