@@ -3,7 +3,7 @@ _ = require 'underscore-plus'
 path = require 'path'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
-{triggerMouseDownEvent, buildDragEvents, buildWheelEvent} = require "./event-helpers"
+{triggerMouseDownEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   workspaceElement = null
@@ -659,6 +659,18 @@ describe "TabBarView", ->
           expect(pane.getActiveItem()).toBe item2
           tabBar.trigger(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item1
+
+      describe "when the mouse wheel scrolls up and shift key is pressed", ->
+        it "does not change the active tab", ->
+          expect(pane.getActiveItem()).toBe item2
+          tabBar.trigger(buildWheelPlusShiftEvent(120))
+          expect(pane.getActiveItem()).toBe item2
+
+      describe "when the mouse wheel scrolls down and shift key is pressed", ->
+        it "does not change the active tab", ->
+          expect(pane.getActiveItem()).toBe item2
+          tabBar.trigger(buildWheelPlusShiftEvent(-120))
+          expect(pane.getActiveItem()).toBe item2
 
     describe "when tabScrolling is false in package settings", ->
       beforeEach ->
