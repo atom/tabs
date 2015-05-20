@@ -299,6 +299,8 @@ class TabBarView extends View
       atom.focus()
 
   onMouseWheel: ({originalEvent}) =>
+    return if originalEvent.shiftKey
+
     @wheelDelta ?= 0
     @wheelDelta += originalEvent.wheelDelta
 
