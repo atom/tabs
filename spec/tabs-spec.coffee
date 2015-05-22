@@ -709,3 +709,62 @@ describe "TabBarView", ->
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
         expect(tabBar.element).toHaveClass 'hidden'
+
+  describe "when useTransientBehavior is true in package settings", ->
+    beforeEach ->
+      atom.config.set("tabs.useTransientBehavior", true)
+
+      waitsForPromise ->
+        pane.destroyItems()
+        atom.workspace.open('sample.js').then (o) -> editor1 = o
+
+    describe "when the active pane item changes and there are no editors", ->
+      it "adds tab with class 'temp'", ->
+        pane.activateItem(editor1)
+        expect(tabBar.find('.tab .temp').length).toBe 1
+        expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+    describe "when a new item is added to the pane", ->
+      it "removes any tabs with the 'temp' class leaving only one 'temp' tab", ->
+        pane.activateItem(editor1)
+        editor2 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor2 = o
+        runs ->
+          pane.activateItem(editor2)
+          expect(tabBar.find('.tab .temp').length).toBe 1
+          expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+      it "removes 'temp' class from the new tab if the item is initially modified", ->
+        editor2 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor2 = o
+        runs ->
+          editor2.insertText('x')
+          pane.activateItem(editor2)
+          expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass 'temp'
+
+  describe "when useTransientBehavior is false in package settings", ->
+    beforeEach ->
+      atom.config.set("tabs.useTransientBehavior", false)
+
+      waitsForPromise ->
+        pane.destroyItems()
+        atom.workspace.open('sample.js').then (o) -> editor1 = o
+
+    describe "when the active pane item changes and there are no editors", ->
+      it "adds tab without class 'temp'", ->
+        pane.activateItem(editor1)
+        expect(tabBar.find('.tab').length).toBe 1
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass 'temp'
+
+    describe "when a new item is added to the pane", ->
+      it "adds tab without removing tabs", ->
+        pane.activateItem(editor1)
+        editor2 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor2 = o
+        runs ->
+          pane.activateItem(editor2)
+          expect(tabBar.find('.tab').length).toBe 2
+          expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass 'temp'
