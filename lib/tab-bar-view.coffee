@@ -2,7 +2,7 @@ BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
 {$, View} = require 'atom-space-pen-views'
-{CompositeDisposable} = require 'atom'
+{CompositeDisposable, TextEditor} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
@@ -47,9 +47,9 @@ class TabBarView extends View
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      if atom.config.get('tabs.temporaryTabs')
-        if @tab instanceof TabView && @getTabs().length > 1
-          @pane.destroyItem(@tab.item) if !@tab.open
+      if atom.config.get('tabs.useTransientBehavior') and item instanceof TextEditor
+        if @tab instanceof TabView and @getTabs().length > 1 and @tab.item isnt item and !@tab.keepOpen and @tab.item instanceof TextEditor
+          @pane.destroyItem @tab.item
         @tab = @tabForItem(item)
       @updateActiveTab()
 
@@ -92,9 +92,8 @@ class TabBarView extends View
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    if atom.config.get('tabs.temporaryTabs')
-      if !@tab
-        @tab = tabView
+    if atom.config.get('tabs.useTransientBehavior') and !@tab and item instanceof TextEditor
+      @tab = tabView
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->

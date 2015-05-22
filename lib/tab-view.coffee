@@ -1,20 +1,22 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
+{TextEditor} = require 'atom'
 
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
-    @open = false
-    if atom.config.get('tabs.temporaryTabs')
+    @keepOpen = false
+    if atom.config.get('tabs.useTransientBehavior') and @item instanceof TextEditor
       @addEventListener 'dblclick', =>
-        @open = true
+        @keepOpen = true
         @itemTitle.classList.remove('temp')
+    else
+      @keepOpen = true
 
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
-    if atom.config.get('tabs.temporaryTabs')
-      @itemTitle.classList.add('temp')
+    @itemTitle.classList.add('temp') unless @keepOpen
     @itemTitle.classList.add('title')
     @appendChild(@itemTitle)
 
@@ -164,8 +166,8 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      if atom.config.get('tabs.temporaryTabs')
-        @open = true
+      if atom.config.get('tabs.useTransientBehavior')
+        @keepOpen = true
         @itemTitle.classList.remove('temp')
       @classList.add('modified') unless @isModified
       @isModified = true
