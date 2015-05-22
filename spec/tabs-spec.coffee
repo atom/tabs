@@ -53,7 +53,7 @@ describe "TabBarView", ->
     getTitle: -> @title
     getLongTitle: -> @longTitle
     getIconName: -> @iconName
-    serialize: -> { deserializer: 'TestView', @title, @longTitle, @iconName }
+    serialize: -> {deserializer: 'TestView', @title, @longTitle, @iconName}
     onDidChangeTitle: (callback) ->
       @titleCallbacks ?= []
       @titleCallbacks.push(callback)
