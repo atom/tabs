@@ -110,7 +110,7 @@ class TabBarView extends View
     @updateTabBarVisibility()
 
   updateTabBarVisibility: ->
-    if !atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
+    if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @element.classList.add('hidden')
     else
       @element.classList.remove('hidden')
@@ -350,7 +350,7 @@ class TabBarView extends View
 
     sortables = tabBar.find('.sortable')
     element = target.closest('.sortable')
-    element = sortables.last() if element.length == 0
+    element = sortables.last() if element.length is 0
 
     return 0 unless element.length
 
