@@ -4,9 +4,17 @@ path = require 'path'
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
+    @open = false
+    if atom.config.get('tabs.temporaryTabs')
+      @addEventListener 'dblclick', =>
+        @open = true
+        @itemTitle.classList.remove('temp')
+
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
+    if atom.config.get('tabs.temporaryTabs')
+      @itemTitle.classList.add('temp')
     @itemTitle.classList.add('title')
     @appendChild(@itemTitle)
 

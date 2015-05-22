@@ -13,6 +13,10 @@ module.exports =
     tabScrollingThreshold:
       type: 'integer'
       default: 120
+    temporaryTabs:
+      type: 'boolean'
+      default: true
+      description: 'Tabs will close when they lose focus, Tabs can be locked by double clicking the title'
 
   activate: ->
     @tabBarViews = []

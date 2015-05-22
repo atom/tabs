@@ -46,7 +46,11 @@ class TabBarView extends View
     @subscriptions.add @pane.onDidRemoveItem ({item}) =>
       @removeTabForItem(item)
 
-    @subscriptions.add @pane.onDidChangeActiveItem =>
+    @subscriptions.add @pane.onDidChangeActiveItem (item) =>
+      if atom.config.get('tabs.temporaryTabs')
+        if @tab instanceof TabView && @getTabs().length > 1
+          @pane.destroyItem(@tab.item) if !@tab.open
+        @tab = @tabForItem(item)
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -88,6 +92,9 @@ class TabBarView extends View
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
+    if atom.config.get('tabs.temporaryTabs')
+      if !@tab
+        @tab = tabView
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
