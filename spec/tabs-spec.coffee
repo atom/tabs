@@ -780,18 +780,6 @@ describe "TabBarView", ->
         expect(tabBar.tabForItem(editor2)).toExist()
         expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
-    describe 'when opening an image', ->
-      it 'should be temporary', ->
-        imageView = null
-
-        waitsForPromise ->
-          atom.workspace.open('sample.png').then (o) ->
-            imageView = o
-            pane.activateItem(imageView)
-
-        runs ->
-          expect($(tabBar.tabForItem(imageView)).find('.title')).toHaveClass 'temp'
-
   describe 'when editing a file', ->
     it 'makes the tab permanent', ->
       editor1 = null
