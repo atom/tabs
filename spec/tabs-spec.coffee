@@ -780,14 +780,15 @@ describe "TabBarView", ->
         expect(tabBar.tabForItem(editor2)).toExist()
         expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
-  describe 'when editing a file', ->
-    it 'makes the tab permanent', ->
-      editor1 = null
-      waitsForPromise ->
-        atom.workspace.open('sample.txt').then (o) ->
-          editor1 = o
-          pane.activateItem(editor1)
-          editor1.insertText('x')
+    describe 'when editing a file', ->
+      it 'makes the tab permanent', ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            editor1.insertText('x')
+            advanceClock(editor1.buffer.stoppedChangingDelay)
 
-      runs ->
-        expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+        runs ->
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
