@@ -47,8 +47,8 @@ class TabBarView extends View
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      if atom.config.get('tabs.useTransientBehavior') and item instanceof TextEditor
-        if @tab instanceof TabView and @getTabs().length > 1 and @tab.item isnt item and not @tab.keepOpen and @tab.item instanceof TextEditor
+      if atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
+        if @tab instanceof TabView and @getTabs().length > 1 and @tab.item isnt item and @tab.isPreviewTab and @tab.item instanceof TextEditor
           @pane.destroyItem @tab.item
         @tab = @tabForItem(item)
       @updateActiveTab()
@@ -92,7 +92,7 @@ class TabBarView extends View
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    if atom.config.get('tabs.useTransientBehavior') and not @tab and item instanceof TextEditor
+    if atom.config.get('tabs.usePreviewTabs') and not @tab and item instanceof TextEditor
       @tab = tabView
     @insertTabAtIndex(tabView, index)
 

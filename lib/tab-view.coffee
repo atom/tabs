@@ -5,18 +5,17 @@ path = require 'path'
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
-    @keepOpen = false
-    if atom.config.get('tabs.useTransientBehavior') and @item instanceof TextEditor
+    @isPreviewTab = false
+    if atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
+      @isPreviewTab = true
       @addEventListener 'dblclick', =>
-        @keepOpen = true
+        @isPreviewTab = false
         @itemTitle.classList.remove('temp')
-    else
-      @keepOpen = true
 
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
-    @itemTitle.classList.add('temp') unless @keepOpen
+    @itemTitle.classList.add('temp') if @isPreviewTab
     @itemTitle.classList.add('title')
     @appendChild(@itemTitle)
 
@@ -166,8 +165,8 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      if atom.config.get('tabs.useTransientBehavior')
-        @keepOpen = true
+      if atom.config.get('tabs.usePreviewTabs')
+        @isPreviewTab = false
         @itemTitle.classList.remove('temp')
       @classList.add('modified') unless @isModified
       @isModified = true

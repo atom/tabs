@@ -710,9 +710,9 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 1
         expect(tabBar.element).toHaveClass 'hidden'
 
-  describe "when useTransientBehavior is true in package settings", ->
+  describe "when usePreviewTabs is true in package settings", ->
     beforeEach ->
-      atom.config.set("tabs.useTransientBehavior", true)
+      atom.config.set("tabs.usePreviewTabs", true)
       pane.destroyItems()
 
     describe "when opening a new tab", ->
