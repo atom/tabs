@@ -48,7 +48,7 @@ class TabBarView extends View
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
       if atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
-        if @tab instanceof TabView and @getTabs().length > 1 and @tab.item isnt item and @tab.isPreviewTab and @tab.item instanceof TextEditor
+        if @getTabs().length > 1 and @tab.item isnt item and @tab.isPreviewTab
           @pane.destroyItem @tab.item
         @tab = @tabForItem(item)
       @updateActiveTab()
