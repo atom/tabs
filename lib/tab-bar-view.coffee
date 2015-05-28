@@ -14,7 +14,7 @@ class TabBarView extends View
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add @element,
+    @subscriptions.add atom.commands.add 'atom-workspace',
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
       'tabs:close-tabs-to-right': => @closeTabsToRight()
