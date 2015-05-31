@@ -1,9 +1,14 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
+{CompositeDisposable} = require 'event-kit'
 
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
+    @path = @item.getPath?()
+
+    @subscriptions = new CompositeDisposable()
+
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
@@ -20,6 +25,11 @@ class TabView extends HTMLElement
     @updateIcon()
     @updateModifiedStatus()
     @setupTooltip()
+
+    if @path
+      repo = @repoForPath(@path)
+      @subscribeToRepo(repo)
+      @updateStatus(repo)
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -82,9 +92,9 @@ class TabView extends HTMLElement
 
     @destroyTooltip()
 
-    if itemPath = @item.getPath?()
+    if @path
       @tooltip = atom.tooltips.add this,
-        title: itemPath
+        title: @path
         html: false
         delay:
           show: 1000
@@ -101,13 +111,14 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
+    @subscriptions?.dispose()
     @destroyTooltip()
     @remove()
 
   updateDataAttributes: ->
-    if itemPath = @item.getPath?()
-      @itemTitle.dataset.name = path.basename(itemPath)
-      @itemTitle.dataset.path = itemPath
+    if @path
+      @itemTitle.dataset.name = path.basename(@path)
+      @itemTitle.dataset.path = @path
     else
       delete @itemTitle.dataset.name
       delete @itemTitle.dataset.path
@@ -161,5 +172,40 @@ class TabView extends HTMLElement
     else
       @classList.remove('modified') if @isModified
       @isModified = false
+
+  # Subscribe to the project' repo for changes to the Git status of the file
+  # on this tab.
+  subscribeToRepo: (repo) ->
+    return unless repo?
+
+    @subscriptions.add repo.onDidChangeStatus (event) =>
+      @updateStatus(repo) if @path is event.path
+    @subscriptions.add repo.onDidChangeStatuses =>
+      @updateStatus(repo)
+
+  # Update the status property of this tab using the repo.
+  updateStatus: (repo) ->
+    return unless repo?
+
+    newStatus = null
+    if repo.isPathIgnored(@path)
+      newStatus = 'ignored'
+    else
+      status = repo.getCachedPathStatus(@path)
+      if repo.isStatusModified(status)
+        newStatus = 'modified'
+      else if repo.isStatusNew(status)
+        newStatus = 'added'
+
+    if newStatus isnt @status
+      @status = newStatus
+      @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
+      @itemTitle.classList.add("status-#{@status}") if @status
+
+  repoForPath: (goalPath) ->
+    for projectPath, i in atom.project.getPaths()
+      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
+        return atom.project.getRepositories()[i]
+    null
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
