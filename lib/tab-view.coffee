@@ -69,7 +69,7 @@ class TabView extends HTMLElement
         @path = event.path
         @setupVcsStatus()
 
-    @savedSubscription = @item.buffer.onDidSave(itemSavedHandler)
+    @savedSubscription = @item.buffer?.onDidSave(itemSavedHandler)
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
