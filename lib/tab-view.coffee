@@ -25,11 +25,7 @@ class TabView extends HTMLElement
     @updateIcon()
     @updateModifiedStatus()
     @setupTooltip()
-
-    if @path
-      repo = @repoForPath(@path)
-      @subscribeToRepo(repo)
-      @updateStatus(repo)
+    @setupVcsStatus()
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -67,6 +63,13 @@ class TabView extends HTMLElement
       @item.on('modified-status-changed', modifiedHandler)
       @modifiedSubscription = dispose: =>
         @item.off?('modified-status-changed', modifiedHandler)
+
+    itemSavedHandler = (event) =>
+      if @path isnt event.path
+        @path = event.path
+        @setupVcsStatus()
+
+    @savedSubscription = @item.buffer.onDidSave(itemSavedHandler)
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
@@ -111,6 +114,7 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
+    @savedSubscription?.dispose()
     @subscriptions?.dispose()
     @destroyTooltip()
     @remove()
@@ -173,18 +177,32 @@ class TabView extends HTMLElement
       @classList.remove('modified') if @isModified
       @isModified = false
 
-  # Subscribe to the project' repo for changes to the Git status of the file
-  # on this tab.
+  setupVcsStatus: ->
+    return unless @path?
+    repo = @repoForPath(@path)
+    @subscribeToRepo(repo)
+    @updateVcsStatus(repo)
+
+  # Subscribe to the project's repo for changes to the VCS status of the file.
   subscribeToRepo: (repo) ->
     return unless repo?
 
-    @subscriptions.add repo.onDidChangeStatus (event) =>
-      @updateStatus(repo) if @path is event.path
-    @subscriptions.add repo.onDidChangeStatuses =>
-      @updateStatus(repo)
+    # Remove previous repo subscriptions.
+    @subscriptions?.dispose()
 
-  # Update the status property of this tab using the repo.
-  updateStatus: (repo) ->
+    @subscriptions.add repo.onDidChangeStatus (event) =>
+      @updateVcsStatus(repo) if @path is event.path
+    @subscriptions.add repo.onDidChangeStatuses =>
+      @updateVcsStatus(repo)
+
+  repoForPath: (goalPath) ->
+    for projectPath, i in atom.project.getPaths()
+      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
+        return atom.project.getRepositories()[i]
+    null
+
+  # Update the VCS status property of this tab using the repo.
+  updateVcsStatus: (repo) ->
     return unless repo?
 
     newStatus = null
@@ -201,11 +219,5 @@ class TabView extends HTMLElement
       @status = newStatus
       @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
       @itemTitle.classList.add("status-#{@status}") if @status
-
-  repoForPath: (goalPath) ->
-    for projectPath, i in atom.project.getPaths()
-      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
-        return atom.project.getRepositories()[i]
-    null
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
