@@ -74,6 +74,9 @@ class TabView extends HTMLElement
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
 
+    @vcsConfigSubscription = atom.config.observe 'tabs.enableVcsColoring', =>
+      @updateVcsColoring()
+
   setupTooltip: ->
     # Defer creating the tooltip until the tab is moused over
     onMouseEnter = =>
@@ -217,7 +220,11 @@ class TabView extends HTMLElement
 
     if newStatus isnt @status
       @status = newStatus
-      @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
-      @itemTitle.classList.add("status-#{@status}") if @status
+      @updateVcsColoring()
+
+  updateVcsColoring: ->
+    @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
+    if @status and atom.config.get 'tabs.enableVcsColoring'
+      @itemTitle.classList.add("status-#{@status}")
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')

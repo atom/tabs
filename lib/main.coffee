@@ -13,6 +13,10 @@ module.exports =
     tabScrollingThreshold:
       type: 'integer'
       default: 120
+    enableVcsColoring:
+      title: "Enable VCS Coloring"
+      type: 'boolean'
+      default: true
 
   activate: ->
     @tabBarViews = []
