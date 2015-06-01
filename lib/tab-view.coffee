@@ -1,6 +1,6 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
-{CompositeDisposable} = require 'event-kit'
+{CompositeDisposable} = require 'atom'
 
 module.exports =
 class TabView extends HTMLElement
