@@ -90,9 +90,6 @@ class TabBarView extends View
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
-  isPreviewableItem: (item) ->
-    atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
-
   setInitialPreviewTab: ->
     activeItem = @pane.getActiveItem()
     for tab in @getTabs() when tab.isPreviewTab
