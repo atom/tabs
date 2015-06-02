@@ -8,9 +8,7 @@ class TabView extends HTMLElement
     @isPreviewTab = false
     if atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
       @isPreviewTab = true
-      @addEventListener 'dblclick', =>
-        @isPreviewTab = false
-        @itemTitle.classList.remove('temp')
+      @addEventListener 'dblclick', => @clearPreview()
 
     @classList.add('tab', 'sortable')
 
@@ -157,6 +155,10 @@ class TabView extends HTMLElement
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
 
+  clearPreview: ->
+    @isPreviewTab = false
+    @itemTitle.classList.remove('temp')
+
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
       @itemTitle.classList.remove('hide-icon')
@@ -165,9 +167,7 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      if atom.config.get('tabs.usePreviewTabs')
-        @isPreviewTab = false
-        @itemTitle.classList.remove('temp')
+      @clearPreview() if atom.config.get('tabs.usePreviewTabs')
       @classList.add('modified') unless @isModified
       @isModified = true
     else
