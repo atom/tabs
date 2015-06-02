@@ -769,7 +769,7 @@ describe "TabBarView", ->
           expect(tabBar.tabForItem(editor1)).not.toExist()
           expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
-      it 'makes the tab permanent when dbl clicking the tab', ->
+      it 'makes the tab permanent when double clicking the tab', ->
         editor2 = null
 
         waitsForPromise ->
@@ -818,3 +818,28 @@ describe "TabBarView", ->
 
         runs ->
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when switching from a preview tab to a permanent tab', ->
+      it "keeps the preview tab open", ->
+        atom.config.set("tabs.usePreviewTabs", false)
+        editor1 = null
+        editor2 = null
+
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+
+        runs ->
+          atom.config.set("tabs.usePreviewTabs", true)
+
+        waitsForPromise ->
+          atom.workspace.open('sample2.txt').then (o) ->
+            editor2 = o
+            pane.activateItem(editor2)
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(pane.getItems().length).toBe 2
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
