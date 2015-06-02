@@ -2,7 +2,7 @@ BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
 {$, View} = require 'atom-space-pen-views'
-{CompositeDisposable} = require 'atom'
+{CompositeDisposable, TextEditor} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
@@ -46,7 +46,11 @@ class TabBarView extends View
     @subscriptions.add @pane.onDidRemoveItem ({item}) =>
       @removeTabForItem(item)
 
-    @subscriptions.add @pane.onDidChangeActiveItem =>
+    @subscriptions.add @pane.onDidChangeActiveItem (item) =>
+      if atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
+        if @getTabs().length > 1 and @tab.item isnt item and @tab.isPreviewTab
+          @pane.destroyItem @tab.item
+        @tab = @tabForItem(item)
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -88,6 +92,8 @@ class TabBarView extends View
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
+    if atom.config.get('tabs.usePreviewTabs') and not @tab and item instanceof TextEditor
+      @tab = tabView
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->

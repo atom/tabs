@@ -721,3 +721,86 @@ describe "TabBarView", ->
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
         expect(tabBar.element).toHaveClass 'hidden'
+
+  describe "when usePreviewTabs is true in package settings", ->
+    beforeEach ->
+      atom.config.set("tabs.usePreviewTabs", true)
+      pane.destroyItems()
+
+    describe "when opening a new tab", ->
+      it "adds tab with class 'temp'", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+        runs ->
+          pane.activateItem(editor1)
+          expect(tabBar.find('.tab .temp').length).toBe 1
+          expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+    describe "when there is a temp tab already", ->
+      it "it will replace an existing temporary tab", ->
+        editor1 = null
+        editor2 = null
+
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            atom.project.open('sample2.txt').then (o) ->
+              editor2 = o
+              pane.activateItem(editor2)
+
+        runs ->
+          expect(editor1.isDestroyed()).toBe true
+          expect(editor2.isDestroyed()).toBe false
+          expect(tabBar.tabForItem(editor1)).not.toExist()
+          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+      it 'makes the tab permanent when dbl clicking the tab', ->
+        editor2 = null
+
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor2 = o
+
+        runs ->
+          pane.activateItem(editor2)
+          dbclickEvt = document.createEvent 'MouseEvents'
+          dbclickEvt.initEvent 'dblclick'
+          tabBar.tabForItem(editor2).dispatchEvent dbclickEvt
+          expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when opening views that do not contain an editor', ->
+      editor2 = null
+      settingsView = null
+
+      beforeEach ->
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) ->
+            editor2 = o
+            pane.activateItem(editor2)
+
+        waitsForPromise ->
+          atom.packages.activatePackage('settings-view').then ->
+            atom.workspace.open('atom://config').then (o) ->
+              settingsView = o
+              pane.activateItem(settingsView)
+
+      it 'creates a permanent tab', ->
+        expect(tabBar.tabForItem(settingsView)).toExist()
+        expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
+
+      it 'keeps an existing temp tab', ->
+        expect(tabBar.tabForItem(editor2)).toExist()
+        expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
+    describe 'when editing a file', ->
+      it 'makes the tab permanent', ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            editor1.insertText('x')
+            advanceClock(editor1.buffer.stoppedChangingDelay)
+
+        runs ->
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'

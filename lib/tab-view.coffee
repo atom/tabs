@@ -1,12 +1,21 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
+{TextEditor} = require 'atom'
 
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
+    @isPreviewTab = false
+    if atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
+      @isPreviewTab = true
+      @addEventListener 'dblclick', =>
+        @isPreviewTab = false
+        @itemTitle.classList.remove('temp')
+
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
+    @itemTitle.classList.add('temp') if @isPreviewTab
     @itemTitle.classList.add('title')
     @appendChild(@itemTitle)
 
@@ -156,6 +165,9 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
+      if atom.config.get('tabs.usePreviewTabs')
+        @isPreviewTab = false
+        @itemTitle.classList.remove('temp')
       @classList.add('modified') unless @isModified
       @isModified = true
     else

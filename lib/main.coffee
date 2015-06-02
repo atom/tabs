@@ -13,6 +13,10 @@ module.exports =
     tabScrollingThreshold:
       type: 'integer'
       default: 120
+    usePreviewTabs:
+      type: 'boolean'
+      default: true
+      description: 'Tabs will only stay open if they are modified or double-clicked'
 
   activate: ->
     @tabBarViews = []
