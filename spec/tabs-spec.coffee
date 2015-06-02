@@ -738,6 +738,18 @@ describe "TabBarView", ->
           expect(tabBar.find('.tab .temp').length).toBe 1
           expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
 
+    describe "when tabs:keep-preview-tab is trigger on the pane", ->
+      it "removes the 'temp' class", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(tabBar.find('.tab .temp').length).toBe 1
+          atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-preview-tab')
+          expect(tabBar.find('.tab .temp').length).toBe 0
+
     describe "when there is a temp tab already", ->
       it "it will replace an existing temporary tab", ->
         editor1 = null
