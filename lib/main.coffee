@@ -15,7 +15,7 @@ module.exports =
       default: 120
     usePreviewTabs:
       type: 'boolean'
-      default: true
+      default: false
       description: 'Tabs will only stay open if they are modified or double-clicked'
 
   activate: ->

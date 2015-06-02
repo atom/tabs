@@ -14,6 +14,9 @@ class TabBarView extends View
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
+    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+      'tabs:keep-preview-tab': => @clearPreviewTabs()
+
     @subscriptions.add atom.commands.add @element,
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
@@ -33,6 +36,7 @@ class TabBarView extends View
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
+    @setInitialPreviewTab()
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -47,10 +51,7 @@ class TabBarView extends View
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      if atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
-        if @getTabs().length > 1 and @tab.item isnt item and @tab.isPreviewTab
-          @pane.destroyItem @tab.item
-        @tab = @tabForItem(item)
+      @destroyPreviousPreviewTab()
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -89,11 +90,30 @@ class TabBarView extends View
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
+  setInitialPreviewTab: ->
+    activeItem = @pane.getActiveItem()
+    for tab in @getTabs() when tab.isPreviewTab
+      tab.clearPreview() if tab.item isnt activeItem
+    return
+
+  clearPreviewTabs: ->
+    tab.clearPreview() for tab in @getTabs()
+    return
+
+  storePreviewTabToDestroy: ->
+    for tab in @getTabs() when tab.isPreviewTab
+      @previewTabToDestroy = tab
+    return
+
+  destroyPreviousPreviewTab: ->
+    if @previewTabToDestroy?.isPreviewTab
+      @pane.destroyItem(@previewTabToDestroy.item)
+    @previewTabToDestroy = null
+
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    if atom.config.get('tabs.usePreviewTabs') and not @tab and item instanceof TextEditor
-      @tab = tabView
+    @storePreviewTabToDestroy() if tabView.isPreviewTab
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->

@@ -5,17 +5,11 @@ path = require 'path'
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
-    @isPreviewTab = false
-    if atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
-      @isPreviewTab = true
-      @addEventListener 'dblclick', =>
-        @isPreviewTab = false
-        @itemTitle.classList.remove('temp')
+    @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
 
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
-    @itemTitle.classList.add('temp') if @isPreviewTab
     @itemTitle.classList.add('title')
     @appendChild(@itemTitle)
 
@@ -29,6 +23,11 @@ class TabView extends HTMLElement
     @updateIcon()
     @updateModifiedStatus()
     @setupTooltip()
+
+    if @isPreviewTab
+      @itemTitle.classList.add('temp')
+      @classList.add('preview-tab')
+      @addEventListener 'dblclick', => @clearPreview()
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -157,6 +156,11 @@ class TabView extends HTMLElement
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
 
+  clearPreview: ->
+    @isPreviewTab = false
+    @itemTitle.classList.remove('temp')
+    @classList.remove('preview-tab')
+
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
       @itemTitle.classList.remove('hide-icon')
@@ -165,9 +169,7 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      if atom.config.get('tabs.usePreviewTabs')
-        @isPreviewTab = false
-        @itemTitle.classList.remove('temp')
+      @clearPreview()
       @classList.add('modified') unless @isModified
       @isModified = true
     else

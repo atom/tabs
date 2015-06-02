@@ -732,10 +732,23 @@ describe "TabBarView", ->
         editor1 = null
         waitsForPromise ->
           atom.project.open('sample.txt').then (o) -> editor1 = o
+
         runs ->
           pane.activateItem(editor1)
           expect(tabBar.find('.tab .temp').length).toBe 1
           expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+    describe "when tabs:keep-preview-tab is trigger on the pane", ->
+      it "removes the 'temp' class", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(tabBar.find('.tab .temp').length).toBe 1
+          atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-preview-tab')
+          expect(tabBar.find('.tab .temp').length).toBe 0
 
     describe "when there is a temp tab already", ->
       it "it will replace an existing temporary tab", ->
@@ -755,7 +768,8 @@ describe "TabBarView", ->
           expect(editor2.isDestroyed()).toBe false
           expect(tabBar.tabForItem(editor1)).not.toExist()
           expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
-      it 'makes the tab permanent when dbl clicking the tab', ->
+
+      it 'makes the tab permanent when double clicking the tab', ->
         editor2 = null
 
         waitsForPromise ->
@@ -804,3 +818,41 @@ describe "TabBarView", ->
 
         runs ->
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when switching from a preview tab to a permanent tab', ->
+      it "keeps the preview tab open", ->
+        atom.config.set("tabs.usePreviewTabs", false)
+        editor1 = null
+        editor2 = null
+
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+
+        runs ->
+          atom.config.set("tabs.usePreviewTabs", true)
+
+        waitsForPromise ->
+          atom.workspace.open('sample2.txt').then (o) ->
+            editor2 = o
+            pane.activateItem(editor2)
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(pane.getItems().length).toBe 2
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
+    describe "when splitting a preview tab", ->
+      it "makes the tab a preview tab in the new pane", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          pane2 = pane.splitRight(copyActiveItem: true)
+          tabBar2 = new TabBarView(pane2)
+
+          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).toHaveClass 'temp'
