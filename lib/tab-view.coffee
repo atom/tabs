@@ -13,7 +13,6 @@ class TabView extends HTMLElement
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
-    @itemTitle.classList.add('temp') if @isPreviewTab
     @itemTitle.classList.add('title')
     @appendChild(@itemTitle)
 
@@ -27,6 +26,10 @@ class TabView extends HTMLElement
     @updateIcon()
     @updateModifiedStatus()
     @setupTooltip()
+
+    if @isPreviewTab
+      @itemTitle.classList.add('temp')
+      @classList.add('preview-tab')
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -158,6 +161,7 @@ class TabView extends HTMLElement
   clearPreview: ->
     @isPreviewTab = false
     @itemTitle.classList.remove('temp')
+    @classList.remove('preview-tab')
 
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
