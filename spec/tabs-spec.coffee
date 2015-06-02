@@ -732,6 +732,7 @@ describe "TabBarView", ->
         editor1 = null
         waitsForPromise ->
           atom.project.open('sample.txt').then (o) -> editor1 = o
+
         runs ->
           pane.activateItem(editor1)
           expect(tabBar.find('.tab .temp').length).toBe 1
@@ -755,6 +756,7 @@ describe "TabBarView", ->
           expect(editor2.isDestroyed()).toBe false
           expect(tabBar.tabForItem(editor1)).not.toExist()
           expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
       it 'makes the tab permanent when dbl clicking the tab', ->
         editor2 = null
 
