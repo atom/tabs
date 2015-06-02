@@ -7,9 +7,6 @@ class TabView extends HTMLElement
   initialize: (@item) ->
     @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
 
-    if @isPreviewTab
-      @addEventListener 'dblclick', => @clearPreview()
-
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
@@ -30,6 +27,7 @@ class TabView extends HTMLElement
     if @isPreviewTab
       @itemTitle.classList.add('temp')
       @classList.add('preview-tab')
+      @addEventListener 'dblclick', => @clearPreview()
 
   handleEvents: ->
     titleChangedHandler = =>
