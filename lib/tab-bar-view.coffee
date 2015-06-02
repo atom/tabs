@@ -50,7 +50,7 @@ class TabBarView extends View
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      if atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
+      if @isPreviewableItem(item)
         if @getTabs().length > 1 and @tab?.item isnt item and @tab?.isPreviewTab
           @pane.destroyItem(@tab.item)
         @tab = @tabForItem(item)
@@ -92,11 +92,14 @@ class TabBarView extends View
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
+  isPreviewableItem: (item) ->
+    atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
+
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    if atom.config.get('tabs.usePreviewTabs') and not @tab and item instanceof TextEditor
-      @tab = tabView
+    @tab ?= tabView if @isPreviewableItem(item)
+
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
