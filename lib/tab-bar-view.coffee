@@ -14,6 +14,9 @@ class TabBarView extends View
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
+    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+      'tabs:keep-preview-tab': => tab.clearPreview() for tab in @getTabs()
+
     @subscriptions.add atom.commands.add @element,
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
