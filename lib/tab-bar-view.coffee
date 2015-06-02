@@ -36,7 +36,7 @@ class TabBarView extends View
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
-    @clearPreviewTabs()
+    @setInitialPreviewTab()
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -92,6 +92,12 @@ class TabBarView extends View
 
   isPreviewableItem: (item) ->
     atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
+
+  setInitialPreviewTab: ->
+    activeItem = @pane.getActiveItem()
+    for tab in @getTabs() when tab.isPreviewTab
+      tab.clearPreview() if tab.item isnt activeItem
+    return
 
   clearPreviewTabs: ->
     tab.clearPreview() for tab in @getTabs()
