@@ -50,10 +50,9 @@ class TabBarView extends View
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      if @isPreviewableItem(item)
-        if @getTabs().length > 1 and @tab?.item isnt item and @tab?.isPreviewTab
-          @pane.destroyItem(@tab.item)
-        @tab = @tabForItem(item)
+      if @isPreviewableItem(item) and @getTabs().length > 1
+        previewTab = @getPreviewTab()
+        @pane.destroyItem(previewTab.item) if previewTab
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -98,9 +97,10 @@ class TabBarView extends View
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    @tab ?= tabView if @isPreviewableItem(item)
-
     @insertTabAtIndex(tabView, index)
+
+  getPreviewTab: ->
+    _.detect @getTabs(), (tab) -> tab.isPreviewTab
 
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)
