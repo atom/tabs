@@ -169,7 +169,7 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      @clearPreview() if atom.config.get('tabs.usePreviewTabs')
+      @clearPreview()
       @classList.add('modified') unless @isModified
       @isModified = true
     else
