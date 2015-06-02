@@ -5,9 +5,9 @@ path = require 'path'
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
-    @isPreviewTab = false
-    if atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
-      @isPreviewTab = true
+    @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and @item instanceof TextEditor
+
+    if @isPreviewTab
       @addEventListener 'dblclick', => @clearPreview()
 
     @classList.add('tab', 'sortable')
