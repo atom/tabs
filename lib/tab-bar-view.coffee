@@ -15,7 +15,7 @@ class TabBarView extends View
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
-      'tabs:keep-preview-tab': => tab.clearPreview() for tab in @getTabs()
+      'tabs:keep-preview-tab': => @clearPreviewTabs()
 
     @subscriptions.add atom.commands.add @element,
       'tabs:close-tab': => @closeTab()
@@ -36,6 +36,7 @@ class TabBarView extends View
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
+    @clearPreviewTabs()
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -51,8 +52,8 @@ class TabBarView extends View
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
       if @isPreviewableItem(item) and @getTabs().length > 1
-        previewTab = @getPreviewTab()
-        @pane.destroyItem(previewTab.item) if previewTab
+        @pane.destroyItem(@previewTab.item) if @previewTab?.isPreviewTab
+        @previewTab = @tabForItem(item)
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -94,13 +95,15 @@ class TabBarView extends View
   isPreviewableItem: (item) ->
     atom.config.get('tabs.usePreviewTabs') and item instanceof TextEditor
 
+  clearPreviewTabs: ->
+    tab.clearPreview() for tab in @getTabs()
+    return
+
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
+    @previewTab ?= tabView if tabView.isPreviewTab
     @insertTabAtIndex(tabView, index)
-
-  getPreviewTab: ->
-    _.detect @getTabs(), (tab) -> tab.isPreviewTab
 
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)
