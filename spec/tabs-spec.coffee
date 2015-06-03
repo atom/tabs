@@ -64,7 +64,6 @@ describe "Tabs package main", ->
         expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
         expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
 
-
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
 
