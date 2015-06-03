@@ -866,7 +866,7 @@ describe "TabBarView", ->
           expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
     describe "when splitting a preview tab", ->
-      it "makes the tab permanent tab in the new pane", ->
+      it "makes the tab permanent in the new pane", ->
         editor1 = null
         waitsForPromise ->
           atom.project.open('sample.txt').then (o) -> editor1 = o
