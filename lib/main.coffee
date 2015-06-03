@@ -26,7 +26,7 @@ module.exports =
     _ = require 'underscore-plus'
 
     @paneSubscription = atom.workspace.observePanes (pane) =>
-      tabBarView = new TabBarView(pane, state.pop())
+      tabBarView = new TabBarView(pane, state.shift())
 
       paneElement = atom.views.getView(pane)
       paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
