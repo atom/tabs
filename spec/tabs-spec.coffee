@@ -803,7 +803,7 @@ describe "TabBarView", ->
           tabBar.tabForItem(editor2).dispatchEvent dbclickEvt
           expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
 
-    describe 'when opening views that do not contain an editor', ->
+    describe 'when opening views that do not have file paths', ->
       editor2 = null
       settingsView = null
 
@@ -877,3 +877,15 @@ describe "TabBarView", ->
           tabBar2 = new TabBarView(pane2)
 
           expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
+
+    describe "when a non-text file is opened", ->
+      it "opens a preview tab", ->
+        imageView = null
+        waitsForPromise ->
+          atom.workspace.open('sample.png').then (o) ->
+            imageView = o
+            pane.activateItem(imageView)
+
+        runs ->
+          expect(tabBar.tabForItem(imageView)).toExist()
+          expect($(tabBar.tabForItem(imageView)).find('.title')).toHaveClass 'temp'
