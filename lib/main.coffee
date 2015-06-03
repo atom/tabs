@@ -39,6 +39,7 @@ module.exports =
   deactivate: ->
     @paneSubscription.dispose()
     tabBarView.remove() for tabBarView in @tabBarViews
+    return
 
   serialize: ->
     for tabBarView in @tabBarViews
