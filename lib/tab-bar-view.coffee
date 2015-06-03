@@ -11,7 +11,7 @@ class TabBarView extends View
   @content: ->
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
-  initialize: (@pane) ->
+  initialize: (@pane, state={}) ->
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
@@ -36,7 +36,7 @@ class TabBarView extends View
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
-    @setInitialPreviewTab()
+    @setInitialPreviewTab(state.previewTabURI)
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -90,10 +90,14 @@ class TabBarView extends View
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
-  setInitialPreviewTab: ->
-    activeItem = @pane.getActiveItem()
+  setInitialPreviewTab: (previewTabURI) ->
     for tab in @getTabs() when tab.isPreviewTab
-      tab.clearPreview() if tab.item isnt activeItem
+      tab.clearPreview() if tab.item.getURI() isnt previewTabURI
+    return
+
+  getPreviewTabURI: ->
+    for tab in @getTabs() when tab.isPreviewTab
+      return tab.item.getURI()
     return
 
   clearPreviewTabs: ->
