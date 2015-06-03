@@ -4,7 +4,7 @@ path = require 'path'
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
-    @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and @item.getPath?
+    @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and typeof @item.getPath is 'function'
 
     @classList.add('tab', 'sortable')
 
