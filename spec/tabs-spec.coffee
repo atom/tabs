@@ -43,7 +43,7 @@ describe "Tabs package main", ->
       expect(workspaceElement.querySelectorAll('.pane').length).toBe 3
       expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
-    fit "serializes preview tab state", ->
+    it "serializes preview tab state", ->
       atom.config.set('tabs.usePreviewTabs', true)
 
       waitsForPromise ->
