@@ -721,3 +721,85 @@ describe "TabBarView", ->
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
         expect(tabBar.element).toHaveClass 'hidden'
+
+  describe "integration with version control systems", ->
+    [repository, tab] = []
+
+    beforeEach ->
+      atom.config.set "tabs.enableVcsColoring", true
+      tab = tabBar.tabAtIndex 1
+      repository = atom.project.getRepo()
+      spyOn(repository, 'isPathIgnored')
+      spyOn(repository, 'getCachedPathStatus')
+      repository.getCachedPathStatus.andReturn 128
+
+    describe "when working inside a VCS repository", ->
+      it "adds custom style for new items", ->
+        tab.updateVcsStatus(repository)
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+
+      it "adds custom style for modified items", ->
+        repository.getCachedPathStatus.andReturn 256
+        tab.updateVcsStatus(repository)
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+
+      it "adds custom style for ignored items", ->
+        repository.isPathIgnored.andReturn true
+        tab.updateVcsStatus(repository)
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-ignored"
+
+      it "does not add any styles for items not in the repository", ->
+        tab = tabBar.tabForItem(item1)
+        tab.path = '/some/path'
+        tab.setupVcsStatus()
+
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-added"
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-modified"
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-ignored"
+
+    describe "when changes in item statuses are notified", ->
+      it "updates status for items in the repository", ->
+        spyOn(tab, 'updateVcsStatus').andCallThrough()
+        expect(tab.updateVcsStatus.calls.length).toEqual 0
+        repository.emitter.emit 'did-change-statuses'
+        expect(tab.updateVcsStatus.calls.length).toEqual 1
+
+      it "updates the status of an item if it has changed", ->
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
+        repository.emitter.emit 'did-change-status', {path: tab.path, pathStatus: 256}
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+        expect(repository.getCachedPathStatus.calls.length).toBe 0
+
+      it "does not update status for items not in the repository", ->
+        tab = tabBar.tabForItem(item1)
+        tab.path = '/some/path'
+        tab.setupVcsStatus()
+
+        spyOn(tab, 'updateVcsStatus').andCallThrough()
+        repository.emitter.emit 'did-change-statuses'
+        expect(tab.updateVcsStatus.calls.length).toEqual 0
+
+    describe "when an item is saved", ->
+      it "does not update VCS subscription if the item's path remains the same", ->
+        spyOn(tab, 'setupVcsStatus').andCallThrough()
+        tab.item.buffer.emitter.emit( 'did-save', {path: tab.path})
+        expect(tab.setupVcsStatus.calls.length).toBe 0
+
+      it "updates VCS subscription if the item's path has changed", ->
+        spyOn(tab, 'setupVcsStatus').andCallThrough()
+        tab.item.buffer.emitter.emit( 'did-save', {path: '/some/other/path'})
+        expect(tab.setupVcsStatus.calls.length).toBe 1
+
+    describe "when enableVcsColoring changes in package settings", ->
+      it "removes status from the tab if enableVcsColoring is set to false", ->
+        tab.setupVcsStatus()
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+        atom.config.set "tabs.enableVcsColoring", false
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-added"
+
+      it "adds status to the tab if enableVcsColoring is set to true", ->
+        atom.config.set "tabs.enableVcsColoring", false
+        tab.setupVcsStatus()
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-added"
+        atom.config.set "tabs.enableVcsColoring", true
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
