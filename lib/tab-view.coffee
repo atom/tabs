@@ -9,6 +9,8 @@ class TabView extends HTMLElement
 
     @subscriptions = new CompositeDisposable()
 
+    @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and typeof @item.getPath is 'function'
+
     @classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
@@ -26,6 +28,11 @@ class TabView extends HTMLElement
     @updateModifiedStatus()
     @setupTooltip()
     @setupVcsStatus()
+
+    if @isPreviewTab
+      @itemTitle.classList.add('temp')
+      @classList.add('preview-tab')
+      @addEventListener 'dblclick', => @clearPreview()
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -167,6 +174,11 @@ class TabView extends HTMLElement
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
 
+  clearPreview: ->
+    @isPreviewTab = false
+    @itemTitle.classList.remove('temp')
+    @classList.remove('preview-tab')
+
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
       @itemTitle.classList.remove('hide-icon')
@@ -175,6 +187,7 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
+      @clearPreview()
       @classList.add('modified') unless @isModified
       @isModified = true
     else

@@ -11,8 +11,11 @@ class TabBarView extends View
   @content: ->
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
-  initialize: (@pane) ->
+  initialize: (@pane, state={}) ->
     @subscriptions = new CompositeDisposable
+
+    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+      'tabs:keep-preview-tab': => @clearPreviewTabs()
 
     @subscriptions.add atom.commands.add @element,
       'tabs:close-tab': => @closeTab()
@@ -33,6 +36,7 @@ class TabBarView extends View
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
+    @setInitialPreviewTab(state.previewTabURI)
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -46,7 +50,8 @@ class TabBarView extends View
     @subscriptions.add @pane.onDidRemoveItem ({item}) =>
       @removeTabForItem(item)
 
-    @subscriptions.add @pane.onDidChangeActiveItem =>
+    @subscriptions.add @pane.onDidChangeActiveItem (item) =>
+      @destroyPreviousPreviewTab()
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -85,9 +90,34 @@ class TabBarView extends View
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
+  setInitialPreviewTab: (previewTabURI) ->
+    for tab in @getTabs() when tab.isPreviewTab
+      tab.clearPreview() if tab.item.getURI() isnt previewTabURI
+    return
+
+  getPreviewTabURI: ->
+    for tab in @getTabs() when tab.isPreviewTab
+      return tab.item.getURI()
+    return
+
+  clearPreviewTabs: ->
+    tab.clearPreview() for tab in @getTabs()
+    return
+
+  storePreviewTabToDestroy: ->
+    for tab in @getTabs() when tab.isPreviewTab
+      @previewTabToDestroy = tab
+    return
+
+  destroyPreviousPreviewTab: ->
+    if @previewTabToDestroy?.isPreviewTab
+      @pane.destroyItem(@previewTabToDestroy.item)
+    @previewTabToDestroy = null
+
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
+    @storePreviewTabToDestroy() if tabView.isPreviewTab
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
