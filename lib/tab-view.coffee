@@ -117,6 +117,7 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
+    @vcsConfigSubscription?.dispose()
     @savedSubscription?.dispose()
     @subscriptions?.dispose()
     @destroyTooltip()
