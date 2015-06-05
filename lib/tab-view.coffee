@@ -195,7 +195,7 @@ class TabView extends HTMLElement
     @subscriptions?.dispose()
 
     @subscriptions.add repo.onDidChangeStatus (event) =>
-      @updateVcsStatus(repo) if @path is event.path
+      @updateVcsStatus(repo, event.pathStatus) if event.path is @path
     @subscriptions.add repo.onDidChangeStatuses =>
       @updateVcsStatus(repo)
 
@@ -206,14 +206,14 @@ class TabView extends HTMLElement
     null
 
   # Update the VCS status property of this tab using the repo.
-  updateVcsStatus: (repo) ->
+  updateVcsStatus: (repo, status) ->
     return unless repo?
 
     newStatus = null
     if repo.isPathIgnored(@path)
       newStatus = 'ignored'
     else
-      status = repo.getCachedPathStatus(@path)
+      status = repo.getCachedPathStatus(@path) unless status?
       if repo.isStatusModified(status)
         newStatus = 'modified'
       else if repo.isStatusNew(status)
