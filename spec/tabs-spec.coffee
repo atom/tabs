@@ -891,23 +891,53 @@ describe "TabBarView", ->
           expect($(tabBar.tabForItem(imageView)).find('.title')).toHaveClass 'temp'
 
   describe "integration with version control systems", ->
-    [repository, tab] = []
+    [repository, tab, tab1] = []
 
     beforeEach ->
       atom.config.set "tabs.enableVcsColoring", true
-      tab = tabBar.tabAtIndex 1
-      repository = atom.project.getRepo()
-      spyOn(repository, 'isPathIgnored')
-      spyOn(repository, 'getCachedPathStatus')
-      repository.getCachedPathStatus.andReturn 128
+
+      tab = tabBar.tabForItem editor1
+      spyOn(tab, 'setupVcsStatus').andCallThrough()
+      spyOn(tab, 'updateVcsStatus').andCallThrough()
+
+      tab1 = tabBar.tabForItem item1
+      tab1.path = '/some/path/outside/the/repository'
+      spyOn(tab1, 'updateVcsStatus').andCallThrough()
+
+      # Mock the repository
+      repository = jasmine.createSpyObj 'repo', ['isPathIgnored', 'getCachedPathStatus', 'isStatusNew', 'isStatusModified']
+      repository.isStatusNew.andCallFake (status) -> status is 'new'
+      repository.isStatusModified.andCallFake (status) -> status is 'modified'
+
+      repository.onDidChangeStatus = (callback) ->
+        @changeStatusCallbacks ?= []
+        @changeStatusCallbacks.push(callback)
+        dispose: => _.remove(@changeStatusCallbacks, callback)
+      repository.emitDidChangeStatus = (event) ->
+        callback(event) for callback in @changeStatusCallbacks ? []
+
+      repository.onDidChangeStatuses = (callback) ->
+        @changeStatusesCallbacks ?= []
+        @changeStatusesCallbacks.push(callback)
+        dispose: => _.remove(@changeStatusesCallbacks, callback)
+      repository.emitDidChangeStatuses = (event) ->
+        callback(event) for callback in @changeStatusesCallbacks ? []
+
+      # Mock atom.project to simulate we are working with a repository
+      spyOn(atom.project, 'getPaths').andReturn [tab.path]
+      spyOn(atom.project, 'getRepositories').andReturn [repository]
+
+      tab.setupVcsStatus()
+      tab1.setupVcsStatus()
 
     describe "when working inside a VCS repository", ->
       it "adds custom style for new items", ->
+        repository.getCachedPathStatus.andReturn 'new'
         tab.updateVcsStatus(repository)
         expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
 
       it "adds custom style for modified items", ->
-        repository.getCachedPathStatus.andReturn 256
+        repository.getCachedPathStatus.andReturn 'modified'
         tab.updateVcsStatus(repository)
         expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
 
@@ -917,57 +947,51 @@ describe "TabBarView", ->
         expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-ignored"
 
       it "does not add any styles for items not in the repository", ->
-        tab = tabBar.tabForItem(item1)
-        tab.path = '/some/path'
-        tab.setupVcsStatus()
-
         expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-added"
         expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-modified"
         expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-ignored"
 
     describe "when changes in item statuses are notified", ->
       it "updates status for items in the repository", ->
-        spyOn(tab, 'updateVcsStatus').andCallThrough()
-        expect(tab.updateVcsStatus.calls.length).toEqual 0
-        repository.emitter.emit 'did-change-statuses'
+        tab.updateVcsStatus.reset()
+        repository.emitDidChangeStatuses()
         expect(tab.updateVcsStatus.calls.length).toEqual 1
 
       it "updates the status of an item if it has changed", ->
+        repository.getCachedPathStatus.reset()
         expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
-        repository.emitter.emit 'did-change-status', {path: tab.path, pathStatus: 256}
+        repository.emitDidChangeStatus {path: tab.path, pathStatus: "modified"}
         expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
         expect(repository.getCachedPathStatus.calls.length).toBe 0
 
       it "does not update status for items not in the repository", ->
-        tab = tabBar.tabForItem(item1)
-        tab.path = '/some/path'
-        tab.setupVcsStatus()
-
-        spyOn(tab, 'updateVcsStatus').andCallThrough()
-        repository.emitter.emit 'did-change-statuses'
-        expect(tab.updateVcsStatus.calls.length).toEqual 0
+        tab1.updateVcsStatus.reset()
+        repository.emitDidChangeStatuses()
+        expect(tab1.updateVcsStatus.calls.length).toEqual 0
 
     describe "when an item is saved", ->
       it "does not update VCS subscription if the item's path remains the same", ->
-        spyOn(tab, 'setupVcsStatus').andCallThrough()
-        tab.item.buffer.emitter.emit( 'did-save', {path: tab.path})
+        tab.setupVcsStatus.reset()
+        tab.item.buffer.emitter.emit 'did-save', {path: tab.path}
         expect(tab.setupVcsStatus.calls.length).toBe 0
 
       it "updates VCS subscription if the item's path has changed", ->
-        spyOn(tab, 'setupVcsStatus').andCallThrough()
-        tab.item.buffer.emitter.emit( 'did-save', {path: '/some/other/path'})
+        tab.setupVcsStatus.reset()
+        tab.item.buffer.emitter.emit 'did-save', {path: '/some/other/path'}
         expect(tab.setupVcsStatus.calls.length).toBe 1
 
     describe "when enableVcsColoring changes in package settings", ->
       it "removes status from the tab if enableVcsColoring is set to false", ->
-        tab.setupVcsStatus()
+        repository.emitDidChangeStatus {path: tab.path, pathStatus: 'new'}
+
         expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
         atom.config.set "tabs.enableVcsColoring", false
         expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-added"
 
       it "adds status to the tab if enableVcsColoring is set to true", ->
         atom.config.set "tabs.enableVcsColoring", false
-        tab.setupVcsStatus()
-        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-added"
+        repository.emitDidChangeStatus {path: tab.path, pathStatus: 'modified'}
+
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
         atom.config.set "tabs.enableVcsColoring", true
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
