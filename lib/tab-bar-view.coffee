@@ -17,6 +17,13 @@ class TabBarView extends View
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
       'tabs:keep-preview-tab': => @clearPreviewTabs()
 
+    @subscriptions.add atom.commands.add 'atom-workspace',
+      'tabs:close-tab': => @closeTab()
+      'tabs:close-other-tabs': => @closeOtherTabs()
+      'tabs:close-tabs-to-right': => @closeTabsToRight()
+      'tabs:close-saved-tabs': => @closeSavedTabs()
+      'tabs:close-all-tabs': => @closeAllTabs()
+
     @subscriptions.add atom.commands.add @element,
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
@@ -164,7 +171,8 @@ class TabBarView extends View
 
   closeTab: (tab) ->
     tab ?= @children('.right-clicked')[0]
-    @pane.destroyItem(tab.item)
+    tab ?= @tabForItem(@pane.getActiveItem())
+    @pane.destroyItem(tab.item) if tab?
 
   splitTab: (fn) ->
     if item = @children('.right-clicked')[0]?.item
@@ -177,12 +185,14 @@ class TabBarView extends View
   closeOtherTabs: ->
     tabs = @getTabs()
     active = @children('.right-clicked')[0]
+    active ?= @tabForItem(@pane.getActiveItem())
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: ->
     tabs = @getTabs()
     active = @children('.right-clicked')[0]
+    active ?= @tabForItem(@pane.getActiveItem())
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
