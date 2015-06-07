@@ -1,9 +1,14 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
+{CompositeDisposable} = require 'atom'
 
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
+    @path = @item.getPath?()
+
+    @subscriptions = new CompositeDisposable()
+
     @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and typeof @item.getPath is 'function'
 
     @classList.add('tab', 'sortable')
@@ -22,6 +27,7 @@ class TabView extends HTMLElement
     @updateIcon()
     @updateModifiedStatus()
     @setupTooltip()
+    @setupVcsStatus()
 
     if @isPreviewTab
       @itemTitle.classList.add('temp')
@@ -65,8 +71,18 @@ class TabView extends HTMLElement
       @modifiedSubscription = dispose: =>
         @item.off?('modified-status-changed', modifiedHandler)
 
+    itemSavedHandler = (event) =>
+      if @path isnt event.path
+        @path = event.path
+        @setupVcsStatus()
+
+    @savedSubscription = @item.buffer?.onDidSave(itemSavedHandler)
+
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
+
+    @vcsConfigSubscription = atom.config.observe 'tabs.enableVcsColoring', =>
+      @updateVcsColoring()
 
   setupTooltip: ->
     # Defer creating the tooltip until the tab is moused over
@@ -89,9 +105,9 @@ class TabView extends HTMLElement
 
     @destroyTooltip()
 
-    if itemPath = @item.getPath?()
+    if @path
       @tooltip = atom.tooltips.add this,
-        title: itemPath
+        title: @path
         html: false
         delay:
           show: 1000
@@ -108,13 +124,16 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
+    @vcsConfigSubscription?.dispose()
+    @savedSubscription?.dispose()
+    @subscriptions?.dispose()
     @destroyTooltip()
     @remove()
 
   updateDataAttributes: ->
-    if itemPath = @item.getPath?()
-      @itemTitle.dataset.name = path.basename(itemPath)
-      @itemTitle.dataset.path = itemPath
+    if @path
+      @itemTitle.dataset.name = path.basename(@path)
+      @itemTitle.dataset.path = @path
     else
       delete @itemTitle.dataset.name
       delete @itemTitle.dataset.path
@@ -174,5 +193,52 @@ class TabView extends HTMLElement
     else
       @classList.remove('modified') if @isModified
       @isModified = false
+
+  setupVcsStatus: ->
+    return unless @path?
+    repo = @repoForPath(@path)
+    @subscribeToRepo(repo)
+    @updateVcsStatus(repo)
+
+  # Subscribe to the project's repo for changes to the VCS status of the file.
+  subscribeToRepo: (repo) ->
+    return unless repo?
+
+    # Remove previous repo subscriptions.
+    @subscriptions?.dispose()
+
+    @subscriptions.add repo.onDidChangeStatus (event) =>
+      @updateVcsStatus(repo, event.pathStatus) if event.path is @path
+    @subscriptions.add repo.onDidChangeStatuses =>
+      @updateVcsStatus(repo)
+
+  repoForPath: (goalPath) ->
+    for projectPath, i in atom.project.getPaths()
+      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
+        return atom.project.getRepositories()[i]
+    null
+
+  # Update the VCS status property of this tab using the repo.
+  updateVcsStatus: (repo, status) ->
+    return unless repo?
+
+    newStatus = null
+    if repo.isPathIgnored(@path)
+      newStatus = 'ignored'
+    else
+      status = repo.getCachedPathStatus(@path) unless status?
+      if repo.isStatusModified(status)
+        newStatus = 'modified'
+      else if repo.isStatusNew(status)
+        newStatus = 'added'
+
+    if newStatus isnt @status
+      @status = newStatus
+      @updateVcsColoring()
+
+  updateVcsColoring: ->
+    @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
+    if @status and atom.config.get 'tabs.enableVcsColoring'
+      @itemTitle.classList.add("status-#{@status}")
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
