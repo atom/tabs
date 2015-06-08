@@ -7,7 +7,7 @@ class TabView extends HTMLElement
   initialize: (@item) ->
     @path = @item.getPath?()
 
-    @subscriptions = new CompositeDisposable()
+    @repoSubscriptions = new CompositeDisposable()
 
     @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and typeof @item.getPath is 'function'
 
@@ -126,7 +126,7 @@ class TabView extends HTMLElement
     @configSubscription?.dispose()
     @vcsConfigSubscription?.dispose()
     @savedSubscription?.dispose()
-    @subscriptions?.dispose()
+    @repoSubscriptions?.dispose()
     @destroyTooltip()
     @remove()
 
@@ -205,11 +205,11 @@ class TabView extends HTMLElement
     return unless repo?
 
     # Remove previous repo subscriptions.
-    @subscriptions?.dispose()
+    @repoSubscriptions?.dispose()
 
-    @subscriptions.add repo.onDidChangeStatus (event) =>
+    @repoSubscriptions.add repo.onDidChangeStatus (event) =>
       @updateVcsStatus(repo, event.pathStatus) if event.path is @path
-    @subscriptions.add repo.onDidChangeStatuses =>
+    @repoSubscriptions.add repo.onDidChangeStatuses =>
       @updateVcsStatus(repo)
 
   repoForPath: (goalPath) ->
