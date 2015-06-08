@@ -165,7 +165,6 @@ class TabBarView extends View
       tabView.classList.add('active')
 
   getActiveTab: ->
-    console.log @pane.getActiveItem(), @tabForItem(@pane.getActiveItem())
     @tabForItem(@pane.getActiveItem())
 
   updateActiveTab: ->
