@@ -432,29 +432,29 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
   describe "command palette commands", ->
-    workspaceElement = null
+    paneElement = null
 
     beforeEach ->
-      workspaceElement = atom.views.getView(atom.workspace)
+      paneElement = atom.views.getView(pane)
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
-        atom.commands.dispatch(workspaceElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
         expect(tabBar.getTabs().length).toBe 2
         expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
 
       it "does nothing if no tabs are open", ->
-        atom.commands.dispatch(workspaceElement, 'tabs:close-tab')
-        atom.commands.dispatch(workspaceElement, 'tabs:close-tab')
-        atom.commands.dispatch(workspaceElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 0
         expect(tabBar.getTabs().length).toBe 0
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
-        atom.commands.dispatch(workspaceElement, 'tabs:close-other-tabs')
+        atom.commands.dispatch(paneElement, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
         expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
@@ -463,7 +463,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
-        atom.commands.dispatch(workspaceElement, 'tabs:close-tabs-to-right')
+        atom.commands.dispatch(paneElement, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
         expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
@@ -472,13 +472,13 @@ describe "TabBarView", ->
     describe "when tabs:close-all-tabs is fired", ->
       it "closes all the tabs", ->
         expect(pane.getItems().length).toBeGreaterThan 0
-        atom.commands.dispatch(workspaceElement, 'tabs:close-all-tabs')
+        atom.commands.dispatch(paneElement, 'tabs:close-all-tabs')
         expect(pane.getItems().length).toBe 0
 
     describe "when tabs:close-saved-tabs is fired", ->
       it "closes all the saved tabs", ->
         item1.isModified = -> true
-        atom.commands.dispatch(workspaceElement, 'tabs:close-saved-tabs')
+        atom.commands.dispatch(paneElement, 'tabs:close-saved-tabs')
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 

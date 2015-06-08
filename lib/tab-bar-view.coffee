@@ -16,8 +16,6 @@ class TabBarView extends View
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
       'tabs:keep-preview-tab': => @clearPreviewTabs()
-
-    @subscriptions.add atom.commands.add 'atom-workspace',
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
@@ -167,6 +165,7 @@ class TabBarView extends View
       tabView.classList.add('active')
 
   getActiveTab: ->
+    console.log @pane.getActiveItem(), @tabForItem(@pane.getActiveItem())
     @tabForItem(@pane.getActiveItem())
 
   updateActiveTab: ->
