@@ -1,6 +1,7 @@
 {$, View}  = require 'atom-space-pen-views'
 _ = require 'underscore-plus'
 path = require 'path'
+temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
 {triggerMouseDownEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
@@ -431,6 +432,57 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[0]).toBe pane
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
+  describe "command palette commands", ->
+    paneElement = null
+
+    beforeEach ->
+      paneElement = atom.views.getView(pane)
+
+    describe "when tabs:close-tab is fired", ->
+      it "closes the active tab", ->
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        expect(pane.getItems().length).toBe 2
+        expect(pane.getItems().indexOf(item2)).toBe -1
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+
+      it "does nothing if no tabs are open", ->
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        expect(pane.getItems().length).toBe 0
+        expect(tabBar.getTabs().length).toBe 0
+
+    describe "when tabs:close-other-tabs is fired", ->
+      it "closes all other tabs except the active tab", ->
+        atom.commands.dispatch(paneElement, 'tabs:close-other-tabs')
+        expect(pane.getItems().length).toBe 1
+        expect(tabBar.getTabs().length).toBe 1
+        expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+
+    describe "when tabs:close-tabs-to-right is fired", ->
+      it "closes only the tabs to the right of the active tab", ->
+        pane.activateItem(editor1)
+        atom.commands.dispatch(paneElement, 'tabs:close-tabs-to-right')
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
+
+    describe "when tabs:close-all-tabs is fired", ->
+      it "closes all the tabs", ->
+        expect(pane.getItems().length).toBeGreaterThan 0
+        atom.commands.dispatch(paneElement, 'tabs:close-all-tabs')
+        expect(pane.getItems().length).toBe 0
+
+    describe "when tabs:close-saved-tabs is fired", ->
+      it "closes all the saved tabs", ->
+        item1.isModified = -> true
+        atom.commands.dispatch(paneElement, 'tabs:close-saved-tabs')
+        expect(pane.getItems().length).toBe 1
+        expect(pane.getItems()[0]).toBe item1
+
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->
@@ -840,6 +892,18 @@ describe "TabBarView", ->
         runs ->
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
+    describe 'when saving a file', ->
+      it 'makes the tab permanent', ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt')).then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            editor1.save()
+
+        runs ->
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
     describe 'when switching from a preview tab to a permanent tab', ->
       it "keeps the preview tab open", ->
         atom.config.set("tabs.usePreviewTabs", false)
@@ -875,6 +939,21 @@ describe "TabBarView", ->
           pane.activateItem(editor1)
           pane2 = pane.splitRight(copyActiveItem: true)
           tabBar2 = new TabBarView(pane2)
+
+          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
+
+    describe "when dragging a preview tab to a different pane", ->
+      it "makes the tab permanent in the other pane", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          pane2 = pane.splitRight()
+
+          tabBar2 = new TabBarView(pane2)
+          tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
 
           expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
 

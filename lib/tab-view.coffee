@@ -72,11 +72,13 @@ class TabView extends HTMLElement
         @item.off?('modified-status-changed', modifiedHandler)
 
     itemSavedHandler = (event) =>
+      @clearPreview()
       if @path isnt event.path
         @path = event.path
         @setupVcsStatus()
 
-    @savedSubscription = @item.buffer?.onDidSave(itemSavedHandler)
+    if typeof @item.onDidSave is 'function'
+      @saveSubscription = @item.onDidSave(itemSavedHandler)
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
@@ -124,9 +126,9 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
-    @vcsConfigSubscription?.dispose()
-    @savedSubscription?.dispose()
+    @saveSubscription?.dispose()
     @repoSubscriptions?.dispose()
+    @vcsConfigSubscription?.dispose()
     @destroyTooltip()
     @remove()
 
