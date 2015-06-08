@@ -1,6 +1,7 @@
 {$, View}  = require 'atom-space-pen-views'
 _ = require 'underscore-plus'
 path = require 'path'
+temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
 {triggerMouseDownEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
@@ -887,6 +888,18 @@ describe "TabBarView", ->
             pane.activateItem(editor1)
             editor1.insertText('x')
             advanceClock(editor1.buffer.stoppedChangingDelay)
+
+        runs ->
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when saving a file', ->
+      it 'makes the tab permanent', ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt')).then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            editor1.save()
 
         runs ->
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'

@@ -54,6 +54,9 @@ class TabView extends HTMLElement
       @iconSubscription = dispose: =>
         @item.off?('icon-changed', iconChangedHandler)
 
+    if typeof @item.onDidSave is 'function'
+      @saveSubscription = @item.onDidSave => @clearPreview()
+
     modifiedHandler = =>
       @updateModifiedStatus()
 
@@ -108,6 +111,7 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
+    @saveSubscription?.dispose()
     @destroyTooltip()
     @remove()
 
