@@ -122,6 +122,7 @@ class TabBarView extends View
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
+    tabView.clearPreview() if @isItemMovingBetweenPanes
     @storePreviewTabToDestroy() if tabView.isPreviewTab
     @insertTabAtIndex(tabView, index)
 
@@ -369,13 +370,17 @@ class TabBarView extends View
     null
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
-    if toPane is fromPane
-      toIndex-- if fromIndex < toIndex
-      toPane.moveItem(item, toIndex)
-    else
-      fromPane.moveItemToPane(item, toPane, toIndex--)
-    toPane.activateItem(item)
-    toPane.activate()
+    try
+      if toPane is fromPane
+        toIndex-- if fromIndex < toIndex
+        toPane.moveItem(item, toIndex)
+      else
+        @isItemMovingBetweenPanes = true
+        fromPane.moveItemToPane(item, toPane, toIndex--)
+      toPane.activateItem(item)
+      toPane.activate()
+    finally
+      @isItemMovingBetweenPanes = false
 
   removeDropTargetClasses: ->
     workspaceElement = $(atom.views.getView(atom.workspace))

@@ -942,6 +942,21 @@ describe "TabBarView", ->
 
           expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
 
+    describe "when dragging a preview tab to a different pane", ->
+      it "makes the tab permanent in the other pane", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          pane2 = pane.splitRight()
+
+          tabBar2 = new TabBarView(pane2)
+          tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
+
+          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
+
     describe "when a non-text file is opened", ->
       it "opens a preview tab", ->
         imageView = null
