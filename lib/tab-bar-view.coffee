@@ -102,6 +102,8 @@ class TabBarView extends View
     clearPreviewTabForFile = ({target}) =>
       return unless @pane.isFocused()
 
+      target = target.querySelector('[data-path]') unless target.dataset.path
+
       if itemPath = target.dataset.path
         @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
 
