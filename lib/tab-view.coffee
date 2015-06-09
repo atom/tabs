@@ -7,8 +7,6 @@ class TabView extends HTMLElement
   initialize: (@item) ->
     @path = @item.getPath?()
 
-    @repoSubscriptions = new CompositeDisposable()
-
     @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and typeof @item.getPath is 'function'
 
     @classList.add('tab', 'sortable')
@@ -27,7 +25,6 @@ class TabView extends HTMLElement
     @updateIcon()
     @updateModifiedStatus()
     @setupTooltip()
-    @setupVcsStatus()
 
     if @isPreviewTab
       @itemTitle.classList.add('temp')
@@ -73,9 +70,9 @@ class TabView extends HTMLElement
 
     itemSavedHandler = (event) =>
       @clearPreview()
-      if @path isnt event.path
+      if event.path isnt @path
         @path = event.path
-        @setupVcsStatus()
+        @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
 
     if typeof @item.onDidSave is 'function'
       @saveSubscription = @item.onDidSave(itemSavedHandler)
@@ -83,8 +80,8 @@ class TabView extends HTMLElement
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
 
-    @vcsConfigSubscription = atom.config.observe 'tabs.enableVcsColoring', =>
-      @updateVcsColoring()
+    @vcsConfigSubscription = atom.config.observe 'tabs.enableVcsColoring', (isEnabled) =>
+      if isEnabled and @path? then @setupVcsStatus() else @unsetVcsStatus()
 
   setupTooltip: ->
     # Defer creating the tooltip until the tab is moused over
@@ -207,7 +204,10 @@ class TabView extends HTMLElement
     return unless repo?
 
     # Remove previous repo subscriptions.
-    @repoSubscriptions?.dispose()
+    if @repoSubscriptions?
+      @repoSubscriptions.dispose()
+    else
+      @repoSubscriptions = new CompositeDisposable()
 
     @repoSubscriptions.add repo.onDidChangeStatus (event) =>
       @updateVcsStatus(repo, event.pathStatus) if event.path is @path
@@ -242,5 +242,10 @@ class TabView extends HTMLElement
     @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
     if @status and atom.config.get 'tabs.enableVcsColoring'
       @itemTitle.classList.add("status-#{@status}")
+
+  unsetVcsStatus: ->
+    @repoSubscriptions?.dispose()
+    delete @status
+    @updateVcsColoring()
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')

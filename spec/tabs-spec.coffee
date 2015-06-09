@@ -1069,7 +1069,7 @@ describe "TabBarView", ->
 
       it "adds status to the tab if enableVcsColoring is set to true", ->
         atom.config.set "tabs.enableVcsColoring", false
-        repository.emitDidChangeStatus {path: tab.path, pathStatus: 'modified'}
+        repository.getCachedPathStatus.andReturn 'modified'
 
         expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
         atom.config.set "tabs.enableVcsColoring", true
