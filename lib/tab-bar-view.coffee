@@ -63,6 +63,8 @@ class TabBarView extends View
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
+    @handleTreeViewEvents()
+
     @updateActiveTab()
 
     @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
@@ -94,6 +96,20 @@ class TabBarView extends View
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
+
+  handleTreeViewEvents: ->
+    treeViewSelector = '.tree-view li[is=tree-view-file]'
+    clearPreviewTabForFile = ({target}) =>
+      return unless @pane.isFocused()
+
+      target = target.querySelector('[data-path]') unless target.dataset.path
+
+      if itemPath = target.dataset.path
+        @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
+
+    $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
+    @subscriptions.add dispose: ->
+      $(document.body).off('dblclick', treeViewSelector, clearPreviewTabForFile)
 
   setInitialPreviewTab: (previewTabURI) ->
     for tab in @getTabs() when tab.isPreviewTab

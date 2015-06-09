@@ -969,6 +969,36 @@ describe "TabBarView", ->
           expect(tabBar.tabForItem(imageView)).toExist()
           expect($(tabBar.tabForItem(imageView)).find('.title')).toHaveClass 'temp'
 
+    describe "when double clicking a file in the tree view", ->
+      it "makes the tab for that file permanent", ->
+        editor1 = null
+        workspaceElement = atom.views.getView(atom.workspace)
+        jasmine.attachToDOM(workspaceElement)
+
+        waitsForPromise ->
+          atom.packages.activatePackage('tree-view')
+
+        runs ->
+          atom.commands.dispatch(workspaceElement, 'tree-view:show')
+
+        waitsFor ->
+          workspaceElement.querySelector('.tree-view')
+
+        waitsForPromise ->
+          atom.project.open('sample.js').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+
+          expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
+
+          fileNode = workspaceElement.querySelector(".tree-view [data-path=\"#{path.join(__dirname, 'fixtures', 'sample.js')}\"]")
+          fileNode.dispatchEvent(new MouseEvent('click', detail: 1, bubbles: true, cancelable: true))
+          fileNode.dispatchEvent(new MouseEvent('click', detail: 2, bubbles: true, cancelable: true))
+          fileNode.dispatchEvent(new MouseEvent('dblclick', detail: 2, bubbles: true, cancelable: true))
+
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
   describe "integration with version control systems", ->
     [repository, tab, tab1] = []
 
