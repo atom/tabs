@@ -20,7 +20,7 @@ module.exports =
     enableVcsColoring:
       title: "Enable VCS Coloring"
       type: 'boolean'
-      default: true
+      default: false
 
   activate: (state) ->
     state = [] unless Array.isArray(state)
