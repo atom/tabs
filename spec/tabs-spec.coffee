@@ -351,6 +351,10 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
+    beforeEach ->
+      paneElement = atom.views.getView(pane)
+      paneElement.insertBefore(tabBar.element, paneElement.firstChild)
+
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
         triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)

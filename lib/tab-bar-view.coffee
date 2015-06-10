@@ -22,7 +22,16 @@ class TabBarView extends View
       'tabs:close-saved-tabs': => @closeSavedTabs()
       'tabs:close-all-tabs': => @closeAllTabs()
 
-    @subscriptions.add atom.commands.add @element,
+    addElementCommands = (commands) =>
+      commandsWithPropagationStopped = {}
+      Object.keys(commands).forEach (name) ->
+        commandsWithPropagationStopped[name] = (event) ->
+          event.stopPropagation()
+          commands[name]()
+
+      @subscriptions.add(atom.commands.add(@element, commandsWithPropagationStopped))
+
+    addElementCommands
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
       'tabs:close-tabs-to-right': => @closeTabsToRight()
