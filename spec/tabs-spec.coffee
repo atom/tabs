@@ -191,7 +191,12 @@ describe "TabBarView", ->
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
-      expect(pane.activate.callCount).toBe 2
+      # Pane activation is delayed because focus is stolen by the tab bar
+      # immediately afterward unless propagation of the mousedown event is
+      # stopped. But stopping propagation of the mousedown event prevents the
+      # dragstart event from occurring.
+      waits(1)
+      runs -> expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
       event = triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 2)

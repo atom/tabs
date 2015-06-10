@@ -84,7 +84,7 @@ class TabBarView extends View
         false
       else if which is 1 and not target.classList.contains('close-icon')
         @pane.activateItem(tab.item)
-        @pane.activate()
+        setImmediate => @pane.activate()
         true
       else if which is 2
         @pane.destroyItem(tab.item)
