@@ -191,7 +191,12 @@ describe "TabBarView", ->
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
-      expect(pane.activate.callCount).toBe 2
+      # Pane activation is delayed because focus is stolen by the tab bar
+      # immediately afterward unless propagation of the mousedown event is
+      # stopped. But stopping propagation of the mousedown event prevents the
+      # dragstart event from occurring.
+      waits(1)
+      runs -> expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
       event = triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 2)
@@ -351,6 +356,10 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
+    beforeEach ->
+      paneElement = atom.views.getView(pane)
+      paneElement.insertBefore(tabBar.element, paneElement.firstChild)
+
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
         triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
