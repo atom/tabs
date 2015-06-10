@@ -68,14 +68,12 @@ class TabView extends HTMLElement
       @modifiedSubscription = dispose: =>
         @item.off?('modified-status-changed', modifiedHandler)
 
-    itemSavedHandler = (event) =>
-      @clearPreview()
-      if event.path isnt @path
-        @path = event.path
-        @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
-
     if typeof @item.onDidSave is 'function'
-      @saveSubscription = @item.onDidSave(itemSavedHandler)
+      @saveSubscription = @item.onDidSave (event) =>
+        @clearPreview()
+        if event.path isnt @path
+          @path = event.path
+          @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
 
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
