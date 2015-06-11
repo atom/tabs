@@ -1,10 +1,13 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
+{CompositeDisposable} = require 'atom'
 
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item) ->
-    @isPreviewTab = atom.config.get('tabs.usePreviewTabs') and typeof @item.getPath is 'function'
+    if typeof @item.getPath is 'function'
+      @path = @item.getPath()
+      @isPreviewTab = atom.config.get('tabs.usePreviewTabs')
 
     @classList.add('tab', 'sortable')
 
@@ -15,6 +18,8 @@ class TabView extends HTMLElement
     closeIcon = document.createElement('div')
     closeIcon.classList.add('close-icon')
     @appendChild(closeIcon)
+
+    @subscriptions = new CompositeDisposable()
 
     @handleEvents()
     @updateDataAttributes()
@@ -35,41 +40,48 @@ class TabView extends HTMLElement
       @updateTooltip()
 
     if typeof @item.onDidChangeTitle is 'function'
-      @titleSubscription = @item.onDidChangeTitle(titleChangedHandler)
+      @subscriptions.add @item.onDidChangeTitle(titleChangedHandler)
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('title-changed', titleChangedHandler)
-      @titleSubscription = dispose: =>
+      @subscriptions.add dispose: =>
         @item.off?('title-changed', titleChangedHandler)
 
     iconChangedHandler = =>
       @updateIcon()
 
     if typeof @item.onDidChangeIcon is 'function'
-      @iconSubscription = @item.onDidChangeIcon? =>
+      @subscriptions.add @item.onDidChangeIcon? =>
         @updateIcon()
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('icon-changed', iconChangedHandler)
-      @iconSubscription = dispose: =>
+      @subscriptions.add dispose: =>
         @item.off?('icon-changed', iconChangedHandler)
-
-    if typeof @item.onDidSave is 'function'
-      @saveSubscription = @item.onDidSave => @clearPreview()
 
     modifiedHandler = =>
       @updateModifiedStatus()
 
     if typeof @item.onDidChangeModified is 'function'
-      @modifiedSubscription = @item.onDidChangeModified(modifiedHandler)
+      @subscriptions.add @item.onDidChangeModified(modifiedHandler)
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('modified-status-changed', modifiedHandler)
-      @modifiedSubscription = dispose: =>
+      @subscriptions.add dispose: =>
         @item.off?('modified-status-changed', modifiedHandler)
 
-    @configSubscription = atom.config.observe 'tabs.showIcons', =>
+    if typeof @item.onDidSave is 'function'
+      @subscriptions.add @item.onDidSave (event) =>
+        @clearPreview()
+        if event.path isnt @path
+          @path = event.path
+          @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
+
+    @subscriptions.add atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
+
+    @subscriptions.add atom.config.observe 'tabs.enableVcsColoring', (isEnabled) =>
+      if isEnabled and @path? then @setupVcsStatus() else @unsetVcsStatus()
 
   setupTooltip: ->
     # Defer creating the tooltip until the tab is moused over
@@ -92,9 +104,9 @@ class TabView extends HTMLElement
 
     @destroyTooltip()
 
-    if itemPath = @item.getPath?()
+    if @path
       @tooltip = atom.tooltips.add this,
-        title: itemPath
+        title: @path
         html: false
         delay:
           show: 1000
@@ -106,19 +118,16 @@ class TabView extends HTMLElement
     @tooltip?.dispose()
 
   destroy: ->
-    @titleSubscription?.dispose()
-    @modifiedSubscription?.dispose()
-    @iconSubscription?.dispose()
+    @subscriptions?.dispose()
     @mouseEnterSubscription?.dispose()
-    @configSubscription?.dispose()
-    @saveSubscription?.dispose()
+    @repoSubscriptions?.dispose()
     @destroyTooltip()
     @remove()
 
   updateDataAttributes: ->
-    if itemPath = @item.getPath?()
-      @itemTitle.dataset.name = path.basename(itemPath)
-      @itemTitle.dataset.path = itemPath
+    if @path
+      @itemTitle.dataset.name = path.basename(@path)
+      @itemTitle.dataset.path = @path
     else
       delete @itemTitle.dataset.name
       delete @itemTitle.dataset.path
@@ -178,5 +187,58 @@ class TabView extends HTMLElement
     else
       @classList.remove('modified') if @isModified
       @isModified = false
+
+  setupVcsStatus: ->
+    return unless @path?
+    repo = @repoForPath(@path)
+    @subscribeToRepo(repo)
+    @updateVcsStatus(repo)
+
+  # Subscribe to the project's repo for changes to the VCS status of the file.
+  subscribeToRepo: (repo) ->
+    return unless repo?
+
+    # Remove previous repo subscriptions.
+    @repoSubscriptions?.dispose()
+    @repoSubscriptions = new CompositeDisposable()
+
+    @repoSubscriptions.add repo.onDidChangeStatus (event) =>
+      @updateVcsStatus(repo, event.pathStatus) if event.path is @path
+    @repoSubscriptions.add repo.onDidChangeStatuses =>
+      @updateVcsStatus(repo)
+
+  repoForPath: (goalPath) ->
+    for projectPath, i in atom.project.getPaths()
+      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
+        return atom.project.getRepositories()[i]
+    null
+
+  # Update the VCS status property of this tab using the repo.
+  updateVcsStatus: (repo, status) ->
+    return unless repo?
+
+    newStatus = null
+    if repo.isPathIgnored(@path)
+      newStatus = 'ignored'
+    else
+      status = repo.getCachedPathStatus(@path) unless status?
+      if repo.isStatusModified(status)
+        newStatus = 'modified'
+      else if repo.isStatusNew(status)
+        newStatus = 'added'
+
+    if newStatus isnt @status
+      @status = newStatus
+      @updateVcsColoring()
+
+  updateVcsColoring: ->
+    @itemTitle.classList.remove('status-ignored', 'status-modified',  'status-added')
+    if @status and atom.config.get 'tabs.enableVcsColoring'
+      @itemTitle.classList.add("status-#{@status}")
+
+  unsetVcsStatus: ->
+    @repoSubscriptions?.dispose()
+    delete @status
+    @updateVcsColoring()
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')

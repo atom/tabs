@@ -17,6 +17,10 @@ module.exports =
       type: 'boolean'
       default: false
       description: 'Tabs will only stay open if they are modified or double-clicked'
+    enableVcsColoring:
+      title: "Enable VCS Coloring"
+      type: 'boolean'
+      default: false
 
   activate: (state) ->
     state = [] unless Array.isArray(state)
