@@ -40,34 +40,34 @@ class TabView extends HTMLElement
       @updateTooltip()
 
     if typeof @item.onDidChangeTitle is 'function'
-      @titleSubscription = @item.onDidChangeTitle(titleChangedHandler)
+      @subscriptions.add @item.onDidChangeTitle(titleChangedHandler)
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('title-changed', titleChangedHandler)
-      @titleSubscription = dispose: =>
+      @subscriptions.add dispose: =>
         @item.off?('title-changed', titleChangedHandler)
 
     iconChangedHandler = =>
       @updateIcon()
 
     if typeof @item.onDidChangeIcon is 'function'
-      @iconSubscription = @item.onDidChangeIcon? =>
+      @subscriptions.add @item.onDidChangeIcon? =>
         @updateIcon()
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('icon-changed', iconChangedHandler)
-      @iconSubscription = dispose: =>
+      @subscriptions.add dispose: =>
         @item.off?('icon-changed', iconChangedHandler)
 
     modifiedHandler = =>
       @updateModifiedStatus()
 
     if typeof @item.onDidChangeModified is 'function'
-      @modifiedSubscription = @item.onDidChangeModified(modifiedHandler)
+      @subscriptions.add @item.onDidChangeModified(modifiedHandler)
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('modified-status-changed', modifiedHandler)
-      @modifiedSubscription = dispose: =>
+      @subscriptions.add dispose: =>
         @item.off?('modified-status-changed', modifiedHandler)
 
     if typeof @item.onDidSave is 'function'
@@ -77,7 +77,7 @@ class TabView extends HTMLElement
           @path = event.path
           @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
 
-    @configSubscription = atom.config.observe 'tabs.showIcons', =>
+    @subscriptions.add atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
 
     @subscriptions.add atom.config.observe 'tabs.enableVcsColoring', (isEnabled) =>
@@ -118,12 +118,8 @@ class TabView extends HTMLElement
     @tooltip?.dispose()
 
   destroy: ->
-    @titleSubscription?.dispose()
-    @modifiedSubscription?.dispose()
-    @iconSubscription?.dispose()
-    @mouseEnterSubscription?.dispose()
-    @configSubscription?.dispose()
     @subscriptions?.dispose()
+    @mouseEnterSubscription?.dispose()
     @repoSubscriptions?.dispose()
     @destroyTooltip()
     @remove()
