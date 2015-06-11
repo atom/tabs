@@ -202,10 +202,8 @@ class TabView extends HTMLElement
     return unless repo?
 
     # Remove previous repo subscriptions.
-    if @repoSubscriptions?
-      @repoSubscriptions.dispose()
-    else
-      @repoSubscriptions = new CompositeDisposable()
+    @repoSubscriptions?.dispose()
+    @repoSubscriptions = new CompositeDisposable()
 
     @repoSubscriptions.add repo.onDidChangeStatus (event) =>
       @updateVcsStatus(repo, event.pathStatus) if event.path is @path
