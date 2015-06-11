@@ -19,6 +19,8 @@ class TabView extends HTMLElement
     closeIcon.classList.add('close-icon')
     @appendChild(closeIcon)
 
+    @subscriptions = new CompositeDisposable()
+
     @handleEvents()
     @updateDataAttributes()
     @updateTitle()
@@ -69,7 +71,7 @@ class TabView extends HTMLElement
         @item.off?('modified-status-changed', modifiedHandler)
 
     if typeof @item.onDidSave is 'function'
-      @saveSubscription = @item.onDidSave (event) =>
+      @subscriptions.add @item.onDidSave (event) =>
         @clearPreview()
         if event.path isnt @path
           @path = event.path
@@ -78,7 +80,7 @@ class TabView extends HTMLElement
     @configSubscription = atom.config.observe 'tabs.showIcons', =>
       @updateIconVisibility()
 
-    @vcsConfigSubscription = atom.config.observe 'tabs.enableVcsColoring', (isEnabled) =>
+    @subscriptions.add atom.config.observe 'tabs.enableVcsColoring', (isEnabled) =>
       if isEnabled and @path? then @setupVcsStatus() else @unsetVcsStatus()
 
   setupTooltip: ->
@@ -121,9 +123,8 @@ class TabView extends HTMLElement
     @iconSubscription?.dispose()
     @mouseEnterSubscription?.dispose()
     @configSubscription?.dispose()
-    @saveSubscription?.dispose()
+    @subscriptions?.dispose()
     @repoSubscriptions?.dispose()
-    @vcsConfigSubscription?.dispose()
     @destroyTooltip()
     @remove()
 
