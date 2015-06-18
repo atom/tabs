@@ -1012,8 +1012,6 @@ describe "TabBarView", ->
     [repository, tab, tab1] = []
 
     beforeEach ->
-      atom.config.set "tabs.enableVcsColoring", true
-
       tab = tabBar.tabForItem editor1
       spyOn(tab, 'setupVcsStatus').andCallThrough()
       spyOn(tab, 'updateVcsStatus').andCallThrough()
@@ -1041,12 +1039,13 @@ describe "TabBarView", ->
       repository.emitDidChangeStatuses = (event) ->
         callback(event) for callback in @changeStatusesCallbacks ? []
 
-      # Mock atom.project to simulate we are working with a repository
-      spyOn(atom.project, 'getPaths').andReturn [tab.path]
-      spyOn(atom.project, 'getRepositories').andReturn [repository]
+      # Mock atom.project to pretend we are working within a repository
+      spyOn(atom.project, 'repositoryForDirectory').andReturn Promise.resolve(repository)
 
-      tab.setupVcsStatus()
-      tab1.setupVcsStatus()
+      atom.config.set "tabs.enableVcsColoring", true
+
+      waitsFor ->
+        repository.changeStatusCallbacks?.length > 0
 
     describe "when working inside a VCS repository", ->
       it "adds custom style for new items", ->
@@ -1109,7 +1108,11 @@ describe "TabBarView", ->
       it "adds status to the tab if enableVcsColoring is set to true", ->
         atom.config.set "tabs.enableVcsColoring", false
         repository.getCachedPathStatus.andReturn 'modified'
-
         expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
         atom.config.set "tabs.enableVcsColoring", true
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+
+        waitsFor ->
+          repository.changeStatusCallbacks?.length > 0
+
+        runs ->
+          expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
