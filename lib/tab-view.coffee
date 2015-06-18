@@ -190,9 +190,12 @@ class TabView extends HTMLElement
 
   setupVcsStatus: ->
     return unless @path?
-    repo = @repoForPath(@path)
-    @subscribeToRepo(repo)
-    @updateVcsStatus(repo)
+    @repoForPath(@path).then (repo) =>
+      @subscribeToRepo(repo)
+      @updateVcsStatus(repo)
+    .catch (err) ->
+      # We can only get here if repository is destroyed
+      # by the time the promise is resolved
 
   # Subscribe to the project's repo for changes to the VCS status of the file.
   subscribeToRepo: (repo) ->
@@ -207,11 +210,10 @@ class TabView extends HTMLElement
     @repoSubscriptions.add repo.onDidChangeStatuses =>
       @updateVcsStatus(repo)
 
-  repoForPath: (goalPath) ->
-    for projectPath, i in atom.project.getPaths()
-      if goalPath is projectPath or goalPath.indexOf(projectPath + path.sep) is 0
-        return atom.project.getRepositories()[i]
-    null
+  repoForPath: ->
+    for dir in atom.project.getDirectories()
+      return atom.project.repositoryForDirectory(dir) if dir.contains @path
+    Promise.resolve(null)
 
   # Update the VCS status property of this tab using the repo.
   updateVcsStatus: (repo, status) ->
