@@ -193,10 +193,6 @@ class TabView extends HTMLElement
     @repoForPath(@path).then (repo) =>
       @subscribeToRepo(repo)
       @updateVcsStatus(repo)
-    .catch (err) ->
-      # We can only get here if repository is destroyed
-      # by the time the promise is resolved.
-      # This happens during tests
 
   # Subscribe to the project's repo for changes to the VCS status of the file.
   subscribeToRepo: (repo) ->
