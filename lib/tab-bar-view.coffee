@@ -212,8 +212,8 @@ class TabBarView extends View
     else if typeof item.getUri is 'function'
       itemURI = item.getUri()
     return unless itemURI?
-    atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
     @closeTab(tab)
+    atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
   splitTab: (fn) ->
     if item = @children('.right-clicked')[0]?.item
       if copiedItem = @copyItem(item)
