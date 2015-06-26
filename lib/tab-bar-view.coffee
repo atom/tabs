@@ -434,7 +434,7 @@ class TabBarView extends View
 
     sortables = tabBar.find('.sortable')
     element = target.closest('.sortable')
-    element = sortables.last() if element.length == 0
+    element = sortables.last() if element.length is 0
 
     return 0 unless element.length
 
