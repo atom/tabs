@@ -447,7 +447,7 @@ describe "TabBarView", ->
         triggerMouseDownEvent(tabBar.tabForItem(item1), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
-        spyOn(atom,'open')
+        spyOn(atom, 'open')
         atom.commands.dispatch(tabBar.element, 'tabs:open-in-new-window')
         expect(atom.open).toHaveBeenCalled()
 
