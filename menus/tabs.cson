@@ -17,7 +17,9 @@
     
     {label: 'Open In New Window', command: 'tabs:open-in-new-window'}
   ]
-
+  '.tab.preview-tab': [
+    {label: 'Keep Preview Tab', command: 'tabs:keep-preview-tab'}
+  ]
   '.tab-bar': [
     {label: 'Reopen Closed Tab', command: 'pane:reopen-closed-item'}
   ]

@@ -11,10 +11,28 @@ class TabBarView extends View
   @content: ->
     @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
 
-  initialize: (@pane) ->
+  initialize: (@pane, state={}) ->
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add @element,
+    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+      'tabs:keep-preview-tab': => @clearPreviewTabs()
+      'tabs:close-tab': => @closeTab(@getActiveTab())
+      'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
+      'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
+      'tabs:close-saved-tabs': => @closeSavedTabs()
+      'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:open-in-new-window': => @openInNewWindow()
+
+    addElementCommands = (commands) =>
+      commandsWithPropagationStopped = {}
+      Object.keys(commands).forEach (name) ->
+        commandsWithPropagationStopped[name] = (event) ->
+          event.stopPropagation()
+          commands[name]()
+
+      @subscriptions.add(atom.commands.add(@element, commandsWithPropagationStopped))
+
+    addElementCommands
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
       'tabs:close-tabs-to-right': => @closeTabsToRight()
@@ -24,7 +42,6 @@ class TabBarView extends View
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
-      'tabs:open-in-new-window': => @openInNewWindow()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -34,6 +51,7 @@ class TabBarView extends View
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
+    @setInitialPreviewTab(state.previewTabURI)
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -47,12 +65,15 @@ class TabBarView extends View
     @subscriptions.add @pane.onDidRemoveItem ({item}) =>
       @removeTabForItem(item)
 
-    @subscriptions.add @pane.onDidChangeActiveItem =>
+    @subscriptions.add @pane.onDidChangeActiveItem (item) =>
+      @destroyPreviousPreviewTab()
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
+
+    @handleTreeViewEvents()
 
     @updateActiveTab()
 
@@ -64,7 +85,7 @@ class TabBarView extends View
         false
       else if which is 1 and not target.classList.contains('close-icon')
         @pane.activateItem(tab.item)
-        @pane.activate()
+        setImmediate => @pane.activate()
         true
       else if which is 2
         @pane.destroyItem(tab.item)
@@ -86,9 +107,49 @@ class TabBarView extends View
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
+  handleTreeViewEvents: ->
+    treeViewSelector = '.tree-view li[is=tree-view-file]'
+    clearPreviewTabForFile = ({target}) =>
+      return unless @pane.isFocused()
+
+      target = target.querySelector('[data-path]') unless target.dataset.path
+
+      if itemPath = target.dataset.path
+        @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
+
+    $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
+    @subscriptions.add dispose: ->
+      $(document.body).off('dblclick', treeViewSelector, clearPreviewTabForFile)
+
+  setInitialPreviewTab: (previewTabURI) ->
+    for tab in @getTabs() when tab.isPreviewTab
+      tab.clearPreview() if tab.item.getURI() isnt previewTabURI
+    return
+
+  getPreviewTabURI: ->
+    for tab in @getTabs() when tab.isPreviewTab
+      return tab.item.getURI()
+    return
+
+  clearPreviewTabs: ->
+    tab.clearPreview() for tab in @getTabs()
+    return
+
+  storePreviewTabToDestroy: ->
+    for tab in @getTabs() when tab.isPreviewTab
+      @previewTabToDestroy = tab
+    return
+
+  destroyPreviousPreviewTab: ->
+    if @previewTabToDestroy?.isPreviewTab
+      @pane.destroyItem(@previewTabToDestroy.item)
+    @previewTabToDestroy = null
+
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
+    tabView.clearPreview() if @isItemMovingBetweenPanes
+    @storePreviewTabToDestroy() if tabView.isPreviewTab
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
@@ -111,7 +172,7 @@ class TabBarView extends View
     @updateTabBarVisibility()
 
   updateTabBarVisibility: ->
-    if !atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
+    if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @element.classList.add('hidden')
     else
       @element.classList.remove('hidden')
@@ -130,13 +191,16 @@ class TabBarView extends View
       @element.querySelector('.tab.active')?.classList.remove('active')
       tabView.classList.add('active')
 
+  getActiveTab: ->
+    @tabForItem(@pane.getActiveItem())
+
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
   closeTab: (tab) ->
     tab ?= @children('.right-clicked')[0]
-    @pane.destroyItem(tab.item)
-    
+    @pane.destroyItem(tab.item) if tab?
+
   openInNewWindow: (tab) ->
     tab ?= @children('.right-clicked')[0]
     item = tab.item
@@ -150,7 +214,6 @@ class TabBarView extends View
     return unless itemURI?
     atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
     @closeTab(tab)
-
   splitTab: (fn) ->
     if item = @children('.right-clicked')[0]?.item
       if copiedItem = @copyItem(item)
@@ -159,15 +222,15 @@ class TabBarView extends View
   copyItem: (item) ->
     item.copy?() ? atom.deserializers.deserialize(item.serialize())
 
-  closeOtherTabs: ->
+  closeOtherTabs: (active) ->
     tabs = @getTabs()
-    active = @children('.right-clicked')[0]
+    active ?= @children('.right-clicked')[0]
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
-  closeTabsToRight: ->
+  closeTabsToRight: (active) ->
     tabs = @getTabs()
-    active = @children('.right-clicked')[0]
+    active ?= @children('.right-clicked')[0]
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
@@ -262,7 +325,6 @@ class TabBarView extends View
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
-        @droppedOnOtherWindow = true
 
     @clearDropTarget()
 
@@ -315,6 +377,8 @@ class TabBarView extends View
       atom.focus()
 
   onMouseWheel: ({originalEvent}) =>
+    return if originalEvent.shiftKey
+
     @wheelDelta ?= 0
     @wheelDelta += originalEvent.wheelDelta
 
@@ -345,13 +409,17 @@ class TabBarView extends View
     null
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
-    if toPane is fromPane
-      toIndex-- if fromIndex < toIndex
-      toPane.moveItem(item, toIndex)
-    else
-      fromPane.moveItemToPane(item, toPane, toIndex--)
-    toPane.activateItem(item)
-    toPane.activate()
+    try
+      if toPane is fromPane
+        toIndex-- if fromIndex < toIndex
+        toPane.moveItem(item, toIndex)
+      else
+        @isItemMovingBetweenPanes = true
+        fromPane.moveItemToPane(item, toPane, toIndex--)
+      toPane.activateItem(item)
+      toPane.activate()
+    finally
+      @isItemMovingBetweenPanes = false
 
   removeDropTargetClasses: ->
     workspaceElement = $(atom.views.getView(atom.workspace))

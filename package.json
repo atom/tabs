@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.68.0",
+  "version": "0.81.0",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "atom-space-pen-views": "^2.0.0",
+    "temp": "~0.8.1",
     "underscore-plus": "1.x"
+  },
+  "devDependencies": {
+    "coffeelint": "^1.9.7"
   }
 }

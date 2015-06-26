@@ -1,9 +1,10 @@
 {$, View}  = require 'atom-space-pen-views'
 _ = require 'underscore-plus'
 path = require 'path'
+temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
-{triggerMouseDownEvent, buildDragEvents, buildWheelEvent} = require "./event-helpers"
+{triggerMouseDownEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   workspaceElement = null
@@ -43,6 +44,27 @@ describe "Tabs package main", ->
       expect(workspaceElement.querySelectorAll('.pane').length).toBe 3
       expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
+    it "serializes preview tab state", ->
+      atom.config.set('tabs.usePreviewTabs', true)
+
+      waitsForPromise ->
+        atom.workspace.open('sample.txt')
+
+      runs ->
+        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
+        expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
+
+        atom.packages.deactivatePackage('tabs')
+
+        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 0
+
+      waitsForPromise ->
+        atom.packages.activatePackage('tabs')
+
+      runs ->
+        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
+        expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
+
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
 
@@ -54,7 +76,7 @@ describe "TabBarView", ->
     getLongTitle: -> @longTitle
     getURI: -> @pathURI
     getIconName: -> @iconName
-    serialize: -> { deserializer: 'TestView', @title, @longTitle, @iconName }
+    serialize: -> {deserializer: 'TestView', @title, @longTitle, @iconName}
     onDidChangeTitle: (callback) ->
       @titleCallbacks ?= []
       @titleCallbacks.push(callback)
@@ -170,7 +192,12 @@ describe "TabBarView", ->
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
-      expect(pane.activate.callCount).toBe 2
+      # Pane activation is delayed because focus is stolen by the tab bar
+      # immediately afterward unless propagation of the mousedown event is
+      # stopped. But stopping propagation of the mousedown event prevents the
+      # dragstart event from occurring.
+      waits(1)
+      runs -> expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
       event = triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 2)
@@ -330,6 +357,10 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
+    beforeEach ->
+      paneElement = atom.views.getView(pane)
+      paneElement.insertBefore(tabBar.element, paneElement.firstChild)
+
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
         triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
@@ -411,7 +442,13 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[0]).toBe pane
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
-    describe "when tabs:open-in-new-window is fired", ->
+  describe "command palette commands", ->
+    paneElement = null
+
+    beforeEach ->
+      paneElement = atom.views.getView(pane)
+
+   describe "when tabs:open-in-new-window is fired", ->
       it "opens new window, closes current tab", ->
         triggerMouseDownEvent(tabBar.tabForItem(item1), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
@@ -424,6 +461,51 @@ describe "TabBarView", ->
         expect(tabBar.getTabs().length).toBe 2
         expect(tabBar.find('.tab:contains(Item 2)')).toExist()
         expect(tabBar.find('.tab:contains(Item 1)')).not.toExist()
+
+    describe "when tabs:close-tab is fired", ->
+      it "closes the active tab", ->
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        expect(pane.getItems().length).toBe 2
+        expect(pane.getItems().indexOf(item2)).toBe -1
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+
+      it "does nothing if no tabs are open", ->
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        expect(pane.getItems().length).toBe 0
+        expect(tabBar.getTabs().length).toBe 0
+
+    describe "when tabs:close-other-tabs is fired", ->
+      it "closes all other tabs except the active tab", ->
+        atom.commands.dispatch(paneElement, 'tabs:close-other-tabs')
+        expect(pane.getItems().length).toBe 1
+        expect(tabBar.getTabs().length).toBe 1
+        expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+
+    describe "when tabs:close-tabs-to-right is fired", ->
+      it "closes only the tabs to the right of the active tab", ->
+        pane.activateItem(editor1)
+        atom.commands.dispatch(paneElement, 'tabs:close-tabs-to-right')
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
+
+    describe "when tabs:close-all-tabs is fired", ->
+      it "closes all the tabs", ->
+        expect(pane.getItems().length).toBeGreaterThan 0
+        atom.commands.dispatch(paneElement, 'tabs:close-all-tabs')
+        expect(pane.getItems().length).toBe 0
+
+    describe "when tabs:close-saved-tabs is fired", ->
+      it "closes all the saved tabs", ->
+        item1.isModified = -> true
+        atom.commands.dispatch(paneElement, 'tabs:close-saved-tabs')
+        expect(pane.getItems().length).toBe 1
+        expect(pane.getItems()[0]).toBe item1
 
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
@@ -675,6 +757,18 @@ describe "TabBarView", ->
           tabBar.trigger(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item1
 
+      describe "when the mouse wheel scrolls up and shift key is pressed", ->
+        it "does not change the active tab", ->
+          expect(pane.getActiveItem()).toBe item2
+          tabBar.trigger(buildWheelPlusShiftEvent(120))
+          expect(pane.getActiveItem()).toBe item2
+
+      describe "when the mouse wheel scrolls down and shift key is pressed", ->
+        it "does not change the active tab", ->
+          expect(pane.getActiveItem()).toBe item2
+          tabBar.trigger(buildWheelPlusShiftEvent(-120))
+          expect(pane.getActiveItem()).toBe item2
+
     describe "when tabScrolling is false in package settings", ->
       beforeEach ->
         atom.config.set("tabs.tabScrolling", false)
@@ -724,3 +818,313 @@ describe "TabBarView", ->
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
         expect(tabBar.element).toHaveClass 'hidden'
+
+  describe "when usePreviewTabs is true in package settings", ->
+    beforeEach ->
+      atom.config.set("tabs.usePreviewTabs", true)
+      pane.destroyItems()
+
+    describe "when opening a new tab", ->
+      it "adds tab with class 'temp'", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(tabBar.find('.tab .temp').length).toBe 1
+          expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+    describe "when tabs:keep-preview-tab is trigger on the pane", ->
+      it "removes the 'temp' class", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(tabBar.find('.tab .temp').length).toBe 1
+          atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-preview-tab')
+          expect(tabBar.find('.tab .temp').length).toBe 0
+
+    describe "when there is a temp tab already", ->
+      it "it will replace an existing temporary tab", ->
+        editor1 = null
+        editor2 = null
+
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            atom.project.open('sample2.txt').then (o) ->
+              editor2 = o
+              pane.activateItem(editor2)
+
+        runs ->
+          expect(editor1.isDestroyed()).toBe true
+          expect(editor2.isDestroyed()).toBe false
+          expect(tabBar.tabForItem(editor1)).not.toExist()
+          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
+      it 'makes the tab permanent when double clicking the tab', ->
+        editor2 = null
+
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor2 = o
+
+        runs ->
+          pane.activateItem(editor2)
+          dbclickEvt = document.createEvent 'MouseEvents'
+          dbclickEvt.initEvent 'dblclick'
+          tabBar.tabForItem(editor2).dispatchEvent dbclickEvt
+          expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when opening views that do not have file paths', ->
+      editor2 = null
+      settingsView = null
+
+      beforeEach ->
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) ->
+            editor2 = o
+            pane.activateItem(editor2)
+
+        waitsForPromise ->
+          atom.packages.activatePackage('settings-view').then ->
+            atom.workspace.open('atom://config').then (o) ->
+              settingsView = o
+              pane.activateItem(settingsView)
+
+      it 'creates a permanent tab', ->
+        expect(tabBar.tabForItem(settingsView)).toExist()
+        expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
+
+      it 'keeps an existing temp tab', ->
+        expect(tabBar.tabForItem(editor2)).toExist()
+        expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
+    describe 'when editing a file', ->
+      it 'makes the tab permanent', ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            editor1.insertText('x')
+            advanceClock(editor1.buffer.stoppedChangingDelay)
+
+        runs ->
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when saving a file', ->
+      it 'makes the tab permanent', ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt')).then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+            editor1.save()
+
+        runs ->
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+    describe 'when switching from a preview tab to a permanent tab', ->
+      it "keeps the preview tab open", ->
+        atom.config.set("tabs.usePreviewTabs", false)
+        editor1 = null
+        editor2 = null
+
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) ->
+            editor1 = o
+            pane.activateItem(editor1)
+
+        runs ->
+          atom.config.set("tabs.usePreviewTabs", true)
+
+        waitsForPromise ->
+          atom.workspace.open('sample2.txt').then (o) ->
+            editor2 = o
+            pane.activateItem(editor2)
+
+        runs ->
+          pane.activateItem(editor1)
+          expect(pane.getItems().length).toBe 2
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
+    describe "when splitting a preview tab", ->
+      it "makes the tab permanent in the new pane", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          pane2 = pane.splitRight(copyActiveItem: true)
+          tabBar2 = new TabBarView(pane2)
+
+          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
+
+    describe "when dragging a preview tab to a different pane", ->
+      it "makes the tab permanent in the other pane", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.project.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          pane2 = pane.splitRight()
+
+          tabBar2 = new TabBarView(pane2)
+          tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
+
+          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
+
+    describe "when a non-text file is opened", ->
+      it "opens a preview tab", ->
+        imageView = null
+        waitsForPromise ->
+          atom.workspace.open('sample.png').then (o) ->
+            imageView = o
+            pane.activateItem(imageView)
+
+        runs ->
+          expect(tabBar.tabForItem(imageView)).toExist()
+          expect($(tabBar.tabForItem(imageView)).find('.title')).toHaveClass 'temp'
+
+    describe "when double clicking a file in the tree view", ->
+      it "makes the tab for that file permanent", ->
+        editor1 = null
+        workspaceElement = atom.views.getView(atom.workspace)
+        jasmine.attachToDOM(workspaceElement)
+
+        waitsForPromise ->
+          atom.packages.activatePackage('tree-view')
+
+        runs ->
+          atom.commands.dispatch(workspaceElement, 'tree-view:show')
+
+        waitsFor ->
+          workspaceElement.querySelector('.tree-view')
+
+        waitsForPromise ->
+          atom.project.open('sample.js').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+
+          expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
+
+          fileNode = workspaceElement.querySelector(".tree-view [data-path=\"#{path.join(__dirname, 'fixtures', 'sample.js')}\"]")
+          fileNode.dispatchEvent(new MouseEvent('click', detail: 1, bubbles: true, cancelable: true))
+          fileNode.dispatchEvent(new MouseEvent('click', detail: 2, bubbles: true, cancelable: true))
+          fileNode.dispatchEvent(new MouseEvent('dblclick', detail: 2, bubbles: true, cancelable: true))
+
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+  describe "integration with version control systems", ->
+    [repository, tab, tab1] = []
+
+    beforeEach ->
+      atom.config.set "tabs.enableVcsColoring", true
+
+      tab = tabBar.tabForItem editor1
+      spyOn(tab, 'setupVcsStatus').andCallThrough()
+      spyOn(tab, 'updateVcsStatus').andCallThrough()
+
+      tab1 = tabBar.tabForItem item1
+      tab1.path = '/some/path/outside/the/repository'
+      spyOn(tab1, 'updateVcsStatus').andCallThrough()
+
+      # Mock the repository
+      repository = jasmine.createSpyObj 'repo', ['isPathIgnored', 'getCachedPathStatus', 'isStatusNew', 'isStatusModified']
+      repository.isStatusNew.andCallFake (status) -> status is 'new'
+      repository.isStatusModified.andCallFake (status) -> status is 'modified'
+
+      repository.onDidChangeStatus = (callback) ->
+        @changeStatusCallbacks ?= []
+        @changeStatusCallbacks.push(callback)
+        dispose: => _.remove(@changeStatusCallbacks, callback)
+      repository.emitDidChangeStatus = (event) ->
+        callback(event) for callback in @changeStatusCallbacks ? []
+
+      repository.onDidChangeStatuses = (callback) ->
+        @changeStatusesCallbacks ?= []
+        @changeStatusesCallbacks.push(callback)
+        dispose: => _.remove(@changeStatusesCallbacks, callback)
+      repository.emitDidChangeStatuses = (event) ->
+        callback(event) for callback in @changeStatusesCallbacks ? []
+
+      # Mock atom.project to simulate we are working with a repository
+      spyOn(atom.project, 'getPaths').andReturn [tab.path]
+      spyOn(atom.project, 'getRepositories').andReturn [repository]
+
+      tab.setupVcsStatus()
+      tab1.setupVcsStatus()
+
+    describe "when working inside a VCS repository", ->
+      it "adds custom style for new items", ->
+        repository.getCachedPathStatus.andReturn 'new'
+        tab.updateVcsStatus(repository)
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+
+      it "adds custom style for modified items", ->
+        repository.getCachedPathStatus.andReturn 'modified'
+        tab.updateVcsStatus(repository)
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+
+      it "adds custom style for ignored items", ->
+        repository.isPathIgnored.andReturn true
+        tab.updateVcsStatus(repository)
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-ignored"
+
+      it "does not add any styles for items not in the repository", ->
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-added"
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-modified"
+        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-ignored"
+
+    describe "when changes in item statuses are notified", ->
+      it "updates status for items in the repository", ->
+        tab.updateVcsStatus.reset()
+        repository.emitDidChangeStatuses()
+        expect(tab.updateVcsStatus.calls.length).toEqual 1
+
+      it "updates the status of an item if it has changed", ->
+        repository.getCachedPathStatus.reset()
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
+        repository.emitDidChangeStatus {path: tab.path, pathStatus: "modified"}
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+        expect(repository.getCachedPathStatus.calls.length).toBe 0
+
+      it "does not update status for items not in the repository", ->
+        tab1.updateVcsStatus.reset()
+        repository.emitDidChangeStatuses()
+        expect(tab1.updateVcsStatus.calls.length).toEqual 0
+
+    describe "when an item is saved", ->
+      it "does not update VCS subscription if the item's path remains the same", ->
+        tab.setupVcsStatus.reset()
+        tab.item.buffer.emitter.emit 'did-save', {path: tab.path}
+        expect(tab.setupVcsStatus.calls.length).toBe 0
+
+      it "updates VCS subscription if the item's path has changed", ->
+        tab.setupVcsStatus.reset()
+        tab.item.buffer.emitter.emit 'did-save', {path: '/some/other/path'}
+        expect(tab.setupVcsStatus.calls.length).toBe 1
+
+    describe "when enableVcsColoring changes in package settings", ->
+      it "removes status from the tab if enableVcsColoring is set to false", ->
+        repository.emitDidChangeStatus {path: tab.path, pathStatus: 'new'}
+
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+        atom.config.set "tabs.enableVcsColoring", false
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-added"
+
+      it "adds status to the tab if enableVcsColoring is set to true", ->
+        atom.config.set "tabs.enableVcsColoring", false
+        repository.getCachedPathStatus.andReturn 'modified'
+
+        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
+        atom.config.set "tabs.enableVcsColoring", true
+        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
