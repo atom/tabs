@@ -117,6 +117,11 @@ class TabBarView extends View
         @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
 
     $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
+
+    atom.commands.add '.tree-view',
+      'tree-view:open-selected-entry': ({target}) =>
+        @clearPreviewTabs()
+
     @subscriptions.add dispose: ->
       $(document.body).off('dblclick', treeViewSelector, clearPreviewTabForFile)
 

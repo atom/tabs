@@ -1008,6 +1008,33 @@ describe "TabBarView", ->
 
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
+    describe "when press enter on a file in the tree view", ->
+      it "makes the tab for that file permanent", ->
+        editor1 = null
+        workspaceElement = atom.views.getView(atom.workspace)
+        jasmine.attachToDOM(workspaceElement)
+
+        waitsForPromise ->
+          atom.packages.activatePackage('tree-view')
+
+        runs ->
+          atom.commands.dispatch(workspaceElement, 'tree-view:show')
+
+        waitsFor ->
+          workspaceElement.querySelector('.tree-view')
+
+        waitsForPromise ->
+          atom.project.open('sample.js').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+
+          expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
+
+          fileNode = workspaceElement.querySelector(".tree-view [data-path=\"#{path.join(__dirname, 'fixtures', 'sample.js')}\"]")
+          atom.commands.dispatch(fileNode, 'tree-view:open-selected-entry')
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
   describe "integration with version control systems", ->
     [repository, tab, tab1] = []
 
