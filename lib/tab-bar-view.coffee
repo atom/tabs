@@ -228,11 +228,8 @@ class TabBarView extends View
   closeAllTabs: ->
     @closeTab(tab) for tab in @getTabs()
 
-  getProcessId: ->
-    @processId ?= atom.getCurrentWindow().getProcessId()
-
-  getRoutingId: ->
-    @routingId ?= atom.getCurrentWindow().getRoutingId()
+  getWindowId: ->
+    @windowId ?= atom.getCurrentWindow().id
 
   shouldAllowDrag: ->
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
@@ -249,8 +246,7 @@ class TabBarView extends View
     paneIndex = @paneContainer.getPanes().indexOf(@pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
     event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
-    event.originalEvent.dataTransfer.setData 'from-process-id', @getProcessId()
-    event.originalEvent.dataTransfer.setData 'from-routing-id', @getRoutingId()
+    event.originalEvent.dataTransfer.setData 'from-window-id', @getWindowId()
 
     item = @pane.getItems()[element.index()]
     return unless item?
@@ -327,8 +323,7 @@ class TabBarView extends View
 
     return unless dataTransfer.getData('atom-event') is 'true'
 
-    fromProcessId = parseInt(dataTransfer.getData('from-process-id'))
-    fromRoutingId = parseInt(dataTransfer.getData('from-routing-id'))
+    fromWindowId  = parseInt(dataTransfer.getData('from-window-id'))
     fromPaneId    = parseInt(dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
@@ -341,7 +336,7 @@ class TabBarView extends View
 
     @clearDropTarget()
 
-    if fromProcessId is @getProcessId()
+    if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
       item = fromPane.getItems()[fromIndex]
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
@@ -355,9 +350,9 @@ class TabBarView extends View
         @moveItemBetweenPanes(activePane, activeItemIndex, toPane, toIndex, item)
         item.setText?(modifiedText) if hasUnsavedChanges
 
-        if not isNaN(fromProcessId) and not isNaN(fromRoutingId)
+        if not isNaN(fromWindowId)
           # Let the window where the drag started know that the tab was dropped
-          browserWindow = @browserWindowForProcessIdAndRoutingId(fromProcessId, fromRoutingId)
+          browserWindow = @browserWindowForId(fromWindowId)
           browserWindow?.webContents.send('tab:dropped', fromPaneId, fromIndex)
 
       atom.focus()
@@ -386,13 +381,9 @@ class TabBarView extends View
     else
       @off 'wheel'
 
-  browserWindowForProcessIdAndRoutingId: (processId, routingId) ->
+  browserWindowForId: (id) ->
     BrowserWindow ?= require('remote').require('browser-window')
-    for browserWindow in BrowserWindow.getAllWindows()
-      if browserWindow.getProcessId() is processId and browserWindow.getRoutingId() is routingId
-        return browserWindow
-
-    null
+    BrowserWindow.fromId id
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
     try

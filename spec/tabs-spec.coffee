@@ -654,7 +654,7 @@ describe "TabBarView", ->
         expect(pane.getItems()).toEqual [item1, item2]
         expect(pane.getActiveItem()).toBe item2
 
-        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -673,7 +673,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -692,7 +692,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
