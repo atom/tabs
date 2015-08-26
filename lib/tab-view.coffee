@@ -1,6 +1,6 @@
 path = require 'path'
 {$} = require 'atom-space-pen-views'
-{CompositeDisposable} = require 'atom'
+{Disposable, CompositeDisposable} = require 'atom'
 
 module.exports =
 class TabView extends HTMLElement
@@ -40,7 +40,11 @@ class TabView extends HTMLElement
       @updateTooltip()
 
     if typeof @item.onDidChangeTitle is 'function'
-      @subscriptions.add @item.onDidChangeTitle(titleChangedHandler)
+      onDidChangeTitleDisposable = @item.onDidChangeTitle(titleChangedHandler)
+      if Disposable.isDisposable(onDidChangeTitleDisposable)
+        @subscriptions.add(onDidChangeTitleDisposable)
+      else
+        console.warn "::onDidChangeTitle does not return a valid disposable!"
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('title-changed', titleChangedHandler)
@@ -63,7 +67,11 @@ class TabView extends HTMLElement
       @updateModifiedStatus()
 
     if typeof @item.onDidChangeModified is 'function'
-      @subscriptions.add @item.onDidChangeModified(modifiedHandler)
+      onDidChangeModifiedDisposable = @item.onDidChangeModified(modifiedHandler)
+      if Disposable.isDisposable(onDidChangeModifiedDisposable)
+        @subscriptions.add(onDidChangeModifiedDisposable)
+      else
+        console.warn "::onDidChangeModified does not return a valid disposable!"
     else if typeof @item.on is 'function'
       #TODO Remove once old events are no longer supported
       @item.on('modified-status-changed', modifiedHandler)
