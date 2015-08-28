@@ -133,6 +133,34 @@ describe "TabBarView", ->
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
 
+    it "emits a warning when ::onDid... functions are not valid Disposables", ->
+      class BadView extends View
+        @content: (title) -> @div title
+        getTitle: -> "Anything"
+        onDidChangeTitle: ->
+        onDidChangeIcon: ->
+        onDidChangeModified: ->
+        onDidSave: ->
+
+      warnings = []
+      spyOn(console, "warn").andCallFake (message, object) ->
+        warnings.push({message, object})
+
+      badItem = new BadView('Item 3')
+      pane.addItem(badItem)
+
+      expect(warnings[0].message).toContain("onDidChangeTitle")
+      expect(warnings[0].object).toBe(badItem)
+
+      expect(warnings[1].message).toContain("onDidChangeIcon")
+      expect(warnings[1].object).toBe(badItem)
+
+      expect(warnings[2].message).toContain("onDidChangeModified")
+      expect(warnings[2].object).toBe(badItem)
+
+      expect(warnings[3].message).toContain("onDidSave")
+      expect(warnings[3].object).toBe(badItem)
+
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
       pane.activateItem(item1)
