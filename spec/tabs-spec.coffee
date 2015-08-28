@@ -144,7 +144,7 @@ describe "TabBarView", ->
 
       warnings = []
       spyOn(console, "warn").andCallFake (message, object) ->
-        warnings.push({message: message, object: object})
+        warnings.push({message, object})
 
       badItem = new BadView('Item 3')
       pane.addItem(badItem)
