@@ -101,9 +101,11 @@ class TabBarView extends View
       false
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.on('tab:new-window-opened', @onNewWindowCreated)
 
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.removeListener('tab:new-window-opened', @onNewWindowCreated)
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
@@ -251,12 +253,7 @@ class TabBarView extends View
     item = @pane.getItems()[element.index()]
     return unless item?
 
-    if typeof item.getURI is 'function'
-      itemURI = item.getURI() ? ''
-    else if typeof item.getPath is 'function'
-      itemURI = item.getPath() ? ''
-    else if typeof item.getUri is 'function'
-      itemURI = item.getUri() ? ''
+    itemURI = @getItemURI item
 
     if itemURI?
       event.originalEvent.dataTransfer.setData 'text/plain', itemURI
@@ -269,6 +266,55 @@ class TabBarView extends View
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
         event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
 
+  getItemURI: (item) =>
+    if typeof item.getURI is 'function'
+      itemURI = item.getURI() ? ''
+    else if typeof item.getPath is 'function'
+      itemURI = item.getPath() ? ''
+    else if typeof item.getUri is 'function'
+      itemURI = item.getUri() ? ''
+
+  onNewWindowCreated: (title, openURI, hasUnsavedChanges, modifiedText, scrollTop) =>
+    #remove any panes created by opening the window
+    for item in @pane.getItems()
+      @pane.destroyItem(item)
+
+    # open the content and reset state based on previous state
+    atom.workspace.open(openURI).then (item) =>
+      item.setText?(modifiedText) if hasUnsavedChanges
+      item.setScrollTop?(scrollTop);
+    atom.focus()
+
+  openTabInNewWindow: (tab, windowX=0, windowY=0) =>
+    item = @pane.getItems()[$(tab).index()]
+
+    atom.commands.dispatch(@element, 'application:new-window');
+
+    # find the new window
+    BrowserWindow ?= require('remote').require('browser-window')
+    windows = BrowserWindow.getAllWindows()
+    newWindow = windows[windows.length - 1]
+
+    # move the tab to the new window
+    newWindow.webContents.once 'did-finish-load', =>
+      newWindow.setPosition(windowX, windowY)
+      hasUnsavedChanges = false
+      itemText = ""
+      itemScrollTop = 0
+      if item.getScrollTop?()
+        itemScrollTop = item.getScrollTop()
+      if item.isModified?()
+        hasUnsavedChanges = item.isModified()
+        if hasUnsavedChanges
+          itemText = item.getText();
+
+      newWindow.send("tab:new-window-opened", item.getTitle(), @getItemURI(item), hasUnsavedChanges, itemText, itemScrollTop)
+
+      # clear changes so moved item can be closed without a warning
+      if item.getBuffer?()
+        item.getBuffer().reload()
+      @pane.destroyItem(item)
+
   uriHasProtocol: (uri) ->
     try
       require('url').parse(uri).protocol?
@@ -279,6 +325,12 @@ class TabBarView extends View
     @removePlaceholder()
 
   onDragEnd: (event) =>
+    {dataTransfer, screenX, screenY} = event.originalEvent
+
+    #if the drop target doesn't handle the drop then this is a new window
+    if dataTransfer.dropEffect is "none"
+        @openTabInNewWindow(event.target, screenX, screenY)
+
     @clearDropTarget()
 
   onDragOver: (event) =>
