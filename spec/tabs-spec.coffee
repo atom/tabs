@@ -1,3 +1,4 @@
+BrowserWindow = null
 {$, View}  = require 'atom-space-pen-views'
 _ = require 'underscore-plus'
 path = require 'path'
@@ -672,6 +673,22 @@ describe "TabBarView", ->
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         if process.platform is 'darwin'
           expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
+
+      it "should open a new window if the target doesn't handle the file information", ->
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
+        expect(pane.getActiveItem()).toBe item2
+        spyOn(tabBar, "openTabInNewWindow").andCallThrough()
+        BrowserWindow ?= require('remote').require('browser-window')
+
+        tabBar.onDragStart(dragStartEvent)
+        dropEvent.originalEvent.dataTransfer.dropEffect = "none"
+        dropEvent.originalEvent.screenX = 10
+        dropEvent.originalEvent.screenY = 20
+        tabBar.onDragEnd(dropEvent)
+
+        expect(BrowserWindow.getAllWindows().length).toBe (windowCount + 1)
+        expect(tabBar.openTabInNewWindow).toHaveBeenCalledWith(dropEvent.target, 10, 20)
+
 
     describe "when a tab is dragged to another Atom window", ->
       it "closes the tab in the first window and opens the tab in the second window", ->
