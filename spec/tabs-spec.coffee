@@ -689,7 +689,6 @@ describe "TabBarView", ->
         expect(BrowserWindow.getAllWindows().length).toBe (windowCount + 1)
         expect(tabBar.openTabInNewWindow).toHaveBeenCalledWith(dropEvent.target, 10, 20)
 
-
     describe "when a tab is dragged to another Atom window", ->
       it "closes the tab in the first window and opens the tab in the second window", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))

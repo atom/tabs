@@ -41,6 +41,7 @@ class TabBarView extends View
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
+      'tabs:open-in-new-window': => @onOpenInNewWindow()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -284,11 +285,17 @@ class TabBarView extends View
       item.setText?(modifiedText) if hasUnsavedChanges
       item.setScrollTop?(scrollTop);
     atom.focus()
+  onOpenInNewWindow: (e) =>
+    tab = $(event.target).closest('.sortable')
+    @openTabInNewWindow(tab, window.screenX + 50, window.screenY + 50)
 
   openTabInNewWindow: (tab, windowX=0, windowY=0) =>
     item = @pane.getItems()[$(tab).index()]
 
-    atom.commands.dispatch(@element, 'application:new-window');
+    itemURI = @getItemURI(item);
+    return unless itemURI?
+
+    atom.commands.dispatch(@element, 'application:new-window')
 
     # find the new window
     BrowserWindow ?= require('remote').require('browser-window')
@@ -297,7 +304,20 @@ class TabBarView extends View
 
     # move the tab to the new window
     newWindow.webContents.once 'did-finish-load', =>
+      WINDOW_MIN_WIDTH_HEIGHT = 300
+      windowWidth = Math.min(window.innerWidth, window.screen.availWidth - windowX)
+      windowHeight =  Math.min(window.innerHeight, window.screen.availHeight - windowY)
+      if windowWidth < WINDOW_MIN_WIDTH_HEIGHT
+        windowWidth = WINDOW_MIN_WIDTH_HEIGHT
+        windowX = window.screen.availWidth - WINDOW_MIN_WIDTH_HEIGHT
+
+      if windowHeight < WINDOW_MIN_WIDTH_HEIGHT
+        windowHeight = WINDOW_MIN_WIDTH_HEIGHT
+        windowY = window.screen.availHeight - WINDOW_MIN_WIDTH_HEIGHT
+
       newWindow.setPosition(windowX, windowY)
+      newWindow.setSize(windowWidth,windowHeight)
+
       hasUnsavedChanges = false
       itemText = ""
       itemScrollTop = 0
@@ -308,7 +328,7 @@ class TabBarView extends View
         if hasUnsavedChanges
           itemText = item.getText();
 
-      newWindow.send("tab:new-window-opened", item.getTitle(), @getItemURI(item), hasUnsavedChanges, itemText, itemScrollTop)
+      newWindow.send('tab:new-window-opened', item.getTitle(), itemURI, hasUnsavedChanges, itemText, itemScrollTop)
 
       # clear changes so moved item can be closed without a warning
       if item.getBuffer?()
