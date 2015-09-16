@@ -149,7 +149,10 @@ class TabBarView extends View
     tabView.initialize(item)
     tabView.clearPreview() if @isItemMovingBetweenPanes
     @storePreviewTabToDestroy() if tabView.isPreviewTab
-    @insertTabAtIndex(tabView, index)
+    if not atom.config.get('tabs.alwaysOpenNewTabAtEnd')
+      @insertTabAtIndex(tabView, index)
+    else
+      @insertTabAtIndex(tabView)
 
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)

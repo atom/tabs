@@ -21,6 +21,10 @@ module.exports =
       title: "Enable VCS Coloring"
       type: 'boolean'
       default: false
+    alwaysOpenNewTabAtEnd:
+      type: 'boolean'
+      default: false
+      description: 'New tabs will be inserted at the end of the current list of tabs'
 
   activate: (state) ->
     state = [] unless Array.isArray(state)
