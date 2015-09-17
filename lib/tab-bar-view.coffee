@@ -283,9 +283,9 @@ class TabBarView extends View
       @pane.destroyItem(item)
 
     # open the content and reset state based on previous state
-    atom.workspace.open(openURI).then (item) =>
+    atom.workspace.open(openURI).then (item) ->
       item.setText?(modifiedText) if hasUnsavedChanges
-      item.setScrollTop?(scrollTop);
+      item.setScrollTop?(scrollTop)
 
     atom.focus()
 
@@ -299,7 +299,7 @@ class TabBarView extends View
 
   openTabInNewWindow: (tab, windowX=0, windowY=0) =>
     item = @pane.getItems()[$(tab).index()]
-    itemURI = @getItemURI(item);
+    itemURI = @getItemURI(item)
     return unless itemURI?
 
     # open and then find the new window
@@ -313,7 +313,7 @@ class TabBarView extends View
       @moveAndSizeNewWindow(newWindow, windowX, windowY)
       itemScrollTop = item.getScrollTop?() ? 0
       hasUnsavedChanges = item.isModified?() ? false
-      itemText = if hasUnsavedChanges then item.getText()  else "";
+      itemText = if hasUnsavedChanges then item.getText()  else ""
 
       #tell the new window to open this item and pass the current item state
       newWindow.send('tab:new-window-opened',
@@ -342,7 +342,7 @@ class TabBarView extends View
       windowY = window.screen.availHeight - WINDOW_MIN_WIDTH_HEIGHT
 
     newWindow.setPosition(windowX, windowY)
-    newWindow.setSize(windowWidth,windowHeight)
+    newWindow.setSize(windowWidth, windowHeight)
 
   uriHasProtocol: (uri) ->
     try
@@ -358,7 +358,7 @@ class TabBarView extends View
 
     #if the drop target doesn't handle the drop then this is a new window
     if dataTransfer.dropEffect is "none"
-        @openTabInNewWindow(event.target, screenX, screenY)
+      @openTabInNewWindow(event.target, screenX, screenY)
 
     @clearDropTarget()
 
