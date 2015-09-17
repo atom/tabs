@@ -540,13 +540,13 @@ describe "TabBarView", ->
 
   describe "dragging and dropping tabs", ->
     describe "when getting dragged tab's URI", ->
-        it "getItemURI returns the tab location information", ->
+      it "getItemURI returns the tab location information", ->
 
-          itemWithNoURI = tabBar.getItemURI(item1)
-          expect(itemWithNoURI).not.toBeDefined()
+        itemWithNoURI = tabBar.getItemURI(item1)
+        expect(itemWithNoURI).not.toBeDefined()
 
-          itemWithURI = tabBar.getItemURI(editor1)
-          expect(itemWithURI).toBe editor1.getURI()
+        itemWithURI = tabBar.getItemURI(editor1)
+        expect(itemWithURI).toBe editor1.getURI()
 
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->
