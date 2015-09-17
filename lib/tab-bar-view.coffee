@@ -102,11 +102,12 @@ class TabBarView extends View
       false
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
-    RendererIpc.on('tab:new-window-opened', @onNewWindowCreated)
+    RendererIpc.on('tab:new-window-opened', @onNewWindowOpened)
 
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
-    RendererIpc.removeListener('tab:new-window-opened', @onNewWindowCreated)
+    RendererIpc.removeListener('tab:new-window-opened', @onNewWindowOpened)
+
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
@@ -268,14 +269,14 @@ class TabBarView extends View
         event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
 
   getItemURI: (item) =>
-    if typeof item.getURI is 'function'
+    if item.getURI is 'function'
       itemURI = item.getURI() ? ''
     else if typeof item.getPath is 'function'
       itemURI = item.getPath() ? ''
     else if typeof item.getUri is 'function'
       itemURI = item.getUri() ? ''
 
-  onNewWindowCreated: (title, openURI, hasUnsavedChanges, modifiedText, scrollTop) =>
+  onNewWindowOpened: (title, openURI, hasUnsavedChanges, modifiedText, scrollTop, fromWindowId) =>
     #remove any panes created by opening the window
     for item in @pane.getItems()
       @pane.destroyItem(item)
@@ -284,56 +285,61 @@ class TabBarView extends View
     atom.workspace.open(openURI).then (item) =>
       item.setText?(modifiedText) if hasUnsavedChanges
       item.setScrollTop?(scrollTop);
+
     atom.focus()
+
+    browserWindow = @browserWindowForId(fromWindowId)
+    browserWindow?.webContents.send('tab:item-moved-to-window')
+
   onOpenInNewWindow: (e) =>
     tab = $(event.target).closest('.sortable')
-    @openTabInNewWindow(tab, window.screenX + 50, window.screenY + 50)
+    @openTabInNewWindow(tab, window.screenX + 20, window.screenY + 20)
 
   openTabInNewWindow: (tab, windowX=0, windowY=0) =>
-    item = @pane.getItems()[$(tab).index()]
-
-    itemURI = @getItemURI(item);
-    return unless itemURI?
-
+    # open and then find the new window
     atom.commands.dispatch(@element, 'application:new-window')
-
-    # find the new window
     BrowserWindow ?= require('remote').require('browser-window')
     windows = BrowserWindow.getAllWindows()
     newWindow = windows[windows.length - 1]
 
+    item = @pane.getItems()[$(tab).index()]
+    itemURI = @getItemURI(item);
+
     # move the tab to the new window
     newWindow.webContents.once 'did-finish-load', =>
-      WINDOW_MIN_WIDTH_HEIGHT = 300
-      windowWidth = Math.min(window.innerWidth, window.screen.availWidth - windowX)
-      windowHeight =  Math.min(window.innerHeight, window.screen.availHeight - windowY)
-      if windowWidth < WINDOW_MIN_WIDTH_HEIGHT
-        windowWidth = WINDOW_MIN_WIDTH_HEIGHT
-        windowX = window.screen.availWidth - WINDOW_MIN_WIDTH_HEIGHT
+      @moveAndSizeNewWindow(newWindow, windowX, windowY)
+      itemScrollTop = item.getScrollTop?() ? 0
+      hasUnsavedChanges = item.isModified?() ? false
+      itemText = if hasUnsavedChanges then item.getText()  else "";
 
-      if windowHeight < WINDOW_MIN_WIDTH_HEIGHT
-        windowHeight = WINDOW_MIN_WIDTH_HEIGHT
-        windowY = window.screen.availHeight - WINDOW_MIN_WIDTH_HEIGHT
+      #tell the new window to open this item and pass the current item state
+      newWindow.send('tab:new-window-opened',
+        item.getTitle(), itemURI, hasUnsavedChanges,
+        itemText, itemScrollTop, @getWindowId())
 
-      newWindow.setPosition(windowX, windowY)
-      newWindow.setSize(windowWidth,windowHeight)
+      #listen for open success, so old tab can be removed
+      RendererIpc.on('tab:item-moved-to-window', => @onTabMovedToWindow(item))
 
-      hasUnsavedChanges = false
-      itemText = ""
-      itemScrollTop = 0
-      if item.getScrollTop?()
-        itemScrollTop = item.getScrollTop()
-      if item.isModified?()
-        hasUnsavedChanges = item.isModified()
-        if hasUnsavedChanges
-          itemText = item.getText();
+  onTabMovedToWindow: (item) ->
+    # clear changes so moved item can be closed without a warning
+    item.getBuffer?().reload()
+    @pane.destroyItem(item)
+    RendererIpc.removeListener('tab:item-moved-to-window', @onTabMovedToWindow)
 
-      newWindow.send('tab:new-window-opened', item.getTitle(), itemURI, hasUnsavedChanges, itemText, itemScrollTop)
+  moveAndSizeNewWindow: (newWindow, windowX=0, windowY=0) ->
+    WINDOW_MIN_WIDTH_HEIGHT = 300
+    windowWidth = Math.min(window.innerWidth, window.screen.availWidth - windowX)
+    windowHeight =  Math.min(window.innerHeight, window.screen.availHeight - windowY)
+    if windowWidth < WINDOW_MIN_WIDTH_HEIGHT
+      windowWidth = WINDOW_MIN_WIDTH_HEIGHT
+      windowX = window.screen.availWidth - WINDOW_MIN_WIDTH_HEIGHT
 
-      # clear changes so moved item can be closed without a warning
-      if item.getBuffer?()
-        item.getBuffer().reload()
-      @pane.destroyItem(item)
+    if windowHeight < WINDOW_MIN_WIDTH_HEIGHT
+      windowHeight = WINDOW_MIN_WIDTH_HEIGHT
+      windowY = window.screen.availHeight - WINDOW_MIN_WIDTH_HEIGHT
+
+    newWindow.setPosition(windowX, windowY)
+    newWindow.setSize(windowWidth,windowHeight)
 
   uriHasProtocol: (uri) ->
     try
