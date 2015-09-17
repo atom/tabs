@@ -268,8 +268,9 @@ class TabBarView extends View
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
         event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
 
-  getItemURI: (item) =>
-    if item.getURI is 'function'
+  getItemURI: (item) ->
+    return unless item?
+    if typeof item.getURI is 'function'
       itemURI = item.getURI() ? ''
     else if typeof item.getPath is 'function'
       itemURI = item.getPath() ? ''
@@ -291,19 +292,21 @@ class TabBarView extends View
     browserWindow = @browserWindowForId(fromWindowId)
     browserWindow?.webContents.send('tab:item-moved-to-window')
 
-  onOpenInNewWindow: (e) =>
-    tab = $(event.target).closest('.sortable')
-    @openTabInNewWindow(tab, window.screenX + 20, window.screenY + 20)
+  onOpenInNewWindow: (active) =>
+    tabs = @getTabs()
+    active ?= @children('.right-clicked')[0]
+    @openTabInNewWindow(active, window.screenX + 20, window.screenY + 20)
 
   openTabInNewWindow: (tab, windowX=0, windowY=0) =>
+    item = @pane.getItems()[$(tab).index()]
+    itemURI = @getItemURI(item);
+    return unless itemURI?
+
     # open and then find the new window
     atom.commands.dispatch(@element, 'application:new-window')
     BrowserWindow ?= require('remote').require('browser-window')
     windows = BrowserWindow.getAllWindows()
     newWindow = windows[windows.length - 1]
-
-    item = @pane.getItems()[$(tab).index()]
-    itemURI = @getItemURI(item);
 
     # move the tab to the new window
     newWindow.webContents.once 'did-finish-load', =>
