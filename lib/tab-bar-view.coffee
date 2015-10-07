@@ -107,7 +107,7 @@ class TabBarView extends View
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
-    treeViewSelector = '.tree-view li[is=tree-view-file]'
+    treeViewSelector = '.tree-view .entry.file'
     clearPreviewTabForFile = ({target}) =>
       return unless @pane.isFocused()
 
