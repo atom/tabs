@@ -183,7 +183,7 @@ describe "TabBarView", ->
       editor2 = null
 
       waitsForPromise ->
-        atom.project.open('sample.txt').then (o) -> editor2 = o
+        atom.workspace.open('sample.txt', activateItem: false).then (o) -> editor2 = o
 
       runs ->
         editor2.insertText('x')
@@ -841,7 +841,7 @@ describe "TabBarView", ->
       it "adds tab with class 'temp'", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -852,7 +852,7 @@ describe "TabBarView", ->
       it "removes the 'temp' class", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -866,10 +866,10 @@ describe "TabBarView", ->
         editor2 = null
 
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) ->
+          atom.workspace.open('sample.txt').then (o) ->
             editor1 = o
             pane.activateItem(editor1)
-            atom.project.open('sample2.txt').then (o) ->
+            atom.workspace.open('sample2.txt').then (o) ->
               editor2 = o
               pane.activateItem(editor2)
 
@@ -883,7 +883,7 @@ describe "TabBarView", ->
         editor2 = null
 
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor2 = o
+          atom.workspace.open('sample.txt').then (o) -> editor2 = o
 
         runs ->
           pane.activateItem(editor2)
@@ -898,7 +898,7 @@ describe "TabBarView", ->
 
       beforeEach ->
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) ->
+          atom.workspace.open('sample.txt').then (o) ->
             editor2 = o
             pane.activateItem(editor2)
 
@@ -970,7 +970,7 @@ describe "TabBarView", ->
       it "makes the tab permanent in the new pane", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -983,7 +983,7 @@ describe "TabBarView", ->
       it "makes the tab permanent in the other pane", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -1022,7 +1022,7 @@ describe "TabBarView", ->
           workspaceElement.querySelector('.tree-view')
 
         waitsForPromise ->
-          atom.project.open('sample.js').then (o) -> editor1 = o
+          atom.workspace.open('sample.js').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
