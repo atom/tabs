@@ -160,7 +160,7 @@ class TabBarView extends HTMLElement
     @closeTab(tab)
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
-  
+
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
@@ -262,6 +262,9 @@ class TabBarView extends HTMLElement
     sortableObjects = tabBar.querySelectorAll(".sortable")
     placeholder = @getPlaceholder()
     return unless placeholder?
+
+    top = sortableObjects[Math.max(0, newDropTargetIndex - 1)].offsetTop
+    placeholder.style.top = if top then "#{top}px" else ""
 
     if newDropTargetIndex < sortableObjects.length
       element = sortableObjects[newDropTargetIndex]
