@@ -183,7 +183,13 @@ describe "TabBarView", ->
       editor2 = null
 
       waitsForPromise ->
-        atom.workspace.open('sample.txt', activateItem: false).then (o) -> editor2 = o
+        opener =
+          if atom.workspace.buildTextEditor?
+            atom.workspace.open('sample.txt', activateItem: false)
+          else
+            atom.project.open('sample.txt')
+
+        opener.then (o) -> editor2 = o
 
       runs ->
         editor2.insertText('x')
