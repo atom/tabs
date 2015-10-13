@@ -134,6 +134,34 @@ describe "TabBarView", ->
     it "highlights the tab for the active pane item", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
 
+    it "emits a warning when ::onDid... functions are not valid Disposables", ->
+      class BadView extends View
+        @content: (title) -> @div title
+        getTitle: -> "Anything"
+        onDidChangeTitle: ->
+        onDidChangeIcon: ->
+        onDidChangeModified: ->
+        onDidSave: ->
+
+      warnings = []
+      spyOn(console, "warn").andCallFake (message, object) ->
+        warnings.push({message, object})
+
+      badItem = new BadView('Item 3')
+      pane.addItem(badItem)
+
+      expect(warnings[0].message).toContain("onDidChangeTitle")
+      expect(warnings[0].object).toBe(badItem)
+
+      expect(warnings[1].message).toContain("onDidChangeIcon")
+      expect(warnings[1].object).toBe(badItem)
+
+      expect(warnings[2].message).toContain("onDidChangeModified")
+      expect(warnings[2].object).toBe(badItem)
+
+      expect(warnings[3].message).toContain("onDidSave")
+      expect(warnings[3].object).toBe(badItem)
+
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
       pane.activateItem(item1)
@@ -156,7 +184,13 @@ describe "TabBarView", ->
       editor2 = null
 
       waitsForPromise ->
-        atom.project.open('sample.txt').then (o) -> editor2 = o
+        opener =
+          if atom.workspace.buildTextEditor?
+            atom.workspace.open('sample.txt', activateItem: false)
+          else
+            atom.project.open('sample.txt')
+
+        opener.then (o) -> editor2 = o
 
       runs ->
         editor2.insertText('x')
@@ -670,7 +704,7 @@ describe "TabBarView", ->
         expect(pane.getItems()).toEqual [item1, item2]
         expect(pane.getActiveItem()).toBe item2
 
-        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -689,7 +723,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -708,7 +742,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-process-id', tabBar.getProcessId() + 1)
+        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -829,7 +863,7 @@ describe "TabBarView", ->
       it "adds tab with class 'temp'", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -840,7 +874,7 @@ describe "TabBarView", ->
       it "removes the 'temp' class", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -854,10 +888,10 @@ describe "TabBarView", ->
         editor2 = null
 
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) ->
+          atom.workspace.open('sample.txt').then (o) ->
             editor1 = o
             pane.activateItem(editor1)
-            atom.project.open('sample2.txt').then (o) ->
+            atom.workspace.open('sample2.txt').then (o) ->
               editor2 = o
               pane.activateItem(editor2)
 
@@ -871,7 +905,7 @@ describe "TabBarView", ->
         editor2 = null
 
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor2 = o
+          atom.workspace.open('sample.txt').then (o) -> editor2 = o
 
         runs ->
           pane.activateItem(editor2)
@@ -886,7 +920,7 @@ describe "TabBarView", ->
 
       beforeEach ->
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) ->
+          atom.workspace.open('sample.txt').then (o) ->
             editor2 = o
             pane.activateItem(editor2)
 
@@ -958,7 +992,7 @@ describe "TabBarView", ->
       it "makes the tab permanent in the new pane", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -971,7 +1005,7 @@ describe "TabBarView", ->
       it "makes the tab permanent in the other pane", ->
         editor1 = null
         waitsForPromise ->
-          atom.project.open('sample.txt').then (o) -> editor1 = o
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -1010,7 +1044,7 @@ describe "TabBarView", ->
           workspaceElement.querySelector('.tree-view')
 
         waitsForPromise ->
-          atom.project.open('sample.js').then (o) -> editor1 = o
+          atom.workspace.open('sample.js').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -1028,8 +1062,6 @@ describe "TabBarView", ->
     [repository, tab, tab1] = []
 
     beforeEach ->
-      atom.config.set "tabs.enableVcsColoring", true
-
       tab = tabBar.tabForItem editor1
       spyOn(tab, 'setupVcsStatus').andCallThrough()
       spyOn(tab, 'updateVcsStatus').andCallThrough()
@@ -1057,12 +1089,13 @@ describe "TabBarView", ->
       repository.emitDidChangeStatuses = (event) ->
         callback(event) for callback in @changeStatusesCallbacks ? []
 
-      # Mock atom.project to simulate we are working with a repository
-      spyOn(atom.project, 'getPaths').andReturn [tab.path]
-      spyOn(atom.project, 'getRepositories').andReturn [repository]
+      # Mock atom.project to pretend we are working within a repository
+      spyOn(atom.project, 'repositoryForDirectory').andReturn Promise.resolve(repository)
 
-      tab.setupVcsStatus()
-      tab1.setupVcsStatus()
+      atom.config.set "tabs.enableVcsColoring", true
+
+      waitsFor ->
+        repository.changeStatusCallbacks?.length > 0
 
     describe "when working inside a VCS repository", ->
       it "adds custom style for new items", ->
@@ -1125,7 +1158,11 @@ describe "TabBarView", ->
       it "adds status to the tab if enableVcsColoring is set to true", ->
         atom.config.set "tabs.enableVcsColoring", false
         repository.getCachedPathStatus.andReturn 'modified'
-
         expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
         atom.config.set "tabs.enableVcsColoring", true
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+
+        waitsFor ->
+          repository.changeStatusCallbacks?.length > 0
+
+        runs ->
+          expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
