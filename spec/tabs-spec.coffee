@@ -172,12 +172,24 @@ describe "TabBarView", ->
       expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
 
   describe "when a new item is added to the pane", ->
-    it "adds a tab for the new item at the same index as the item in the pane", ->
-      pane.activateItem(item1)
-      item3 = new TestView('Item 3')
-      pane.activateItem(item3)
-      expect(tabBar.find('.tab').length).toBe 4
-      expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
+    describe "when alwaysOpenNewTabAtEnd is false in package settings", ->
+      it "adds a tab for the new item at the same index as the item in the pane", ->
+        atom.config.set("tabs.alwaysOpenNewTabAtEnd", false)
+        pane.activateItem(item1)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect(tabBar.find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
+
+    describe "when alwaysOpenNewTabAtEnd is true in package settings", ->
+      it "adds a tab for the new item as the last item in the bar", ->
+        atom.config.set("tabs.alwaysOpenNewTabAtEnd", true)
+        pane.activateItem(item1)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect(tabBar.find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'sample.js'
+        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
       editor2 = null
