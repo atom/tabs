@@ -41,6 +41,7 @@ class TabBarView extends View
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
+      'tabs:open-in-new-window': => @onOpenInNewWindow()
 
     @on 'dragstart', '.sortable', @onDragStart
     @on 'dragend', '.sortable', @onDragEnd
@@ -101,9 +102,12 @@ class TabBarView extends View
       false
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.on('tab:new-window-opened', @onNewWindowOpened)
 
   unsubscribe: ->
     RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.removeListener('tab:new-window-opened', @onNewWindowOpened)
+
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
@@ -251,12 +255,7 @@ class TabBarView extends View
     item = @pane.getItems()[element.index()]
     return unless item?
 
-    if typeof item.getURI is 'function'
-      itemURI = item.getURI() ? ''
-    else if typeof item.getPath is 'function'
-      itemURI = item.getPath() ? ''
-    else if typeof item.getUri is 'function'
-      itemURI = item.getUri() ? ''
+    itemURI = @getItemURI item
 
     if itemURI?
       event.originalEvent.dataTransfer.setData 'text/plain', itemURI
@@ -269,6 +268,82 @@ class TabBarView extends View
         event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
         event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
 
+  getItemURI: (item) ->
+    return unless item?
+    if typeof item.getURI is 'function'
+      itemURI = item.getURI() ? ''
+    else if typeof item.getPath is 'function'
+      itemURI = item.getPath() ? ''
+    else if typeof item.getUri is 'function'
+      itemURI = item.getUri() ? ''
+
+  onNewWindowOpened: (title, openURI, hasUnsavedChanges, modifiedText, scrollTop, fromWindowId) =>
+    #remove any panes created by opening the window
+    for item in @pane.getItems()
+      @pane.destroyItem(item)
+
+    # open the content and reset state based on previous state
+    atom.workspace.open(openURI).then (item) ->
+      item.setText?(modifiedText) if hasUnsavedChanges
+      item.setScrollTop?(scrollTop)
+
+    atom.focus()
+
+    browserWindow = @browserWindowForId(fromWindowId)
+    browserWindow?.webContents.send('tab:item-moved-to-window')
+
+  onOpenInNewWindow: (active) =>
+    tabs = @getTabs()
+    active ?= @children('.right-clicked')[0]
+    @openTabInNewWindow(active, window.screenX + 20, window.screenY + 20)
+
+  openTabInNewWindow: (tab, windowX=0, windowY=0) =>
+    item = @pane.getItems()[$(tab).index()]
+    itemURI = @getItemURI(item)
+    return unless itemURI?
+
+    # open and then find the new window
+    atom.commands.dispatch(@element, 'application:new-window')
+    BrowserWindow ?= require('remote').require('browser-window')
+    windows = BrowserWindow.getAllWindows()
+    newWindow = windows[windows.length - 1]
+
+    # move the tab to the new window
+    newWindow.webContents.once 'did-finish-load', =>
+      @moveAndSizeNewWindow(newWindow, windowX, windowY)
+      itemScrollTop = item.getScrollTop?() ? 0
+      hasUnsavedChanges = item.isModified?() ? false
+      itemText = if hasUnsavedChanges then item.getText()  else ""
+
+      #tell the new window to open this item and pass the current item state
+      newWindow.send('tab:new-window-opened',
+        item.getTitle(), itemURI, hasUnsavedChanges,
+        itemText, itemScrollTop, @getWindowId())
+
+      #listen for open success, so old tab can be removed
+      RendererIpc.on('tab:item-moved-to-window', => @onTabMovedToWindow(item))
+
+  onTabMovedToWindow: (item) ->
+    # clear changes so moved item can be closed without a warning
+    item.getBuffer?().reload()
+    @pane.destroyItem(item)
+    RendererIpc.removeListener('tab:item-moved-to-window', @onTabMovedToWindow)
+
+  moveAndSizeNewWindow: (newWindow, windowX=0, windowY=0) ->
+    WINDOW_MIN_WIDTH_HEIGHT = 300
+    windowWidth = Math.min(window.innerWidth, window.screen.availWidth - windowX)
+    windowHeight =  Math.min(window.innerHeight, window.screen.availHeight - windowY)
+    if windowWidth < WINDOW_MIN_WIDTH_HEIGHT
+      windowWidth = WINDOW_MIN_WIDTH_HEIGHT
+      windowX = window.screen.availWidth - WINDOW_MIN_WIDTH_HEIGHT
+
+    if windowHeight < WINDOW_MIN_WIDTH_HEIGHT
+      windowHeight = WINDOW_MIN_WIDTH_HEIGHT
+      windowY = window.screen.availHeight - WINDOW_MIN_WIDTH_HEIGHT
+
+    newWindow.setPosition(windowX, windowY)
+    newWindow.setSize(windowWidth, windowHeight)
+
   uriHasProtocol: (uri) ->
     try
       require('url').parse(uri).protocol?
@@ -279,6 +354,12 @@ class TabBarView extends View
     @removePlaceholder()
 
   onDragEnd: (event) =>
+    {dataTransfer, screenX, screenY} = event.originalEvent
+
+    #if the drop target doesn't handle the drop then this is a new window
+    if dataTransfer.dropEffect is "none"
+      @openTabInNewWindow(event.target, screenX, screenY)
+
     @clearDropTarget()
 
   onDragOver: (event) =>

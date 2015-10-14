@@ -17,6 +17,10 @@ menu: [
 
     {type: 'separator'}
 
+    {label: 'Open In New Window', command: 'tabs:open-in-new-window'}
+
+    {type: 'separator'}
+
     {label: 'Split Up', command: 'tabs:split-up'}
     {label: 'Split Down', command: 'tabs:split-down'}
     {label: 'Split Left', command: 'tabs:split-left'}

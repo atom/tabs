@@ -1,3 +1,4 @@
+BrowserWindow = null
 {$, View}  = require 'atom-space-pen-views'
 _ = require 'underscore-plus'
 path = require 'path'
@@ -435,6 +436,23 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
+    describe "when tabs:open-in-new-window is fired", ->
+      it "calls the open new window command with the selected tab", ->
+        spyOn(tabBar, "onOpenInNewWindow").andCallThrough()
+        spyOn(tabBar, "openTabInNewWindow").andCallThrough()
+        spyOn(atom.workspace, "open").andCallThrough()
+
+        triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 3)
+        atom.commands.dispatch(tabBar.element, 'tabs:open-in-new-window')
+
+        waitsFor ->
+          atom.workspace.open()
+
+        runs ->
+          expect(tabBar.onOpenInNewWindow).toHaveBeenCalled()
+          expect(tabBar.openTabInNewWindow).toHaveBeenCalled()
+          expect(atom.workspace.open).toHaveBeenCalled()
+
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
         triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
@@ -527,6 +545,15 @@ describe "TabBarView", ->
         expect(pane.getItems()[0]).toBe item1
 
   describe "dragging and dropping tabs", ->
+    describe "when getting dragged tab's URI", ->
+      it "getItemURI returns the tab location information", ->
+
+        itemWithNoURI = tabBar.getItemURI(item1)
+        expect(itemWithNoURI).not.toBeDefined()
+
+        itemWithURI = tabBar.getItemURI(editor1)
+        expect(itemWithURI).toBe editor1.getURI()
+
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->
         it "moves the tab and its item, shows the tab's item, and focuses the pane", ->
@@ -678,6 +705,24 @@ describe "TabBarView", ->
         expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         if process.platform is 'darwin'
           expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
+
+      it "should open a new window if the target doesn't handle the file information", ->
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(0))
+        spyOn(tabBar, "openTabInNewWindow").andCallThrough()
+        spyOn(atom.workspace, "open").andCallThrough()
+
+        tabBar.onDragStart(dragStartEvent)
+        dropEvent.originalEvent.dataTransfer.dropEffect = "none"
+        dropEvent.originalEvent.screenX = 10
+        dropEvent.originalEvent.screenY = 20
+        tabBar.onDragEnd(dropEvent)
+
+        waitsFor ->
+          atom.workspace.open()
+
+        runs ->
+          expect(tabBar.openTabInNewWindow).toHaveBeenCalledWith(dropEvent.target, 10, 20)
+          expect(atom.workspace.open).toHaveBeenCalled()
 
     describe "when a tab is dragged to another Atom window", ->
       it "closes the tab in the first window and opens the tab in the second window", ->
