@@ -430,7 +430,7 @@ class TabBarView extends View
     target = $(event.target)
     tabBar = @getTabBar(event.target)
 
-    return if @isPlaceholder(target)
+    return if @isPlaceholder(target[0])
 
     sortables = tabBar.find('.sortable')
     element = target.closest('.sortable')
@@ -455,7 +455,7 @@ class TabBarView extends View
     @placeholderEl = null
 
   isPlaceholder: (element) ->
-    element.is('.placeholder')
+    element.classList.contains('placeholder')
 
   getTabBar: (target) ->
     target = $(target)
