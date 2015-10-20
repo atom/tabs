@@ -42,11 +42,11 @@ class TabBarView extends View
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
 
-    @on 'dragstart', '.sortable', @onDragStart
-    @on 'dragend', '.sortable', @onDragEnd
-    @on 'dragleave', @onDragLeave
-    @on 'dragover', @onDragOver
-    @on 'drop', @onDrop
+    @element.addEventListener "dragstart", @onDragStart
+    @element.addEventListener "dragend", @onDragEnd
+    @element.addEventListener "dragleave", @onDragLeave
+    @element.addEventListener "dragover", @onDragOver
+    @element.addEventListener "drop", @onDrop
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
@@ -235,6 +235,8 @@ class TabBarView extends View
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) =>
+    return unless event.target.classList.contains('sortable')
+
     event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
     element = $(event.target).closest('.sortable')
@@ -279,6 +281,8 @@ class TabBarView extends View
     @removePlaceholder()
 
   onDragEnd: (event) =>
+    return unless event.target.classList.contains('sortable')
+
     @clearDropTarget()
 
   onDragOver: (event) =>
