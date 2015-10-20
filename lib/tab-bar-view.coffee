@@ -7,6 +7,8 @@ RendererIpc = require 'ipc'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
+# TODO: remove all the originalEvent crap.
+
 module.exports =
 class TabBarView extends View
   @content: ->
