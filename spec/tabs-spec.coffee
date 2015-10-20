@@ -675,9 +675,9 @@ describe "TabBarView", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(1))
         tabBar.onDragStart(dragStartEvent)
 
-        expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
+        expect(dragStartEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         if process.platform is 'darwin'
-          expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
+          expect(dragStartEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
 
     describe "when a tab is dragged to another Atom window", ->
       it "closes the tab in the first window and opens the tab in the second window", ->
@@ -688,7 +688,7 @@ describe "TabBarView", ->
         expect(pane.getItems()).toEqual [item1, item2]
         expect(pane.getActiveItem()).toBe item2
 
-        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -707,7 +707,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -726,7 +726,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)

@@ -7,8 +7,6 @@ RendererIpc = require 'ipc'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
-# TODO: remove all the originalEvent crap.
-
 module.exports =
 class TabBarView extends View
   @content: ->
@@ -221,18 +219,18 @@ class TabBarView extends View
   onDragStart: (event) =>
     return unless matches(event.target, '.sortable')
 
-    event.originalEvent.dataTransfer.setData 'atom-event', 'true'
+    event.dataTransfer.setData 'atom-event', 'true'
 
     element = closest(event.target, '.sortable')
     element.classList.add('is-dragging')
     element.destroyTooltip()
 
-    event.originalEvent.dataTransfer.setData 'sortable-index', indexOf(element)
+    event.dataTransfer.setData 'sortable-index', indexOf(element)
 
     paneIndex = @paneContainer.getPanes().indexOf(@pane)
-    event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
-    event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
-    event.originalEvent.dataTransfer.setData 'from-window-id', @getWindowId()
+    event.dataTransfer.setData 'from-pane-index', paneIndex
+    event.dataTransfer.setData 'from-pane-id', @pane.id
+    event.dataTransfer.setData 'from-window-id', @getWindowId()
 
     item = @pane.getItems()[indexOf(element)]
     return unless item?
@@ -245,15 +243,15 @@ class TabBarView extends View
       itemURI = item.getUri() ? ''
 
     if itemURI?
-      event.originalEvent.dataTransfer.setData 'text/plain', itemURI
+      event.dataTransfer.setData 'text/plain', itemURI
 
       if process.platform is 'darwin' # see #69
         itemURI = "file://#{itemURI}" unless @uriHasProtocol(itemURI)
-        event.originalEvent.dataTransfer.setData 'text/uri-list', itemURI
+        event.dataTransfer.setData 'text/uri-list', itemURI
 
       if item.isModified?() and item.getText?
-        event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
-        event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
+        event.dataTransfer.setData 'has-unsaved-changes', 'true'
+        event.dataTransfer.setData 'modified-text', item.getText()
 
   uriHasProtocol: (uri) ->
     try
@@ -270,7 +268,7 @@ class TabBarView extends View
     @clearDropTarget()
 
   onDragOver: (event) =>
-    unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
+    unless event.dataTransfer.getData('atom-event') is 'true'
       event.preventDefault()
       event.stopPropagation()
       return
@@ -312,7 +310,7 @@ class TabBarView extends View
 
   onDrop: (event) =>
     event.preventDefault()
-    {dataTransfer} = event.originalEvent
+    {dataTransfer} = event
 
     return unless dataTransfer.getData('atom-event') is 'true'
 
@@ -441,7 +439,7 @@ class TabBarView extends View
     elementCenter = element.offsetLeft + element.offsetWidth / 2
     elementIndex = indexOf(element, sortables)
 
-    if event.originalEvent.pageX < elementCenter
+    if event.pageX < elementCenter
       elementIndex
     else
       elementIndex + 1
