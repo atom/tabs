@@ -419,9 +419,12 @@ class TabBarView extends View
       @isItemMovingBetweenPanes = false
 
   removeDropTargetClasses: ->
-    workspaceElement = $(atom.views.getView(atom.workspace))
-    workspaceElement.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
-    workspaceElement.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
+    workspaceElement = atom.views.getView(atom.workspace)
+    for dropTarget in workspaceElement.querySelectorAll('.tab-bar .is-drop-target')
+      dropTarget.classList.remove('is-drop-target')
+
+    for dropTarget in workspaceElement.querySelectorAll('.tab-bar .drop-target-is-after')
+      dropTarget.classList.remove('drop-target-is-after')
 
   getDropTargetIndex: (event) ->
     target = $(event.target)
