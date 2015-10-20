@@ -216,7 +216,7 @@ class TabBarView extends View
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) =>
-    return unless event.target.classList.contains('sortable')
+    return unless event.target.matches('.sortable')
 
     event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
@@ -262,7 +262,7 @@ class TabBarView extends View
     @removePlaceholder()
 
   onDragEnd: (event) =>
-    return unless event.target.classList.contains('sortable')
+    return unless event.target.matches('.sortable')
 
     @clearDropTarget()
 
@@ -356,7 +356,7 @@ class TabBarView extends View
       @pane.activatePreviousItem()
 
   onMouseDown: ({target, which, ctrlKey, preventDefault}) =>
-    return unless contains(@element.querySelectorAll(".tab"), target)
+    return unless target.matches(".tab")
 
     tab = closest(target, '.tab')
     if which is 3 or (which is 1 and ctrlKey is true)
@@ -376,7 +376,7 @@ class TabBarView extends View
       preventDefault()
 
   onClick: ({target}) =>
-    return unless contains(@element.querySelectorAll(".tab .close-icon"), target)
+    return unless target.matches(".tab .close-icon")
 
     tab = closest(target, '.tab')
     @pane.destroyItem(tab.item)
