@@ -79,7 +79,7 @@ class TabBarView extends View
 
     @element.addEventListener "mousedown", @onMouseDown
     @element.addEventListener "dblclick", @onDoubleClick
-    @on 'click', '.tab .close-icon', @onClick
+    @element.addEventListener "click", @onClick
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
 
@@ -376,6 +376,8 @@ class TabBarView extends View
       preventDefault()
 
   onClick: ({target}) =>
+    return unless contains(@element.querySelectorAll(".tab .close-icon"), target)
+
     tab = closest(target, '.tab')
     @pane.destroyItem(tab.item)
     false
