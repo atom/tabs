@@ -1,7 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
-{matches, contains, closest, indexOf} = require './html-helpers'
+{matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
@@ -287,11 +287,11 @@ class TabBarView extends HTMLElement
 
     if newDropTargetIndex < sortableObjects.length
       element = sortableObjects[newDropTargetIndex].classList.add 'is-drop-target'
-      placeholder.insertBefore(element)
+      element.parentElement.insertBefore(placeholder, element)
     else
       element = sortableObjects[newDropTargetIndex - 1].classList.add 'drop-target-is-after'
       if sibling = element.nextSibling
-        placeholder.insertBefore(sibling)
+        element.parentElement.insertBefore(placeholder, sibling)
       else
         element.parentElement.appendChild(placeholder)
 
