@@ -281,7 +281,7 @@ class TabBarView extends View
 
     @removeDropTargetClasses()
 
-    tabBar = @getTabBar(event.target)[0]
+    tabBar = @getTabBar($(event.target)[0])
     sortableObjects = tabBar.querySelectorAll(".sortable")
     placeholder = @getPlaceholder()[0]
     return unless placeholder?
@@ -428,24 +428,23 @@ class TabBarView extends View
 
   getDropTargetIndex: (event) ->
     target = $(event.target)
-    tabBar = @getTabBar(event.target)
+    tabBar = @getTabBar(target[0])
 
     return if @isPlaceholder(target[0])
 
-    sortables = tabBar.find('.sortable')
-    element = target.closest('.sortable')
-    element = sortables.last() if element.length is 0
+    sortables = tabBar.querySelectorAll(".sortable")
+    element = closest(target[0], '.sortable')
+    element ?= sortables[sortables.length - 1]
 
-    return 0 unless element.length
+    return 0 unless element?
 
-    elementCenter = element.offset().left + element.width() / 2
+    elementCenter = element.offsetLeft + element.offsetWidth / 2
+    elementIndex = indexOf(element, sortables)
 
     if event.originalEvent.pageX < elementCenter
-      sortables.index(element)
-    else if element.next('.sortable').length > 0
-      sortables.index(element.next('.sortable'))
+      elementIndex
     else
-      sortables.index(element) + 1
+      elementIndex + 1
 
   getPlaceholder: ->
     @placeholderEl ?= $('<li/>', class: 'placeholder')
@@ -458,5 +457,7 @@ class TabBarView extends View
     element.classList.contains('placeholder')
 
   getTabBar: (target) ->
-    target = $(target)
-    if target.is('.tab-bar') then target else target.parents('.tab-bar')
+    if target.classList.contains('.tab-bar')
+      target
+    else
+      closest(target, '.tab-bar')
