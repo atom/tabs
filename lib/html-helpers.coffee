@@ -1,9 +1,11 @@
 closest = (element, selector) ->
+  return unless element?
   return element if element.matches(selector)
   closest(element.parentElement, selector)
 
-indexOf = (element) ->
-  for child, index in element.parentElement.children
+indexOf = (element, elements) ->
+  elements ?= element.parentElement.children
+  for child, index in elements
     return index if element is child
   return -1
 
