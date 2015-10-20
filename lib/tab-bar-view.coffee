@@ -77,29 +77,9 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
-      tab = $(target).closest('.tab')[0]
-      if which is 3 or (which is 1 and ctrlKey is true)
-        @find('.right-clicked').removeClass('right-clicked')
-        tab.classList.add('right-clicked')
-        false
-      else if which is 1 and not target.classList.contains('close-icon')
-        @pane.activateItem(tab.item)
-        setImmediate => @pane.activate()
-        true
-      else if which is 2
-        @pane.destroyItem(tab.item)
-        false
-
-    @on 'dblclick', ({target}) =>
-      if target is @element
-        atom.commands.dispatch(@element, 'application:new-file')
-        false
-
-    @on 'click', '.tab .close-icon', ({target}) =>
-      tab = $(target).closest('.tab')[0]
-      @pane.destroyItem(tab.item)
-      false
+    @on 'mousedown', '.tab', @onMouseDown
+    @on 'dblclick', @onDoubleClick
+    @on 'click', '.tab .close-icon', @onClick
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
 
@@ -374,6 +354,30 @@ class TabBarView extends View
     else if @wheelDelta >= @tabScrollingThreshold
       @wheelDelta = 0
       @pane.activatePreviousItem()
+
+  onMouseDown: ({target, which, ctrlKey}) =>
+    tab = closest(target, '.tab')
+    if which is 3 or (which is 1 and ctrlKey is true)
+      @element.querySelector('.right-clicked')?.classList.remove('right-clicked')
+      tab.classList.add('right-clicked')
+      false
+    else if which is 1 and not target.classList.contains('close-icon')
+      @pane.activateItem(tab.item)
+      setImmediate => @pane.activate()
+      true
+    else if which is 2
+      @pane.destroyItem(tab.item)
+      false
+
+  onDoubleClick: ({target}) =>
+    if target is @element
+      atom.commands.dispatch(@element, 'application:new-file')
+      false
+
+  onClick: ({target}) =>
+    tab = closest(target, '.tab')
+    @pane.destroyItem(tab.item)
+    false
 
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
