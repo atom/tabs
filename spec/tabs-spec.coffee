@@ -758,34 +758,34 @@ describe "TabBarView", ->
       describe "when the mouse wheel scrolls up", ->
         it "changes the active tab to the previous tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(120))
+          tabBar[0].dispatchEvent(buildWheelEvent(120))
           expect(pane.getActiveItem()).toBe editor1
 
         it "changes the active tab to the previous tab only after the wheelDelta crosses the threshold", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(50))
+          tabBar[0].dispatchEvent(buildWheelEvent(50))
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(50))
+          tabBar[0].dispatchEvent(buildWheelEvent(50))
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(50))
+          tabBar[0].dispatchEvent(buildWheelEvent(50))
           expect(pane.getActiveItem()).toBe editor1
 
       describe "when the mouse wheel scrolls down", ->
         it "changes the active tab to the previous tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(-120))
+          tabBar[0].dispatchEvent(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item1
 
       describe "when the mouse wheel scrolls up and shift key is pressed", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelPlusShiftEvent(120))
+          tabBar[0].dispatchEvent(buildWheelPlusShiftEvent(120))
           expect(pane.getActiveItem()).toBe item2
 
       describe "when the mouse wheel scrolls down and shift key is pressed", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelPlusShiftEvent(-120))
+          tabBar[0].dispatchEvent(buildWheelPlusShiftEvent(-120))
           expect(pane.getActiveItem()).toBe item2
 
     describe "when tabScrolling is false in package settings", ->
@@ -795,13 +795,13 @@ describe "TabBarView", ->
       describe "when the mouse wheel scrolls up one unit", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(120))
+          tabBar[0].dispatchEvent(buildWheelEvent(120))
           expect(pane.getActiveItem()).toBe item2
 
       describe "when the mouse wheel scrolls down one unit", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(-120))
+          tabBar[0].dispatchEvent(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item2
 
   describe "when alwaysShowTabBar is true in package settings", ->

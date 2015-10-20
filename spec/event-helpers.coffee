@@ -29,7 +29,7 @@ module.exports.buildDragEvents = (dragged, dropTarget) ->
   [dragStartEvent, dropEvent]
 
 module.exports.buildWheelEvent = (delta) ->
-  $.Event "wheel", {originalEvent: {wheelDelta: delta}}
+  new WheelEvent("mousewheel", wheelDeltaY: delta)
 
 module.exports.buildWheelPlusShiftEvent = (delta) ->
-  $.Event "wheel", {originalEvent: {wheelDelta: delta, shiftKey: true}}
+  new WheelEvent("mousewheel", wheelDeltaY: delta, shiftKey: true)

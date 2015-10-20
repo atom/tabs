@@ -279,14 +279,14 @@ class TabBarView extends View
 
     @removeDropTargetClasses()
 
-    tabBar = @getTabBar(event.target)
-    sortableObjects = tabBar.find(".sortable")
+    tabBar = @getTabBar(event.target)[0]
+    sortableObjects = tabBar.querySelectorAll(".sortable")
 
     if newDropTargetIndex < sortableObjects.length
-      element = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
+      element = sortableObjects[newDropTargetIndex].classList.add 'is-drop-target'
       @getPlaceholder().insertBefore(element)
     else
-      element = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
+      element = sortableObjects[newDropTargetIndex - 1].classList.add 'drop-target-is-after'
       @getPlaceholder().insertAfter(element)
 
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
@@ -343,11 +343,11 @@ class TabBarView extends View
 
       atom.focus()
 
-  onMouseWheel: ({originalEvent}) =>
-    return if originalEvent.shiftKey
+  onMouseWheel: ({shiftKey, wheelDeltaY}) =>
+    return if shiftKey
 
     @wheelDelta ?= 0
-    @wheelDelta += originalEvent.wheelDelta
+    @wheelDelta += wheelDeltaY
 
     if @wheelDelta <= -@tabScrollingThreshold
       @wheelDelta = 0
@@ -390,9 +390,9 @@ class TabBarView extends View
     @tabScrolling = atom.config.get('tabs.tabScrolling')
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
     if @tabScrolling
-      @on 'wheel', @onMouseWheel
+      @element.addEventListener 'mousewheel', @onMouseWheel
     else
-      @off 'wheel'
+      @element.removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
     BrowserWindow ?= require('remote').require('browser-window')
