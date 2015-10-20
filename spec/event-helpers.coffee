@@ -1,7 +1,7 @@
 {$} = require 'atom-space-pen-views'
 
-module.exports.triggerMouseDownEvent = (target, {which, ctrlKey}) ->
-  event = new MouseEvent("mousedown", {bubbles: true, cancelable: true})
+module.exports.triggerMouseEvent = (type, target, {which, ctrlKey}) ->
+  event = new MouseEvent(type, {bubbles: true, cancelable: true})
   Object.defineProperty(event, 'which', get: -> which) if which?
   Object.defineProperty(event, 'ctrlKey', get: -> ctrlKey) if ctrlKey?
   Object.defineProperty(event, 'target', get: -> target)

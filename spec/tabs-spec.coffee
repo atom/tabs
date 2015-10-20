@@ -4,7 +4,7 @@ path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
-{triggerMouseDownEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
+{triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   workspaceElement = null
@@ -217,11 +217,11 @@ describe "TabBarView", ->
     it "shows the associated item on the pane and focuses the pane", ->
       spyOn(pane, 'activate')
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 1)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 1)
       expect(pane.getActiveItem()).toBe pane.getItems()[0]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(2), which: 1)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(2), which: 1)
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
@@ -233,7 +233,7 @@ describe "TabBarView", ->
       runs -> expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
-      event = triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 2)
+      event = triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 2)
 
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
@@ -246,11 +246,11 @@ describe "TabBarView", ->
     it "doesn't switch tab when right (or ctrl-left) clicked", ->
       spyOn(pane, 'activate')
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 3)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 3)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
       expect(event.preventDefault).toHaveBeenCalled()
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 1, ctrlKey: true)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 1, ctrlKey: true)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
       expect(event.preventDefault).toHaveBeenCalled()
 
@@ -396,7 +396,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
@@ -405,7 +405,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
@@ -415,7 +415,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
-        triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
@@ -437,7 +437,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-up')
@@ -447,7 +447,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-down is fired", ->
       it "splits the selected tab down", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-down')
@@ -457,7 +457,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-left is fired", ->
       it "splits the selected tab to the left", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-left')
@@ -467,7 +467,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-right is fired", ->
       it "splits the selected tab to the right", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-right')
