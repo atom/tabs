@@ -159,10 +159,10 @@ class TabBarView extends View
       @element.classList.remove('hidden')
 
   getTabs: ->
-    @children('.tab').toArray()
+    tab for tab in @element.querySelectorAll(".tab")
 
   tabAtIndex: (index) ->
-    @children(".tab:eq(#{index})")[0]
+    @element.querySelectorAll(".tab")[index]
 
   tabForItem: (item) ->
     _.detect @getTabs(), (tab) -> tab.item is item
@@ -179,11 +179,11 @@ class TabBarView extends View
     @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
   closeTab: (tab) ->
-    tab ?= @children('.right-clicked')[0]
+    tab ?= @element.querySelector('.right-clicked')
     @pane.destroyItem(tab.item) if tab?
 
   splitTab: (fn) ->
-    if item = @children('.right-clicked')[0]?.item
+    if item = @element.querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
         @pane[fn](items: [copiedItem])
 
@@ -192,13 +192,13 @@ class TabBarView extends View
 
   closeOtherTabs: (active) ->
     tabs = @getTabs()
-    active ?= @children('.right-clicked')[0]
+    active ?= @element.querySelector('.right-clicked')
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: (active) ->
     tabs = @getTabs()
-    active ?= @children('.right-clicked')[0]
+    active ?= @element.querySelector('.right-clicked')
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
