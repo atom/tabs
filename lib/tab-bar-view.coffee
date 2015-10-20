@@ -2,15 +2,16 @@ BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
 {matches, contains, closest, indexOf} = require './html-helpers'
-{$, View} = require 'atom-space-pen-views'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
-module.exports =
-class TabBarView extends View
-  @content: ->
-    @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
+class TabBarView extends HTMLElement
+  createdCallback: ->
+    @classList.add("list-inline")
+    @classList.add("tab-bar")
+    @classList.add("inset-panel")
+    @setAttribute("tabindex", -1)
 
   initialize: (@pane, state={}) ->
     @subscriptions = new CompositeDisposable
@@ -30,7 +31,7 @@ class TabBarView extends View
           event.stopPropagation()
           commands[name]()
 
-      @subscriptions.add(atom.commands.add(@element, commandsWithPropagationStopped))
+      @subscriptions.add(atom.commands.add(this, commandsWithPropagationStopped))
 
     addElementCommands
       'tabs:close-tab': => @closeTab()
@@ -43,11 +44,11 @@ class TabBarView extends View
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
 
-    @element.addEventListener "dragstart", @onDragStart
-    @element.addEventListener "dragend", @onDragEnd
-    @element.addEventListener "dragleave", @onDragLeave
-    @element.addEventListener "dragover", @onDragOver
-    @element.addEventListener "drop", @onDrop
+    @addEventListener "dragstart", @onDragStart
+    @addEventListener "dragend", @onDragEnd
+    @addEventListener "dragleave", @onDragLeave
+    @addEventListener "dragover", @onDragOver
+    @addEventListener "drop", @onDrop
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
@@ -77,9 +78,9 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @element.addEventListener "mousedown", @onMouseDown
-    @element.addEventListener "dblclick", @onDoubleClick
-    @element.addEventListener "click", @onClick
+    @addEventListener "mousedown", @onMouseDown
+    @addEventListener "dblclick", @onDoubleClick
+    @addEventListener "click", @onClick
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
 
@@ -141,9 +142,9 @@ class TabBarView extends View
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
     if followingTab
-      @element.insertBefore(tab, followingTab)
+      @insertBefore(tab, followingTab)
     else
-      @element.appendChild(tab)
+      @appendChild(tab)
     tab.updateTitle()
     @updateTabBarVisibility()
 
@@ -154,22 +155,22 @@ class TabBarView extends View
 
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
-      @element.classList.add('hidden')
+      @classList.add('hidden')
     else
-      @element.classList.remove('hidden')
+      @classList.remove('hidden')
 
   getTabs: ->
-    tab for tab in @element.querySelectorAll(".tab")
+    tab for tab in @querySelectorAll(".tab")
 
   tabAtIndex: (index) ->
-    @element.querySelectorAll(".tab")[index]
+    @querySelectorAll(".tab")[index]
 
   tabForItem: (item) ->
     _.detect @getTabs(), (tab) -> tab.item is item
 
   setActiveTab: (tabView) ->
     if tabView? and not tabView.classList.contains('active')
-      @element.querySelector('.tab.active')?.classList.remove('active')
+      @querySelector('.tab.active')?.classList.remove('active')
       tabView.classList.add('active')
 
   getActiveTab: ->
@@ -179,11 +180,11 @@ class TabBarView extends View
     @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
   closeTab: (tab) ->
-    tab ?= @element.querySelector('.right-clicked')
+    tab ?= @querySelector('.right-clicked')
     @pane.destroyItem(tab.item) if tab?
 
   splitTab: (fn) ->
-    if item = @element.querySelector('.right-clicked')?.item
+    if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
         @pane[fn](items: [copiedItem])
 
@@ -192,13 +193,13 @@ class TabBarView extends View
 
   closeOtherTabs: (active) ->
     tabs = @getTabs()
-    active ?= @element.querySelector('.right-clicked')
+    active ?= @querySelector('.right-clicked')
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: (active) ->
     tabs = @getTabs()
-    active ?= @element.querySelector('.right-clicked')
+    active ?= @querySelector('.right-clicked')
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
@@ -279,7 +280,7 @@ class TabBarView extends View
 
     @removeDropTargetClasses()
 
-    tabBar = @getTabBar($(event.target)[0])
+    tabBar = @getTabBar(event.target)
     sortableObjects = tabBar.querySelectorAll(".sortable")
     placeholder = @getPlaceholder()
     return unless placeholder?
@@ -302,7 +303,7 @@ class TabBarView extends View
     @clearDropTarget()
 
   clearDropTarget: ->
-    element = @element.querySelector(".is-dragging")
+    element = @querySelector(".is-dragging")
     element?.classList.remove('is-dragging')
     element?.updateTooltip()
     @removeDropTargetClasses()
@@ -366,7 +367,7 @@ class TabBarView extends View
 
     tab = closest(target, '.tab')
     if which is 3 or (which is 1 and ctrlKey is true)
-      @element.querySelector('.right-clicked')?.classList.remove('right-clicked')
+      @querySelector('.right-clicked')?.classList.remove('right-clicked')
       tab.classList.add('right-clicked')
       preventDefault()
     else if which is 1 and not target.classList.contains('close-icon')
@@ -377,8 +378,8 @@ class TabBarView extends View
       preventDefault()
 
   onDoubleClick: ({target, preventDefault}) =>
-    if target is @element
-      atom.commands.dispatch(@element, 'application:new-file')
+    if target is this
+      atom.commands.dispatch(this, 'application:new-file')
       preventDefault()
 
   onClick: ({target}) =>
@@ -395,9 +396,9 @@ class TabBarView extends View
     @tabScrolling = atom.config.get('tabs.tabScrolling')
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
     if @tabScrolling
-      @element.addEventListener 'mousewheel', @onMouseWheel
+      @addEventListener 'mousewheel', @onMouseWheel
     else
-      @element.removeEventListener 'mousewheel', @onMouseWheel
+      @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
     BrowserWindow ?= require('remote').require('browser-window')
@@ -425,13 +426,13 @@ class TabBarView extends View
       dropTarget.classList.remove('drop-target-is-after')
 
   getDropTargetIndex: (event) ->
-    target = $(event.target)
-    tabBar = @getTabBar(target[0])
+    target = event.target
+    tabBar = @getTabBar(target)
 
-    return if @isPlaceholder(target[0])
+    return if @isPlaceholder(target)
 
     sortables = tabBar.querySelectorAll(".sortable")
-    element = closest(target[0], '.sortable')
+    element = closest(target, '.sortable')
     element ?= sortables[sortables.length - 1]
 
     return 0 unless element?
@@ -463,3 +464,5 @@ class TabBarView extends View
       target
     else
       closest(target, '.tab-bar')
+
+module.exports = document.registerElement("atom-tabs", prototype: TabBarView.prototype, extends: "ul")
