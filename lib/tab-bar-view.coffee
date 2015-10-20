@@ -316,9 +316,9 @@ class TabBarView extends View
     @clearDropTarget()
 
   clearDropTarget: ->
-    element = @find(".is-dragging")
-    element.removeClass 'is-dragging'
-    element[0]?.updateTooltip()
+    element = @element.querySelector(".is-dragging")
+    element?.classList.remove('is-dragging')
+    element?.updateTooltip()
     @removeDropTargetClasses()
     @removePlaceholder()
 
