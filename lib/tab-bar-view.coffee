@@ -1,7 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
-{contains, closest, indexOf} = require './html-helpers'
+{matches, contains, closest, indexOf} = require './html-helpers'
 {$, View} = require 'atom-space-pen-views'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
@@ -91,15 +91,16 @@ class TabBarView extends View
     treeViewSelector = '.tree-view .entry.file'
     clearPreviewTabForFile = ({target}) =>
       return unless @pane.isFocused()
+      return unless matches(target, treeViewSelector)
 
       target = target.querySelector('[data-path]') unless target.dataset.path
 
       if itemPath = target.dataset.path
         @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
 
-    $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
+    $(document.body).on('dblclick', clearPreviewTabForFile)
     @subscriptions.add dispose: ->
-      $(document.body).off('dblclick', treeViewSelector, clearPreviewTabForFile)
+      $(document.body).off('dblclick', clearPreviewTabForFile)
 
   setInitialPreviewTab: (previewTabURI) ->
     for tab in @getTabs() when tab.isPreviewTab
@@ -216,7 +217,7 @@ class TabBarView extends View
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) =>
-    return unless event.target.matches('.sortable')
+    return unless matches(event.target, '.sortable')
 
     event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
@@ -262,7 +263,7 @@ class TabBarView extends View
     @removePlaceholder()
 
   onDragEnd: (event) =>
-    return unless event.target.matches('.sortable')
+    return unless matches(event.target, '.sortable')
 
     @clearDropTarget()
 
@@ -356,7 +357,7 @@ class TabBarView extends View
       @pane.activatePreviousItem()
 
   onMouseDown: ({target, which, ctrlKey, preventDefault}) =>
-    return unless target.matches(".tab")
+    return unless matches(target, ".tab")
 
     tab = closest(target, '.tab')
     if which is 3 or (which is 1 and ctrlKey is true)
@@ -376,7 +377,7 @@ class TabBarView extends View
       preventDefault()
 
   onClick: ({target}) =>
-    return unless target.matches(".tab .close-icon")
+    return unless matches(target, ".tab .close-icon")
 
     tab = closest(target, '.tab')
     @pane.destroyItem(tab.item)

@@ -10,4 +10,7 @@ indexOf = (element) ->
 contains = (elements, element) ->
   Array::indexOf.call(elements, element) isnt -1
 
-module.exports = {closest, indexOf, contains}
+matches = (element, selector) ->
+  element.matches(selector) or element.matches(selector + " *")
+
+module.exports = {matches, closest, indexOf, contains}
