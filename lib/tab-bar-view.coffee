@@ -1,6 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
+{closest, indexOf} = require './html-helpers'
 {$, View} = require 'atom-space-pen-views'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
@@ -239,18 +240,18 @@ class TabBarView extends View
 
     event.originalEvent.dataTransfer.setData 'atom-event', 'true'
 
-    element = $(event.target).closest('.sortable')
-    element.addClass 'is-dragging'
-    element[0].destroyTooltip()
+    element = closest(event.target, '.sortable')
+    element.classList.add('is-dragging')
+    element.destroyTooltip()
 
-    event.originalEvent.dataTransfer.setData 'sortable-index', element.index()
+    event.originalEvent.dataTransfer.setData 'sortable-index', indexOf(element)
 
     paneIndex = @paneContainer.getPanes().indexOf(@pane)
     event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
     event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
     event.originalEvent.dataTransfer.setData 'from-window-id', @getWindowId()
 
-    item = @pane.getItems()[element.index()]
+    item = @pane.getItems()[indexOf(element)]
     return unless item?
 
     if typeof item.getURI is 'function'
