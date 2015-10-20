@@ -78,7 +78,7 @@ class TabBarView extends View
     @updateActiveTab()
 
     @element.addEventListener "mousedown", @onMouseDown
-    @on 'dblclick', @onDoubleClick
+    @element.addEventListener "dblclick", @onDoubleClick
     @on 'click', '.tab .close-icon', @onClick
 
     RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
@@ -370,10 +370,10 @@ class TabBarView extends View
       @pane.destroyItem(tab.item)
       preventDefault()
 
-  onDoubleClick: ({target}) =>
+  onDoubleClick: ({target, preventDefault}) =>
     if target is @element
       atom.commands.dispatch(@element, 'application:new-file')
-      false
+      preventDefault()
 
   onClick: ({target}) =>
     tab = closest(target, '.tab')

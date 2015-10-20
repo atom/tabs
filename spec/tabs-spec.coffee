@@ -743,10 +743,10 @@ describe "TabBarView", ->
       newFileHandler = jasmine.createSpy('newFileHandler')
       atom.commands.add(tabBar.element, 'application:new-file', newFileHandler)
 
-      $(tabBar.getTabs()[0]).dblclick()
+      triggerMouseEvent("dblclick", tabBar.getTabs()[0])
       expect(newFileHandler.callCount).toBe 0
 
-      tabBar.dblclick()
+      triggerMouseEvent("dblclick", tabBar[0])
       expect(newFileHandler.callCount).toBe 1
 
   describe "when the mouse wheel is used on the tab bar", ->
