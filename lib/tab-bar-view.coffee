@@ -98,9 +98,9 @@ class TabBarView extends View
       if itemPath = target.dataset.path
         @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
 
-    $(document.body).on('dblclick', clearPreviewTabForFile)
+    document.body.addEventListener('dblclick', clearPreviewTabForFile)
     @subscriptions.add dispose: ->
-      $(document.body).off('dblclick', clearPreviewTabForFile)
+      document.body.removeEventListener('dblclick', clearPreviewTabForFile)
 
   setInitialPreviewTab: (previewTabURI) ->
     for tab in @getTabs() when tab.isPreviewTab
