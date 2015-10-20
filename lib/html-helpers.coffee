@@ -7,4 +7,7 @@ indexOf = (element) ->
     return index if element is child
   return -1
 
-module.exports = {closest, indexOf}
+contains = (elements, element) ->
+  Array::indexOf.call(elements, element) isnt -1
+
+module.exports = {closest, indexOf, contains}

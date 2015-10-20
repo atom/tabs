@@ -1,12 +1,14 @@
 {$} = require 'atom-space-pen-views'
 
 module.exports.triggerMouseDownEvent = (target, {which, ctrlKey}) ->
-  event =
-    type: 'mousedown'
-    which: which
-    ctrlKey: ctrlKey
-    preventDefault: jasmine.createSpy("preventDefault")
-  $(target).trigger(event)
+  event = new MouseEvent("mousedown", {bubbles: true, cancelable: true})
+  Object.defineProperty(event, 'which', get: -> which) if which?
+  Object.defineProperty(event, 'ctrlKey', get: -> ctrlKey) if ctrlKey?
+  Object.defineProperty(event, 'target', get: -> target)
+  Object.defineProperty(event, 'srcObject', get: -> target)
+  spyOn(event, "preventDefault")
+
+  target.dispatchEvent(event)
 
   event
 

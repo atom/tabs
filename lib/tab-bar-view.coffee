@@ -1,7 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
-{closest, indexOf} = require './html-helpers'
+{contains, closest, indexOf} = require './html-helpers'
 {$, View} = require 'atom-space-pen-views'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
@@ -77,7 +77,7 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @on 'mousedown', '.tab', @onMouseDown
+    @element.addEventListener "mousedown", @onMouseDown
     @on 'dblclick', @onDoubleClick
     @on 'click', '.tab .close-icon', @onClick
 
@@ -355,19 +355,20 @@ class TabBarView extends View
       @wheelDelta = 0
       @pane.activatePreviousItem()
 
-  onMouseDown: ({target, which, ctrlKey}) =>
+  onMouseDown: ({target, which, ctrlKey, preventDefault}) =>
+    return unless contains(@element.querySelectorAll(".tab"), target)
+
     tab = closest(target, '.tab')
     if which is 3 or (which is 1 and ctrlKey is true)
       @element.querySelector('.right-clicked')?.classList.remove('right-clicked')
       tab.classList.add('right-clicked')
-      false
+      preventDefault()
     else if which is 1 and not target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
       setImmediate => @pane.activate()
-      true
     else if which is 2
       @pane.destroyItem(tab.item)
-      false
+      preventDefault()
 
   onDoubleClick: ({target}) =>
     if target is @element
