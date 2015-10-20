@@ -283,7 +283,7 @@ class TabBarView extends View
 
     tabBar = @getTabBar($(event.target)[0])
     sortableObjects = tabBar.querySelectorAll(".sortable")
-    placeholder = @getPlaceholder()[0]
+    placeholder = @getPlaceholder()
     return unless placeholder?
 
     if newDropTargetIndex < sortableObjects.length
@@ -447,7 +447,11 @@ class TabBarView extends View
       elementIndex + 1
 
   getPlaceholder: ->
-    @placeholderEl ?= $('<li/>', class: 'placeholder')
+    return @placeholderEl if @placeholderEl?
+
+    @placeholderEl = document.createElement("li")
+    @placeholderEl.classList.add("placeholder")
+    @placeholderEl
 
   removePlaceholder: ->
     @placeholderEl?.remove()
