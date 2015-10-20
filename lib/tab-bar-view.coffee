@@ -439,7 +439,8 @@ class TabBarView extends HTMLElement
 
     return 0 unless element?
 
-    elementCenter = element.offsetLeft + element.offsetWidth / 2
+    {left, width} = element.getBoundingClientRect()
+    elementCenter = left + width / 2
     elementIndex = indexOf(element, sortables)
 
     if event.pageX < elementCenter
