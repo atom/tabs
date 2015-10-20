@@ -286,10 +286,12 @@ class TabBarView extends HTMLElement
     return unless placeholder?
 
     if newDropTargetIndex < sortableObjects.length
-      element = sortableObjects[newDropTargetIndex].classList.add 'is-drop-target'
+      element = sortableObjects[newDropTargetIndex]
+      element.classList.add 'is-drop-target'
       element.parentElement.insertBefore(placeholder, element)
     else
-      element = sortableObjects[newDropTargetIndex - 1].classList.add 'drop-target-is-after'
+      element = sortableObjects[newDropTargetIndex - 1]
+      element.classList.add 'drop-target-is-after'
       if sibling = element.nextSibling
         element.parentElement.insertBefore(placeholder, sibling)
       else
