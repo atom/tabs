@@ -463,7 +463,7 @@ class TabBarView extends HTMLElement
     element.classList.contains('placeholder')
 
   getTabBar: (target) ->
-    if target.classList.contains('.tab-bar')
+    if target.classList.contains('tab-bar')
       target
     else
       closest(target, '.tab-bar')
