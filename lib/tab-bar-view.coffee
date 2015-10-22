@@ -177,7 +177,7 @@ class TabBarView extends View
       @element.classList.remove('hidden')
 
   getTabs: ->
-    @children('.tab').toArray()
+    Array.prototype.slice.call(@element.getElementsByClassName('tab'))
 
   tabAtIndex: (index) ->
     @children(".tab:eq(#{index})")[0]
@@ -185,16 +185,14 @@ class TabBarView extends View
   tabForItem: (item) ->
     _.detect @getTabs(), (tab) -> tab.item is item
 
-  setActiveTab: (tabView) ->
-    if tabView? and not tabView.classList.contains('active')
-      @element.querySelector('.tab.active')?.classList.remove('active')
-      tabView.classList.add('active')
-
   getActiveTab: ->
     @tabForItem(@pane.getActiveItem())
 
   updateActiveTab: ->
-    @setActiveTab(@tabForItem(@pane.getActiveItem()))
+    activeItem = @pane.getActiveItem()
+    if activeItem?
+      @getTabs().forEach (tab) ->
+        tab.classList.toggle('active', tab.item is activeItem)
 
   closeTab: (tab) ->
     tab ?= @children('.right-clicked')[0]
