@@ -73,6 +73,7 @@ class TabBarView extends View
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
     @handleTreeViewEvents()
+    @handleFindAndReplaceEvents()
 
     @updateActiveTab()
 
@@ -119,6 +120,21 @@ class TabBarView extends View
     $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
     @subscriptions.add dispose: ->
       $(document.body).off('dblclick', treeViewSelector, clearPreviewTabForFile)
+
+  handleFindAndReplaceEvents: ->
+    findAndReplaceViewSelector = '.results-view li.search-result[is=space-pen-li]'
+    clearPreviewTabForFile = ({target}) =>
+      return unless @pane.isFocused()
+
+      target = $(target).closest('[data-path]')
+      if itemPath = target?[0]?.dataset.path
+        @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
+
+    $(document.body).on(
+      'dblclick', findAndReplaceViewSelector, clearPreviewTabForFile)
+    @subscriptions.add dispose: ->
+      $(document.body).off(
+        'dblclick', findAndReplaceViewSelector, clearPreviewTabForFile)
 
   setInitialPreviewTab: (previewTabURI) ->
     for tab in @getTabs() when tab.isPreviewTab

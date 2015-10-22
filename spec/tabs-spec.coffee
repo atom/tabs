@@ -1150,3 +1150,60 @@ describe "TabBarView", ->
 
         runs ->
           expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+
+describe 'TabBarView and find-and-replace', ->
+  describe "when double clicking a result in the Project Find Results", ->
+    [activationPromise, projectFindView, searchPromise, workspaceElement, firstResult] = []
+
+    beforeEach ->
+      workspaceElement = atom.views.getView(atom.workspace)
+      atom.project.setPaths([path.join(__dirname, 'fixtures')])
+      jasmine.attachToDOM(workspaceElement)
+
+      activationPromise = atom.packages.activatePackage("find-and-replace").then ({mainModule}) ->
+        mainModule.createViews()
+        {projectFindView} = mainModule
+        spy = spyOn(projectFindView, 'confirm').andCallFake ->
+          searchPromise = spy.originalValue.call(projectFindView)
+          searchPromise
+
+    beforeEach ->
+      atom.config.set('find-and-replace.openProjectFindResultsInRightPane', true)
+      atom.config.set('tabs.usePreviewTabs', true)
+      atom.commands.dispatch(workspaceElement, 'project-find:show')
+
+      waitsForPromise ->
+        atom.packages.activatePackage("tabs")
+
+      waitsForPromise ->
+        activationPromise
+
+      runs ->
+        projectFindView.findEditor.setText('items')
+        atom.commands.dispatch(projectFindView[0], 'core:confirm')
+
+      waitsForPromise ->
+        searchPromise
+
+      runs ->
+        expect(atom.workspace.getTextEditors().length).toBe 0
+
+        firstResult = workspaceElement.querySelectorAll('.results-view .search-result')[0]
+        firstResult.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true}))
+        firstResult.dispatchEvent(new MouseEvent('mouseup', {bubbles: true, cancelable: true}))
+        firstResult.dispatchEvent(new MouseEvent('click', {detail: 1, bubbles: true, cancelable: true}))
+
+      waitsFor ->
+        atom.workspace.getTextEditors().length is 1
+
+      runs ->
+        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
+        firstResult.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true}))
+        firstResult.dispatchEvent(new MouseEvent('mouseup', {bubbles: true, cancelable: true}))
+        firstResult.dispatchEvent(new MouseEvent('click', {detail: 2, bubbles: true, cancelable: true}))
+        firstResult.dispatchEvent(new MouseEvent('dblclick', {detail: 2, bubbles: true, cancelable: true}))
+
+    it 'makes the tab for that file permanent', ->
+      waitsFor( ->
+        workspaceElement.querySelectorAll('.tab.preview-tab .title').length is 0
+      , 'clearing preview', 1000)
