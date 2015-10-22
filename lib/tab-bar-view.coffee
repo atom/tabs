@@ -313,17 +313,16 @@ class TabBarView extends HTMLElement
 
   onDrop: (event) =>
     event.preventDefault()
-    {dataTransfer} = event
 
-    return unless dataTransfer.getData('atom-event') is 'true'
+    return unless event.dataTransfer.getData('atom-event') is 'true'
 
-    fromWindowId  = parseInt(dataTransfer.getData('from-window-id'))
-    fromPaneId    = parseInt(dataTransfer.getData('from-pane-id'))
-    fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
-    fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
+    fromWindowId  = parseInt(event.dataTransfer.getData('from-window-id'))
+    fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
+    fromIndex     = parseInt(event.dataTransfer.getData('sortable-index'))
+    fromPaneIndex = parseInt(event.dataTransfer.getData('from-pane-index'))
 
-    hasUnsavedChanges = dataTransfer.getData('has-unsaved-changes') is 'true'
-    modifiedText = dataTransfer.getData('modified-text')
+    hasUnsavedChanges = event.dataTransfer.getData('has-unsaved-changes') is 'true'
+    modifiedText = event.dataTransfer.getData('modified-text')
 
     toIndex = @getDropTargetIndex(event)
     toPane = @pane
@@ -335,7 +334,7 @@ class TabBarView extends HTMLElement
       item = fromPane.getItems()[fromIndex]
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      droppedURI = dataTransfer.getData('text/plain')
+      droppedURI = event.dataTransfer.getData('text/plain')
       atom.workspace.open(droppedURI).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
@@ -351,11 +350,11 @@ class TabBarView extends HTMLElement
 
       atom.focus()
 
-  onMouseWheel: ({shiftKey, wheelDeltaY}) =>
-    return if shiftKey
+  onMouseWheel: (event) =>
+    return if event.shiftKey
 
     @wheelDelta ?= 0
-    @wheelDelta += wheelDeltaY
+    @wheelDelta += event.wheelDeltaY
 
     if @wheelDelta <= -@tabScrollingThreshold
       @wheelDelta = 0
@@ -364,30 +363,30 @@ class TabBarView extends HTMLElement
       @wheelDelta = 0
       @pane.activatePreviousItem()
 
-  onMouseDown: ({target, which, ctrlKey, preventDefault}) =>
-    return unless matches(target, ".tab")
+  onMouseDown: (event) =>
+    return unless matches(event.target, ".tab")
 
-    tab = closest(target, '.tab')
-    if which is 3 or (which is 1 and ctrlKey is true)
+    tab = closest(event.target, '.tab')
+    if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
       @querySelector('.right-clicked')?.classList.remove('right-clicked')
       tab.classList.add('right-clicked')
-      preventDefault()
-    else if which is 1 and not target.classList.contains('close-icon')
+      event.preventDefault()
+    else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
       setImmediate => @pane.activate()
-    else if which is 2
+    else if event.which is 2
       @pane.destroyItem(tab.item)
-      preventDefault()
+      event.preventDefault()
 
-  onDoubleClick: ({target, preventDefault}) =>
-    if target is this
+  onDoubleClick: (event) =>
+    if event.target is this
       atom.commands.dispatch(this, 'application:new-file')
-      preventDefault()
+      event.preventDefault()
 
-  onClick: ({target}) =>
-    return unless matches(target, ".tab .close-icon")
+  onClick: (event) =>
+    return unless matches(event.target, ".tab .close-icon")
 
-    tab = closest(target, '.tab')
+    tab = closest(event.target, '.tab')
     @pane.destroyItem(tab.item)
     false
 
