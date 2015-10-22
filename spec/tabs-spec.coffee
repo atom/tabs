@@ -216,6 +216,8 @@ describe "TabBarView", ->
 
   describe "when a tab is clicked", ->
     it "shows the associated item on the pane and focuses the pane", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       spyOn(pane, 'activate')
 
       event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 1)
@@ -234,6 +236,8 @@ describe "TabBarView", ->
       runs -> expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       event = triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 2)
 
       expect(pane.getItems().length).toBe 2
@@ -245,6 +249,8 @@ describe "TabBarView", ->
       expect(event.preventDefault).toHaveBeenCalled()
 
     it "doesn't switch tab when right (or ctrl-left) clicked", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       spyOn(pane, 'activate')
 
       event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 3)
@@ -259,6 +265,8 @@ describe "TabBarView", ->
 
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       $(tabBar.tabForItem(editor1)).find('.close-icon').click()
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
@@ -394,6 +402,7 @@ describe "TabBarView", ->
     beforeEach ->
       paneElement = atom.views.getView(pane)
       paneElement.insertBefore(tabBar, paneElement.firstChild)
+      jasmine.attachToDOM(paneElement) # Remove after Atom 1.2.0 is released
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
