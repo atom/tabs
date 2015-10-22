@@ -655,6 +655,7 @@ describe "TabBarView", ->
 
           [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar2)
           tabBar.onDragStart(dragStartEvent)
+          tabBar2.onDragOver(dropEvent)
           tabBar2.onDrop(dropEvent)
 
           expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2"]

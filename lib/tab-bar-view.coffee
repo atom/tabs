@@ -290,12 +290,12 @@ class TabBarView extends HTMLElement
       element.classList.add 'is-drop-target'
       element.parentElement.insertBefore(placeholder, element)
     else
-      element = sortableObjects[newDropTargetIndex - 1]
-      element.classList.add 'drop-target-is-after'
-      if sibling = element.nextSibling
-        element.parentElement.insertBefore(placeholder, sibling)
-      else
-        element.parentElement.appendChild(placeholder)
+      if element = sortableObjects[newDropTargetIndex - 1]
+        element.classList.add 'drop-target-is-after'
+        if sibling = element.nextSibling
+          element.parentElement.insertBefore(placeholder, sibling)
+        else
+          element.parentElement.appendChild(placeholder)
 
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
     if @pane.id is fromPaneId
