@@ -1,13 +1,17 @@
 {$} = require 'atom-space-pen-views'
 
-module.exports.triggerMouseDownEvent = (target, {which, ctrlKey}) ->
-  event =
-    type: 'mousedown'
-    which: which
-    ctrlKey: ctrlKey
-    preventDefault: jasmine.createSpy("preventDefault")
-  $(target).trigger(event)
+buildMouseEvent = (type, target, {which, ctrlKey}={}) ->
+  event = new MouseEvent(type, {bubbles: true, cancelable: true})
+  Object.defineProperty(event, 'which', get: -> which) if which?
+  Object.defineProperty(event, 'ctrlKey', get: -> ctrlKey) if ctrlKey?
+  Object.defineProperty(event, 'target', get: -> target)
+  Object.defineProperty(event, 'srcObject', get: -> target)
+  spyOn(event, "preventDefault")
+  event
 
+module.exports.triggerMouseEvent = (type, target, {which, ctrlKey}={}) ->
+  event = buildMouseEvent(arguments...)
+  target.dispatchEvent(event)
   event
 
 module.exports.buildDragEvents = (dragged, dropTarget) ->
@@ -16,18 +20,16 @@ module.exports.buildDragEvents = (dragged, dropTarget) ->
     setData: (key, value) -> @data[key] = "#{value}" # Drag events stringify data values
     getData: (key) -> @data[key]
 
-  dragStartEvent = $.Event()
-  dragStartEvent.target = dragged
-  dragStartEvent.originalEvent = {dataTransfer}
+  dragStartEvent = buildMouseEvent("dragstart", dragged)
+  Object.defineProperty(dragStartEvent, 'dataTransfer', get: -> dataTransfer)
 
-  dropEvent = $.Event()
-  dropEvent.target = dropTarget
-  dropEvent.originalEvent = {dataTransfer}
+  dropEvent = buildMouseEvent("drop", dropTarget)
+  Object.defineProperty(dropEvent, 'dataTransfer', get: -> dataTransfer)
 
   [dragStartEvent, dropEvent]
 
 module.exports.buildWheelEvent = (delta) ->
-  $.Event "wheel", {originalEvent: {wheelDelta: delta}}
+  new WheelEvent("mousewheel", wheelDeltaY: delta)
 
 module.exports.buildWheelPlusShiftEvent = (delta) ->
-  $.Event "wheel", {originalEvent: {wheelDelta: delta, shiftKey: true}}
+  new WheelEvent("mousewheel", wheelDeltaY: delta, shiftKey: true)
