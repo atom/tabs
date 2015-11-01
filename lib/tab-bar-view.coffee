@@ -82,10 +82,10 @@ class TabBarView extends HTMLElement
     @addEventListener "dblclick", @onDoubleClick
     @addEventListener "click", @onClick
 
-    RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.on('tab:dropped', => @onDropOnOtherWindow(arguments...))
 
   unsubscribe: ->
-    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.removeListener('tab:dropped', => @onDropOnOtherWindow(arguments...))
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
