@@ -33,6 +33,21 @@ class TabView extends HTMLElement
       @addEventListener 'dblclick', => @clearPreview()
 
   handleEvents: ->
+    titleChangedHandler = =>
+      @updateTitle()
+
+    if typeof @item.onDidChangeTitle is 'function'
+      onDidChangeTitleDisposable = @item.onDidChangeTitle(titleChangedHandler)
+      if Disposable.isDisposable(onDidChangeTitleDisposable)
+        @subscriptions.add(onDidChangeTitleDisposable)
+      else
+        console.warn "::onDidChangeTitle does not return a valid Disposable!", @item
+    else if typeof @item.on is 'function'
+      #TODO Remove once old events are no longer supported
+      @item.on('title-changed', titleChangedHandler)
+      @subscriptions.add dispose: =>
+        @item.off?('title-changed', titleChangedHandler)
+
     pathChangedHandler = (@path) =>
       @updateDataAttributes()
       @updateTitle()
