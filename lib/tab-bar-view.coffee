@@ -82,10 +82,10 @@ class TabBarView extends HTMLElement
     @addEventListener "dblclick", @onDoubleClick
     @addEventListener "click", @onClick
 
-    RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.on('tab:dropped', @onDropOnOtherWindow.bind(this))
 
   unsubscribe: ->
-    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
@@ -217,7 +217,7 @@ class TabBarView extends HTMLElement
   shouldAllowDrag: ->
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
-  onDragStart: (event) =>
+  onDragStart: (event) ->
     return unless matches(event.target, '.sortable')
 
     event.dataTransfer.setData 'atom-event', 'true'
@@ -260,15 +260,15 @@ class TabBarView extends HTMLElement
     catch error
       false
 
-  onDragLeave: (event) =>
+  onDragLeave: (event) ->
     @removePlaceholder()
 
-  onDragEnd: (event) =>
+  onDragEnd: (event) ->
     return unless matches(event.target, '.sortable')
 
     @clearDropTarget()
 
-  onDragOver: (event) =>
+  onDragOver: (event) ->
     unless event.dataTransfer.getData('atom-event') is 'true'
       event.preventDefault()
       event.stopPropagation()
@@ -297,7 +297,7 @@ class TabBarView extends HTMLElement
         else
           element.parentElement.appendChild(placeholder)
 
-  onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
+  onDropOnOtherWindow: (fromPaneId, fromItemIndex) ->
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
@@ -311,7 +311,7 @@ class TabBarView extends HTMLElement
     @removeDropTargetClasses()
     @removePlaceholder()
 
-  onDrop: (event) =>
+  onDrop: (event) ->
     event.preventDefault()
 
     return unless event.dataTransfer.getData('atom-event') is 'true'
@@ -350,7 +350,7 @@ class TabBarView extends HTMLElement
 
       atom.focus()
 
-  onMouseWheel: (event) =>
+  onMouseWheel: (event) ->
     return if event.shiftKey
 
     @wheelDelta ?= 0
@@ -363,7 +363,7 @@ class TabBarView extends HTMLElement
       @wheelDelta = 0
       @pane.activatePreviousItem()
 
-  onMouseDown: (event) =>
+  onMouseDown: (event) ->
     return unless matches(event.target, ".tab")
 
     tab = closest(event.target, '.tab')
@@ -378,12 +378,12 @@ class TabBarView extends HTMLElement
       @pane.destroyItem(tab.item)
       event.preventDefault()
 
-  onDoubleClick: (event) =>
+  onDoubleClick: (event) ->
     if event.target is this
       atom.commands.dispatch(this, 'application:new-file')
       event.preventDefault()
 
-  onClick: (event) =>
+  onClick: (event) ->
     return unless matches(event.target, ".tab .close-icon")
 
     tab = closest(event.target, '.tab')
