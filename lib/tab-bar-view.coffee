@@ -1,5 +1,5 @@
 BrowserWindow = null # Defer require until actually used
-ipc = require 'ipc-renderer'
+ipc = try require 'ipc-renderer' catch then require 'ipc'
 
 {matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
