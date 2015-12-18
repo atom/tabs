@@ -185,7 +185,7 @@ class TabBarView extends HTMLElement
     @pane.destroyItem(tab.item) if tab?
 
   openInNewWindow: (tab) ->
-    tab ?= @children('.right-clicked')[0]
+    tab ?= @querySelector('.right-clicked')
     item = tab.item
     return unless item?
     if typeof item.getURI is 'function'
@@ -196,7 +196,9 @@ class TabBarView extends HTMLElement
       itemURI = item.getUri()
     return unless itemURI?
     @closeTab(tab)
+    console.log(atom.window)
     atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
+  
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
