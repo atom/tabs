@@ -1,15 +1,17 @@
 BrowserWindow = null # Defer require until actually used
 RendererIpc = require 'ipc'
 
-{$, View} = require 'atom-space-pen-views'
+{matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
-module.exports =
-class TabBarView extends View
-  @content: ->
-    @ul tabindex: -1, class: "list-inline tab-bar inset-panel"
+class TabBarView extends HTMLElement
+  createdCallback: ->
+    @classList.add("list-inline")
+    @classList.add("tab-bar")
+    @classList.add("inset-panel")
+    @setAttribute("tabindex", -1)
 
   initialize: (@pane, state={}) ->
     @subscriptions = new CompositeDisposable
@@ -30,7 +32,7 @@ class TabBarView extends View
           event.stopPropagation()
           commands[name]()
 
-      @subscriptions.add(atom.commands.add(@element, commandsWithPropagationStopped))
+      @subscriptions.add(atom.commands.add(this, commandsWithPropagationStopped))
 
     addElementCommands
       'tabs:close-tab': => @closeTab()
@@ -43,11 +45,11 @@ class TabBarView extends View
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
 
-    @on 'dragstart', '.sortable', @onDragStart
-    @on 'dragend', '.sortable', @onDragEnd
-    @on 'dragleave', @onDragLeave
-    @on 'dragover', @onDragOver
-    @on 'drop', @onDrop
+    @addEventListener "dragstart", @onDragStart
+    @addEventListener "dragend", @onDragEnd
+    @addEventListener "dragleave", @onDragLeave
+    @addEventListener "dragover", @onDragOver
+    @addEventListener "drop", @onDrop
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
@@ -77,49 +79,30 @@ class TabBarView extends View
 
     @updateActiveTab()
 
-    @on 'mousedown', '.tab', ({target, which, ctrlKey}) =>
-      tab = $(target).closest('.tab')[0]
-      if which is 3 or (which is 1 and ctrlKey is true)
-        @find('.right-clicked').removeClass('right-clicked')
-        tab.classList.add('right-clicked')
-        false
-      else if which is 1 and not target.classList.contains('close-icon')
-        @pane.activateItem(tab.item)
-        setImmediate => @pane.activate()
-        true
-      else if which is 2
-        @pane.destroyItem(tab.item)
-        false
+    @addEventListener "mousedown", @onMouseDown
+    @addEventListener "dblclick", @onDoubleClick
+    @addEventListener "click", @onClick
 
-    @on 'dblclick', ({target}) =>
-      if target is @element
-        atom.commands.dispatch(@element, 'application:new-file')
-        false
-
-    @on 'click', '.tab .close-icon', ({target}) =>
-      tab = $(target).closest('.tab')[0]
-      @pane.destroyItem(tab.item)
-      false
-
-    RendererIpc.on('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.on('tab:dropped', @onDropOnOtherWindow.bind(this))
 
   unsubscribe: ->
-    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow)
+    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
     treeViewSelector = '.tree-view .entry.file'
     clearPreviewTabForFile = ({target}) =>
       return unless @pane.isFocused()
+      return unless matches(target, treeViewSelector)
 
       target = target.querySelector('[data-path]') unless target.dataset.path
 
       if itemPath = target.dataset.path
         @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
 
-    $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
+    document.body.addEventListener('dblclick', clearPreviewTabForFile)
     @subscriptions.add dispose: ->
-      $(document.body).off('dblclick', treeViewSelector, clearPreviewTabForFile)
+      document.body.removeEventListener('dblclick', clearPreviewTabForFile)
 
   setInitialPreviewTab: (previewTabURI) ->
     for tab in @getTabs() when tab.isPreviewTab
@@ -160,9 +143,9 @@ class TabBarView extends View
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
     if followingTab
-      @element.insertBefore(tab, followingTab)
+      @insertBefore(tab, followingTab)
     else
-      @element.appendChild(tab)
+      @appendChild(tab)
     tab.updateTitle()
     @updateTabBarVisibility()
 
@@ -173,22 +156,22 @@ class TabBarView extends View
 
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
-      @element.classList.add('hidden')
+      @classList.add('hidden')
     else
-      @element.classList.remove('hidden')
+      @classList.remove('hidden')
 
   getTabs: ->
-    @children('.tab').toArray()
+    tab for tab in @querySelectorAll(".tab")
 
   tabAtIndex: (index) ->
-    @children(".tab:eq(#{index})")[0]
+    @querySelectorAll(".tab")[index]
 
   tabForItem: (item) ->
     _.detect @getTabs(), (tab) -> tab.item is item
 
   setActiveTab: (tabView) ->
     if tabView? and not tabView.classList.contains('active')
-      @element.querySelector('.tab.active')?.classList.remove('active')
+      @querySelector('.tab.active')?.classList.remove('active')
       tabView.classList.add('active')
 
   getActiveTab: ->
@@ -198,7 +181,7 @@ class TabBarView extends View
     @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
   closeTab: (tab) ->
-    tab ?= @children('.right-clicked')[0]
+    tab ?= @querySelector('.right-clicked')
     @pane.destroyItem(tab.item) if tab?
 
   openInNewWindow: (tab) ->
@@ -215,7 +198,7 @@ class TabBarView extends View
     @closeTab(tab)
     atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
   splitTab: (fn) ->
-    if item = @children('.right-clicked')[0]?.item
+    if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
         @pane[fn](items: [copiedItem])
 
@@ -224,13 +207,13 @@ class TabBarView extends View
 
   closeOtherTabs: (active) ->
     tabs = @getTabs()
-    active ?= @children('.right-clicked')[0]
+    active ?= @querySelector('.right-clicked')
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: (active) ->
     tabs = @getTabs()
-    active ?= @children('.right-clicked')[0]
+    active ?= @querySelector('.right-clicked')
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
@@ -248,21 +231,23 @@ class TabBarView extends View
   shouldAllowDrag: ->
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
-  onDragStart: (event) =>
-    event.originalEvent.dataTransfer.setData 'atom-event', 'true'
+  onDragStart: (event) ->
+    return unless matches(event.target, '.sortable')
 
-    element = $(event.target).closest('.sortable')
-    element.addClass 'is-dragging'
-    element[0].destroyTooltip()
+    event.dataTransfer.setData 'atom-event', 'true'
 
-    event.originalEvent.dataTransfer.setData 'sortable-index', element.index()
+    element = closest(event.target, '.sortable')
+    element.classList.add('is-dragging')
+    element.destroyTooltip()
+
+    event.dataTransfer.setData 'sortable-index', indexOf(element)
 
     paneIndex = @paneContainer.getPanes().indexOf(@pane)
-    event.originalEvent.dataTransfer.setData 'from-pane-index', paneIndex
-    event.originalEvent.dataTransfer.setData 'from-pane-id', @pane.id
-    event.originalEvent.dataTransfer.setData 'from-window-id', @getWindowId()
+    event.dataTransfer.setData 'from-pane-index', paneIndex
+    event.dataTransfer.setData 'from-pane-id', @pane.id
+    event.dataTransfer.setData 'from-window-id', @getWindowId()
 
-    item = @pane.getItems()[element.index()]
+    item = @pane.getItems()[indexOf(element)]
     return unless item?
 
     if typeof item.getURI is 'function'
@@ -273,15 +258,15 @@ class TabBarView extends View
       itemURI = item.getUri() ? ''
 
     if itemURI?
-      event.originalEvent.dataTransfer.setData 'text/plain', itemURI
+      event.dataTransfer.setData 'text/plain', itemURI
 
       if process.platform is 'darwin' # see #69
         itemURI = "file://#{itemURI}" unless @uriHasProtocol(itemURI)
-        event.originalEvent.dataTransfer.setData 'text/uri-list', itemURI
+        event.dataTransfer.setData 'text/uri-list', itemURI
 
       if item.isModified?() and item.getText?
-        event.originalEvent.dataTransfer.setData 'has-unsaved-changes', 'true'
-        event.originalEvent.dataTransfer.setData 'modified-text', item.getText()
+        event.dataTransfer.setData 'has-unsaved-changes', 'true'
+        event.dataTransfer.setData 'modified-text', item.getText()
 
   uriHasProtocol: (uri) ->
     try
@@ -289,14 +274,16 @@ class TabBarView extends View
     catch error
       false
 
-  onDragLeave: (event) =>
+  onDragLeave: (event) ->
     @removePlaceholder()
 
-  onDragEnd: (event) =>
+  onDragEnd: (event) ->
+    return unless matches(event.target, '.sortable')
+
     @clearDropTarget()
 
-  onDragOver: (event) =>
-    unless event.originalEvent.dataTransfer.getData('atom-event') is 'true'
+  onDragOver: (event) ->
+    unless event.dataTransfer.getData('atom-event') is 'true'
       event.preventDefault()
       event.stopPropagation()
       return
@@ -308,16 +295,23 @@ class TabBarView extends View
     @removeDropTargetClasses()
 
     tabBar = @getTabBar(event.target)
-    sortableObjects = tabBar.find(".sortable")
+    sortableObjects = tabBar.querySelectorAll(".sortable")
+    placeholder = @getPlaceholder()
+    return unless placeholder?
 
     if newDropTargetIndex < sortableObjects.length
-      element = sortableObjects.eq(newDropTargetIndex).addClass 'is-drop-target'
-      @getPlaceholder().insertBefore(element)
+      element = sortableObjects[newDropTargetIndex]
+      element.classList.add 'is-drop-target'
+      element.parentElement.insertBefore(placeholder, element)
     else
-      element = sortableObjects.eq(newDropTargetIndex - 1).addClass 'drop-target-is-after'
-      @getPlaceholder().insertAfter(element)
+      if element = sortableObjects[newDropTargetIndex - 1]
+        element.classList.add 'drop-target-is-after'
+        if sibling = element.nextSibling
+          element.parentElement.insertBefore(placeholder, sibling)
+        else
+          element.parentElement.appendChild(placeholder)
 
-  onDropOnOtherWindow: (fromPaneId, fromItemIndex) =>
+  onDropOnOtherWindow: (fromPaneId, fromItemIndex) ->
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
@@ -325,25 +319,24 @@ class TabBarView extends View
     @clearDropTarget()
 
   clearDropTarget: ->
-    element = @find(".is-dragging")
-    element.removeClass 'is-dragging'
-    element[0]?.updateTooltip()
+    element = @querySelector(".is-dragging")
+    element?.classList.remove('is-dragging')
+    element?.updateTooltip()
     @removeDropTargetClasses()
     @removePlaceholder()
 
-  onDrop: (event) =>
+  onDrop: (event) ->
     event.preventDefault()
-    {dataTransfer} = event.originalEvent
 
-    return unless dataTransfer.getData('atom-event') is 'true'
+    return unless event.dataTransfer.getData('atom-event') is 'true'
 
-    fromWindowId  = parseInt(dataTransfer.getData('from-window-id'))
-    fromPaneId    = parseInt(dataTransfer.getData('from-pane-id'))
-    fromIndex     = parseInt(dataTransfer.getData('sortable-index'))
-    fromPaneIndex = parseInt(dataTransfer.getData('from-pane-index'))
+    fromWindowId  = parseInt(event.dataTransfer.getData('from-window-id'))
+    fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
+    fromIndex     = parseInt(event.dataTransfer.getData('sortable-index'))
+    fromPaneIndex = parseInt(event.dataTransfer.getData('from-pane-index'))
 
-    hasUnsavedChanges = dataTransfer.getData('has-unsaved-changes') is 'true'
-    modifiedText = dataTransfer.getData('modified-text')
+    hasUnsavedChanges = event.dataTransfer.getData('has-unsaved-changes') is 'true'
+    modifiedText = event.dataTransfer.getData('modified-text')
 
     toIndex = @getDropTargetIndex(event)
     toPane = @pane
@@ -355,7 +348,7 @@ class TabBarView extends View
       item = fromPane.getItems()[fromIndex]
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else
-      droppedURI = dataTransfer.getData('text/plain')
+      droppedURI = event.dataTransfer.getData('text/plain')
       atom.workspace.open(droppedURI).then (item) =>
         # Move the item from the pane it was opened on to the target pane
         # where it was dropped onto
@@ -371,11 +364,11 @@ class TabBarView extends View
 
       atom.focus()
 
-  onMouseWheel: ({originalEvent}) =>
-    return if originalEvent.shiftKey
+  onMouseWheel: (event) ->
+    return if event.shiftKey
 
     @wheelDelta ?= 0
-    @wheelDelta += originalEvent.wheelDelta
+    @wheelDelta += event.wheelDeltaY
 
     if @wheelDelta <= -@tabScrollingThreshold
       @wheelDelta = 0
@@ -384,6 +377,33 @@ class TabBarView extends View
       @wheelDelta = 0
       @pane.activatePreviousItem()
 
+  onMouseDown: (event) ->
+    return unless matches(event.target, ".tab")
+
+    tab = closest(event.target, '.tab')
+    if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
+      @querySelector('.right-clicked')?.classList.remove('right-clicked')
+      tab.classList.add('right-clicked')
+      event.preventDefault()
+    else if event.which is 1 and not event.target.classList.contains('close-icon')
+      @pane.activateItem(tab.item)
+      setImmediate => @pane.activate()
+    else if event.which is 2
+      @pane.destroyItem(tab.item)
+      event.preventDefault()
+
+  onDoubleClick: (event) ->
+    if event.target is this
+      atom.commands.dispatch(this, 'application:new-file')
+      event.preventDefault()
+
+  onClick: (event) ->
+    return unless matches(event.target, ".tab .close-icon")
+
+    tab = closest(event.target, '.tab')
+    @pane.destroyItem(tab.item)
+    false
+
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
 
@@ -391,9 +411,9 @@ class TabBarView extends View
     @tabScrolling = atom.config.get('tabs.tabScrolling')
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
     if @tabScrolling
-      @on 'wheel', @onMouseWheel
+      @addEventListener 'mousewheel', @onMouseWheel
     else
-      @off 'wheel'
+      @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
     BrowserWindow ?= require('remote').require('browser-window')
@@ -413,41 +433,52 @@ class TabBarView extends View
       @isItemMovingBetweenPanes = false
 
   removeDropTargetClasses: ->
-    workspaceElement = $(atom.views.getView(atom.workspace))
-    workspaceElement.find('.tab-bar .is-drop-target').removeClass 'is-drop-target'
-    workspaceElement.find('.tab-bar .drop-target-is-after').removeClass 'drop-target-is-after'
+    workspaceElement = atom.views.getView(atom.workspace)
+    for dropTarget in workspaceElement.querySelectorAll('.tab-bar .is-drop-target')
+      dropTarget.classList.remove('is-drop-target')
+
+    for dropTarget in workspaceElement.querySelectorAll('.tab-bar .drop-target-is-after')
+      dropTarget.classList.remove('drop-target-is-after')
 
   getDropTargetIndex: (event) ->
-    target = $(event.target)
-    tabBar = @getTabBar(event.target)
+    target = event.target
+    tabBar = @getTabBar(target)
 
     return if @isPlaceholder(target)
 
-    sortables = tabBar.find('.sortable')
-    element = target.closest('.sortable')
-    element = sortables.last() if element.length is 0
+    sortables = tabBar.querySelectorAll(".sortable")
+    element = closest(target, '.sortable')
+    element ?= sortables[sortables.length - 1]
 
-    return 0 unless element.length
+    return 0 unless element?
 
-    elementCenter = element.offset().left + element.width() / 2
+    {left, width} = element.getBoundingClientRect()
+    elementCenter = left + width / 2
+    elementIndex = indexOf(element, sortables)
 
-    if event.originalEvent.pageX < elementCenter
-      sortables.index(element)
-    else if element.next('.sortable').length > 0
-      sortables.index(element.next('.sortable'))
+    if event.pageX < elementCenter
+      elementIndex
     else
-      sortables.index(element) + 1
+      elementIndex + 1
 
   getPlaceholder: ->
-    @placeholderEl ?= $('<li/>', class: 'placeholder')
+    return @placeholderEl if @placeholderEl?
+
+    @placeholderEl = document.createElement("li")
+    @placeholderEl.classList.add("placeholder")
+    @placeholderEl
 
   removePlaceholder: ->
     @placeholderEl?.remove()
     @placeholderEl = null
 
   isPlaceholder: (element) ->
-    element.is('.placeholder')
+    element.classList.contains('placeholder')
 
   getTabBar: (target) ->
-    target = $(target)
-    if target.is('.tab-bar') then target else target.parents('.tab-bar')
+    if target.classList.contains('tab-bar')
+      target
+    else
+      closest(target, '.tab-bar')
+
+module.exports = document.registerElement("atom-tabs", prototype: TabBarView.prototype, extends: "ul")

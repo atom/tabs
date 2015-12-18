@@ -1,5 +1,4 @@
 path = require 'path'
-{$} = require 'atom-space-pen-views'
 {Disposable, CompositeDisposable} = require 'atom'
 
 module.exports =

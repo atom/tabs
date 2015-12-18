@@ -4,7 +4,7 @@ path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
-{triggerMouseDownEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
+{triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   workspaceElement = null
@@ -106,7 +106,8 @@ describe "TabBarView", ->
       pane.addItem(item1, 0)
       pane.addItem(item2, 2)
       pane.activateItem(item2)
-      tabBar = new TabBarView(pane)
+      tabBar = new TabBarView
+      tabBar.initialize(pane)
 
   afterEach ->
     deserializerDisposable.dispose()
@@ -114,25 +115,25 @@ describe "TabBarView", ->
   describe ".initialize(pane)", ->
     it "creates a tab for each item on the tab bar's parent pane", ->
       expect(pane.getItems().length).toBe 3
-      expect(tabBar.find('.tab').length).toBe 3
+      expect($(tabBar).find('.tab').length).toBe 3
 
-      expect(tabBar.find('.tab:eq(0) .title').text()).toBe item1.getTitle()
-      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveAttr('data-name')
-      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveAttr('data-path')
-      expect(tabBar.find('.tab:eq(0)')).toHaveAttr('data-type', 'TestView')
+      expect($(tabBar).find('.tab:eq(0) .title').text()).toBe item1.getTitle()
+      expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveAttr('data-name')
+      expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveAttr('data-path')
+      expect($(tabBar).find('.tab:eq(0)')).toHaveAttr('data-type', 'TestView')
 
-      expect(tabBar.find('.tab:eq(1) .title').text()).toBe editor1.getTitle()
-      expect(tabBar.find('.tab:eq(1) .title')).toHaveAttr('data-name', path.basename(editor1.getPath()))
-      expect(tabBar.find('.tab:eq(1) .title')).toHaveAttr('data-path', editor1.getPath())
-      expect(tabBar.find('.tab:eq(1)')).toHaveAttr('data-type', 'TextEditor')
+      expect($(tabBar).find('.tab:eq(1) .title').text()).toBe editor1.getTitle()
+      expect($(tabBar).find('.tab:eq(1) .title')).toHaveAttr('data-name', path.basename(editor1.getPath()))
+      expect($(tabBar).find('.tab:eq(1) .title')).toHaveAttr('data-path', editor1.getPath())
+      expect($(tabBar).find('.tab:eq(1)')).toHaveAttr('data-type', 'TextEditor')
 
-      expect(tabBar.find('.tab:eq(2) .title').text()).toBe item2.getTitle()
-      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveAttr('data-name')
-      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveAttr('data-path')
-      expect(tabBar.find('.tab:eq(2)')).toHaveAttr('data-type', 'TestView')
+      expect($(tabBar).find('.tab:eq(2) .title').text()).toBe item2.getTitle()
+      expect($(tabBar).find('.tab:eq(2) .title')).not.toHaveAttr('data-name')
+      expect($(tabBar).find('.tab:eq(2) .title')).not.toHaveAttr('data-path')
+      expect($(tabBar).find('.tab:eq(2)')).toHaveAttr('data-type', 'TestView')
 
     it "highlights the tab for the active pane item", ->
-      expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
+      expect($(tabBar).find('.tab:eq(2)')).toHaveClass 'active'
 
     it "emits a warning when ::onDid... functions are not valid Disposables", ->
       class BadView extends View
@@ -165,19 +166,19 @@ describe "TabBarView", ->
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
       pane.activateItem(item1)
-      expect(tabBar.find('.active').length).toBe 1
-      expect(tabBar.find('.tab:eq(0)')).toHaveClass 'active'
+      expect($(tabBar).find('.active').length).toBe 1
+      expect($(tabBar).find('.tab:eq(0)')).toHaveClass 'active'
 
       pane.activateItem(item2)
-      expect(tabBar.find('.active').length).toBe 1
-      expect(tabBar.find('.tab:eq(2)')).toHaveClass 'active'
+      expect($(tabBar).find('.active').length).toBe 1
+      expect($(tabBar).find('.tab:eq(2)')).toHaveClass 'active'
 
   describe "when a new item is added to the pane", ->
     it "adds a tab for the new item at the same index as the item in the pane", ->
       pane.activateItem(item1)
       item3 = new TestView('Item 3')
       pane.activateItem(item3)
-      expect(tabBar.find('.tab').length).toBe 4
+      expect($(tabBar).find('.tab').length).toBe 4
       expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
 
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
@@ -201,7 +202,7 @@ describe "TabBarView", ->
     it "removes the item's tab from the tab bar", ->
       pane.destroyItem(item2)
       expect(tabBar.getTabs().length).toBe 2
-      expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+      expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
 
     it "updates the titles of the remaining tabs", ->
       expect(tabBar.tabForItem(item2)).toHaveText 'Item 2'
@@ -216,13 +217,15 @@ describe "TabBarView", ->
 
   describe "when a tab is clicked", ->
     it "shows the associated item on the pane and focuses the pane", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       spyOn(pane, 'activate')
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 1)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 1)
       expect(pane.getActiveItem()).toBe pane.getItems()[0]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(2), which: 1)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(2), which: 1)
       expect(pane.getActiveItem()).toBe pane.getItems()[2]
       expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
 
@@ -234,24 +237,28 @@ describe "TabBarView", ->
       runs -> expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
-      event = triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 2)
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
+      event = triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 2)
 
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
       expect(editor1.destroyed).toBeTruthy()
       expect(tabBar.getTabs().length).toBe 2
-      expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+      expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
 
       expect(event.preventDefault).toHaveBeenCalled()
 
     it "doesn't switch tab when right (or ctrl-left) clicked", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       spyOn(pane, 'activate')
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 3)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 3)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
       expect(event.preventDefault).toHaveBeenCalled()
 
-      event = triggerMouseDownEvent(tabBar.tabAtIndex(0), which: 1, ctrlKey: true)
+      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0), which: 1, ctrlKey: true)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
       expect(event.preventDefault).toHaveBeenCalled()
 
@@ -259,12 +266,14 @@ describe "TabBarView", ->
 
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
+      jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
+
       $(tabBar.tabForItem(editor1)).find('.close-icon').click()
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
       expect(editor1.destroyed).toBeTruthy()
       expect(tabBar.getTabs().length).toBe 2
-      expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
+      expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
 
   describe "when a tab item's title changes", ->
     it "updates the title of the item's tab", ->
@@ -291,20 +300,20 @@ describe "TabBarView", ->
 
   describe "when an item has an icon defined", ->
     it "displays the icon on the tab", ->
-      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon"
-      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon-squirrel"
+      expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass "icon"
+      expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass "icon-squirrel"
 
     it "hides the icon from the tab if the icon is removed", ->
       item1.getIconName = null
       item1.emitIconChanged()
-      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon"
-      expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "icon-squirrel"
+      expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "icon"
+      expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "icon-squirrel"
 
     it "updates the icon on the tab if the icon is changed", ->
       item1.getIconName = -> "zap"
       item1.emitIconChanged()
-      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon"
-      expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "icon-zap"
+      expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass "icon"
+      expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass "icon-zap"
 
     describe "when showIcon is set to true in package settings", ->
       beforeEach ->
@@ -319,7 +328,7 @@ describe "TabBarView", ->
           tabBar.tabForItem(item1).updateIconVisibility.reset()
 
       it "doesn't hide the icon", ->
-        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "hide-icon"
+        expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "hide-icon"
 
       it "hides the icon from the tab when showIcon is changed to false", ->
         atom.config.set("tabs.showIcons", false)
@@ -328,7 +337,7 @@ describe "TabBarView", ->
           tabBar.tabForItem(item1).updateIconVisibility.callCount > 0
 
         runs ->
-          expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "hide-icon"
+          expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass "hide-icon"
 
     describe "when showIcon is set to false in package settings", ->
       beforeEach ->
@@ -343,7 +352,7 @@ describe "TabBarView", ->
           tabBar.tabForItem(item1).updateIconVisibility.reset()
 
       it "hides the icon", ->
-        expect(tabBar.find('.tab:eq(0) .title')).toHaveClass "hide-icon"
+        expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass "hide-icon"
 
       it "shows the icon on the tab when showIcon is changed to true", ->
         atom.config.set("tabs.showIcons", true)
@@ -351,18 +360,18 @@ describe "TabBarView", ->
         waitsFor ->
           tabBar.tabForItem(item1).updateIconVisibility.callCount > 0
 
-        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "hide-icon"
+        expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "hide-icon"
 
   describe "when the item doesn't have an icon defined", ->
     it "doesn't display an icon on the tab", ->
-      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveClass "icon"
-      expect(tabBar.find('.tab:eq(2) .title')).not.toHaveClass "icon-squirrel"
+      expect($(tabBar).find('.tab:eq(2) .title')).not.toHaveClass "icon"
+      expect($(tabBar).find('.tab:eq(2) .title')).not.toHaveClass "icon-squirrel"
 
     it "shows the icon on the tab if an icon is defined", ->
       item2.getIconName = -> "squirrel"
       item2.emitIconChanged()
-      expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon"
-      expect(tabBar.find('.tab:eq(2) .title')).toHaveClass "icon-squirrel"
+      expect($(tabBar).find('.tab:eq(2) .title')).toHaveClass "icon"
+      expect($(tabBar).find('.tab:eq(2) .title')).toHaveClass "icon-squirrel"
 
   describe "when a tab item's modified status changes", ->
     it "adds or removes the 'modified' class to the tab based on the status", ->
@@ -393,85 +402,86 @@ describe "TabBarView", ->
   describe "context menu commands", ->
     beforeEach ->
       paneElement = atom.views.getView(pane)
-      paneElement.insertBefore(tabBar.element, paneElement.firstChild)
+      paneElement.insertBefore(tabBar, paneElement.firstChild)
+      jasmine.attachToDOM(paneElement) # Remove after Atom 1.2.0 is released
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
-        atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
+        atom.commands.dispatch(tabBar, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
         expect(tabBar.getTabs().length).toBe 2
-        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+        expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
-        atom.commands.dispatch(tabBar.element, 'tabs:close-other-tabs')
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
+        atom.commands.dispatch(tabBar, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
-        expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
-        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+        expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
+        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
 
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
-        triggerMouseDownEvent(tabBar.tabForItem(editor1), which: 3)
-        atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-right')
+        triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
+        atom.commands.dispatch(tabBar, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
-        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
-        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
+        expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
+        expect($(tabBar).find('.tab:contains(Item 1)')).toExist()
 
     describe "when tabs:close-all-tabs is fired", ->
       it "closes all the tabs", ->
         expect(pane.getItems().length).toBeGreaterThan 0
-        atom.commands.dispatch(tabBar.element, 'tabs:close-all-tabs')
+        atom.commands.dispatch(tabBar, 'tabs:close-all-tabs')
         expect(pane.getItems().length).toBe 0
 
     describe "when tabs:close-saved-tabs is fired", ->
       it "closes all the saved tabs", ->
         item1.isModified = -> true
-        atom.commands.dispatch(tabBar.element, 'tabs:close-saved-tabs')
+        atom.commands.dispatch(tabBar, 'tabs:close-saved-tabs')
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
-        atom.commands.dispatch(tabBar.element, 'tabs:split-up')
+        atom.commands.dispatch(tabBar, 'tabs:split-up')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[1]).toBe pane
         expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-down is fired", ->
       it "splits the selected tab down", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
-        atom.commands.dispatch(tabBar.element, 'tabs:split-down')
+        atom.commands.dispatch(tabBar, 'tabs:split-down')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[0]).toBe pane
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-left is fired", ->
       it "splits the selected tab to the left", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
-        atom.commands.dispatch(tabBar.element, 'tabs:split-left')
+        atom.commands.dispatch(tabBar, 'tabs:split-left')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[1]).toBe pane
         expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-right is fired", ->
       it "splits the selected tab to the right", ->
-        triggerMouseDownEvent(tabBar.tabForItem(item2), which: 3)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         expect(atom.workspace.getPanes().length).toBe 1
 
-        atom.commands.dispatch(tabBar.element, 'tabs:split-right')
+        atom.commands.dispatch(tabBar, 'tabs:split-right')
         expect(atom.workspace.getPanes().length).toBe 2
         expect(atom.workspace.getPanes()[0]).toBe pane
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
@@ -503,7 +513,7 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
         expect(tabBar.getTabs().length).toBe 2
-        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
+        expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
 
       it "does nothing if no tabs are open", ->
         atom.commands.dispatch(paneElement, 'tabs:close-tab')
@@ -517,8 +527,8 @@ describe "TabBarView", ->
         atom.commands.dispatch(paneElement, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
-        expect(tabBar.find('.tab:contains(sample.js)')).not.toExist()
-        expect(tabBar.find('.tab:contains(Item 2)')).toExist()
+        expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
+        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
 
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
@@ -526,8 +536,8 @@ describe "TabBarView", ->
         atom.commands.dispatch(paneElement, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
-        expect(tabBar.find('.tab:contains(Item 2)')).not.toExist()
-        expect(tabBar.find('.tab:contains(Item 1)')).toExist()
+        expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
+        expect($(tabBar).find('.tab:contains(Item 1)')).toExist()
 
     describe "when tabs:close-all-tabs is fired", ->
       it "closes all the tabs", ->
@@ -620,7 +630,8 @@ describe "TabBarView", ->
       beforeEach ->
         pane2 = pane.splitRight(copyActiveItem: true)
         [item2b] = pane2.getItems()
-        tabBar2 = new TabBarView(pane2)
+        tabBar2 = new TabBarView
+        tabBar2.initialize(pane2)
 
       it "removes the tab and item from their original pane and moves them to the target pane", ->
         expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
@@ -660,6 +671,7 @@ describe "TabBarView", ->
 
           [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar2)
           tabBar.onDragStart(dragStartEvent)
+          tabBar2.onDragOver(dropEvent)
           tabBar2.onDrop(dropEvent)
 
           expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2"]
@@ -691,9 +703,9 @@ describe "TabBarView", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1), tabBar.tabAtIndex(1))
         tabBar.onDragStart(dragStartEvent)
 
-        expect(dragStartEvent.originalEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
+        expect(dragStartEvent.dataTransfer.getData("text/plain")).toEqual editor1.getPath()
         if process.platform is 'darwin'
-          expect(dragStartEvent.originalEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
+          expect(dragStartEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
 
     describe "when a tab is dragged to another Atom window", ->
       it "closes the tab in the first window and opens the tab in the second window", ->
@@ -704,7 +716,7 @@ describe "TabBarView", ->
         expect(pane.getItems()).toEqual [item1, item2]
         expect(pane.getActiveItem()).toBe item2
 
-        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -723,7 +735,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -742,7 +754,7 @@ describe "TabBarView", ->
         tabBar.onDragStart(dragStartEvent)
         tabBar.onDropOnOtherWindow(pane.id, 1)
 
-        dropEvent.originalEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
 
         spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
         tabBar.onDrop(dropEvent)
@@ -757,12 +769,12 @@ describe "TabBarView", ->
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->
       newFileHandler = jasmine.createSpy('newFileHandler')
-      atom.commands.add(tabBar.element, 'application:new-file', newFileHandler)
+      atom.commands.add(tabBar, 'application:new-file', newFileHandler)
 
-      $(tabBar.getTabs()[0]).dblclick()
+      triggerMouseEvent("dblclick", tabBar.getTabs()[0])
       expect(newFileHandler.callCount).toBe 0
 
-      tabBar.dblclick()
+      triggerMouseEvent("dblclick", tabBar)
       expect(newFileHandler.callCount).toBe 1
 
   describe "when the mouse wheel is used on the tab bar", ->
@@ -774,34 +786,34 @@ describe "TabBarView", ->
       describe "when the mouse wheel scrolls up", ->
         it "changes the active tab to the previous tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(120))
+          tabBar.dispatchEvent(buildWheelEvent(120))
           expect(pane.getActiveItem()).toBe editor1
 
         it "changes the active tab to the previous tab only after the wheelDelta crosses the threshold", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(50))
+          tabBar.dispatchEvent(buildWheelEvent(50))
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(50))
+          tabBar.dispatchEvent(buildWheelEvent(50))
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(50))
+          tabBar.dispatchEvent(buildWheelEvent(50))
           expect(pane.getActiveItem()).toBe editor1
 
       describe "when the mouse wheel scrolls down", ->
         it "changes the active tab to the previous tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(-120))
+          tabBar.dispatchEvent(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item1
 
       describe "when the mouse wheel scrolls up and shift key is pressed", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelPlusShiftEvent(120))
+          tabBar.dispatchEvent(buildWheelPlusShiftEvent(120))
           expect(pane.getActiveItem()).toBe item2
 
       describe "when the mouse wheel scrolls down and shift key is pressed", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelPlusShiftEvent(-120))
+          tabBar.dispatchEvent(buildWheelPlusShiftEvent(-120))
           expect(pane.getActiveItem()).toBe item2
 
     describe "when tabScrolling is false in package settings", ->
@@ -811,13 +823,13 @@ describe "TabBarView", ->
       describe "when the mouse wheel scrolls up one unit", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(120))
+          tabBar.dispatchEvent(buildWheelEvent(120))
           expect(pane.getActiveItem()).toBe item2
 
       describe "when the mouse wheel scrolls down one unit", ->
         it "does not change the active tab", ->
           expect(pane.getActiveItem()).toBe item2
-          tabBar.trigger(buildWheelEvent(-120))
+          tabBar.dispatchEvent(buildWheelEvent(-120))
           expect(pane.getActiveItem()).toBe item2
 
   describe "when alwaysShowTabBar is true in package settings", ->
@@ -827,7 +839,7 @@ describe "TabBarView", ->
     describe "when 2 tabs are open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        expect(tabBar.element).not.toHaveClass 'hidden'
+        expect(tabBar).not.toHaveClass 'hidden'
 
     describe "when 1 tab is open", ->
       it "shows the tab bar", ->
@@ -835,7 +847,7 @@ describe "TabBarView", ->
         pane.destroyItem(item1)
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
-        expect(tabBar.element).not.toHaveClass 'hidden'
+        expect(tabBar).not.toHaveClass 'hidden'
 
   describe "when alwaysShowTabBar is false in package settings", ->
     beforeEach ->
@@ -844,7 +856,7 @@ describe "TabBarView", ->
     describe "when 2 tabs are open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        expect(tabBar.element).not.toHaveClass 'hidden'
+        expect(tabBar).not.toHaveClass 'hidden'
 
     describe "when 1 tab is open", ->
       it "hides the tab bar", ->
@@ -852,7 +864,7 @@ describe "TabBarView", ->
         pane.destroyItem(item1)
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
-        expect(tabBar.element).toHaveClass 'hidden'
+        expect(tabBar).toHaveClass 'hidden'
 
   describe "when usePreviewTabs is true in package settings", ->
     beforeEach ->
@@ -867,8 +879,8 @@ describe "TabBarView", ->
 
         runs ->
           pane.activateItem(editor1)
-          expect(tabBar.find('.tab .temp').length).toBe 1
-          expect(tabBar.find('.tab:eq(0) .title')).toHaveClass 'temp'
+          expect($(tabBar).find('.tab .temp').length).toBe 1
+          expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass 'temp'
 
     describe "when tabs:keep-preview-tab is trigger on the pane", ->
       it "removes the 'temp' class", ->
@@ -878,9 +890,9 @@ describe "TabBarView", ->
 
         runs ->
           pane.activateItem(editor1)
-          expect(tabBar.find('.tab .temp').length).toBe 1
+          expect($(tabBar).find('.tab .temp').length).toBe 1
           atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-preview-tab')
-          expect(tabBar.find('.tab .temp').length).toBe 0
+          expect($(tabBar).find('.tab .temp').length).toBe 0
 
     describe "when there is a temp tab already", ->
       it "it will replace an existing temporary tab", ->
@@ -997,7 +1009,8 @@ describe "TabBarView", ->
         runs ->
           pane.activateItem(editor1)
           pane2 = pane.splitRight(copyActiveItem: true)
-          tabBar2 = new TabBarView(pane2)
+          tabBar2 = new TabBarView
+          tabBar2.initialize(pane2)
 
           expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
 
@@ -1011,7 +1024,8 @@ describe "TabBarView", ->
           pane.activateItem(editor1)
           pane2 = pane.splitRight()
 
-          tabBar2 = new TabBarView(pane2)
+          tabBar2 = new TabBarView
+          tabBar2.initialize(pane2)
           tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
 
           expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
@@ -1101,22 +1115,22 @@ describe "TabBarView", ->
       it "adds custom style for new items", ->
         repository.getCachedPathStatus.andReturn 'new'
         tab.updateVcsStatus(repository)
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+        expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-added"
 
       it "adds custom style for modified items", ->
         repository.getCachedPathStatus.andReturn 'modified'
         tab.updateVcsStatus(repository)
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+        expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-modified"
 
       it "adds custom style for ignored items", ->
         repository.isPathIgnored.andReturn true
         tab.updateVcsStatus(repository)
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-ignored"
+        expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-ignored"
 
       it "does not add any styles for items not in the repository", ->
-        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-added"
-        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-modified"
-        expect(tabBar.find('.tab:eq(0) .title')).not.toHaveClass "status-ignored"
+        expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "status-added"
+        expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "status-modified"
+        expect($(tabBar).find('.tab:eq(0) .title')).not.toHaveClass "status-ignored"
 
     describe "when changes in item statuses are notified", ->
       it "updates status for items in the repository", ->
@@ -1126,9 +1140,9 @@ describe "TabBarView", ->
 
       it "updates the status of an item if it has changed", ->
         repository.getCachedPathStatus.reset()
-        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
+        expect($(tabBar).find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
         repository.emitDidChangeStatus {path: tab.path, pathStatus: "modified"}
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+        expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-modified"
         expect(repository.getCachedPathStatus.calls.length).toBe 0
 
       it "does not update status for items not in the repository", ->
@@ -1151,18 +1165,18 @@ describe "TabBarView", ->
       it "removes status from the tab if enableVcsColoring is set to false", ->
         repository.emitDidChangeStatus {path: tab.path, pathStatus: 'new'}
 
-        expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-added"
+        expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-added"
         atom.config.set "tabs.enableVcsColoring", false
-        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-added"
+        expect($(tabBar).find('.tab:eq(1) .title')).not.toHaveClass "status-added"
 
       it "adds status to the tab if enableVcsColoring is set to true", ->
         atom.config.set "tabs.enableVcsColoring", false
         repository.getCachedPathStatus.andReturn 'modified'
-        expect(tabBar.find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
+        expect($(tabBar).find('.tab:eq(1) .title')).not.toHaveClass "status-modified"
         atom.config.set "tabs.enableVcsColoring", true
 
         waitsFor ->
           repository.changeStatusCallbacks?.length > 0
 
         runs ->
-          expect(tabBar.find('.tab:eq(1) .title')).toHaveClass "status-modified"
+          expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-modified"
