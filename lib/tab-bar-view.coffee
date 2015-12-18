@@ -1,5 +1,5 @@
 BrowserWindow = null # Defer require until actually used
-ipc = try require 'ipc-renderer' catch then require 'ipc'
+try require {ipcRenderer} = 'electron' catch then ipcRenderer = require 'ipc'
 
 {matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
@@ -82,10 +82,10 @@ class TabBarView extends HTMLElement
     @addEventListener "dblclick", @onDoubleClick
     @addEventListener "click", @onClick
 
-    ipc.on('tab:dropped', @onDropOnOtherWindow.bind(this))
+    ipcRenderer.on('tab:dropped', @onDropOnOtherWindow.bind(this))
 
   unsubscribe: ->
-    ipc.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
+    ipcRenderer.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
