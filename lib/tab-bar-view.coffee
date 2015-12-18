@@ -1,4 +1,5 @@
 BrowserWindow = null # Defer require until actually used
+# TODO: Remove the catch once Electron 0.35.0 is bundled in Atom
 try require {ipcRenderer} = 'electron' catch then ipcRenderer = require 'ipc'
 
 {matches, closest, indexOf} = require './html-helpers'
@@ -402,7 +403,11 @@ class TabBarView extends HTMLElement
       @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
-    BrowserWindow ?= require('remote').require('browser-window')
+    try
+      BrowserWindow ?= require('electron').remote.BrowserWindow
+    catch e # TODO: Remove once Electron 0.35.0 is bundled in Atom
+      BrowserWindow ?= require('remote').require('browser-window')
+
     BrowserWindow.fromId id
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
