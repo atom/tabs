@@ -1,5 +1,6 @@
 BrowserWindow = null # Defer require until actually used
-RendererIpc = require 'ipc'
+# TODO: Remove the catch once Electron 0.35.0 is bundled in Atom
+try {ipcRenderer} = require 'electron' catch then ipcRenderer = require 'ipc'
 
 {matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
@@ -82,10 +83,10 @@ class TabBarView extends HTMLElement
     @addEventListener "dblclick", @onDoubleClick
     @addEventListener "click", @onClick
 
-    RendererIpc.on('tab:dropped', @onDropOnOtherWindow.bind(this))
+    ipcRenderer.on('tab:dropped', @onDropOnOtherWindow.bind(this))
 
   unsubscribe: ->
-    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
+    ipcRenderer.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
     @subscriptions.dispose()
 
   handleTreeViewEvents: ->
@@ -402,7 +403,11 @@ class TabBarView extends HTMLElement
       @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
-    BrowserWindow ?= require('remote').require('browser-window')
+    try
+      BrowserWindow ?= require('electron').remote.BrowserWindow
+    catch # TODO: Remove once Electron 0.35.0 is bundled in Atom
+      BrowserWindow ?= require('remote').require('browser-window')
+
     BrowserWindow.fromId id
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
