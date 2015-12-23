@@ -44,26 +44,26 @@ describe "Tabs package main", ->
       expect(workspaceElement.querySelectorAll('.pane').length).toBe 3
       expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
-    it "serializes preview tab state", ->
-      atom.config.set('tabs.usePreviewTabs', true)
-
-      waitsForPromise ->
-        atom.workspace.open('sample.txt')
-
-      runs ->
-        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
-        expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
-
-        atom.packages.deactivatePackage('tabs')
-
-        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 0
-
-      waitsForPromise ->
-        atom.packages.activatePackage('tabs')
-
-      runs ->
-        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
-        expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
+    # it "serializes preview tab state", ->
+    #   atom.config.set('tabs.usePreviewTabs', true)
+    #
+    #   waitsForPromise ->
+    #     atom.workspace.open('sample.txt')
+    #
+    #   runs ->
+    #     expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
+    #     expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
+    #
+    #     atom.packages.deactivatePackage('tabs')
+    #
+    #     expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 0
+    #
+    #   waitsForPromise ->
+    #     atom.packages.activatePackage('tabs')
+    #
+    #   runs ->
+    #     expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
+    #     expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
 
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
@@ -849,6 +849,23 @@ describe "TabBarView", ->
         pane.destroyItem(item2)
         expect(pane.getItems().length).toBe 1
         expect(tabBar).toHaveClass 'hidden'
+
+  describe "when tab is for a pending item", ->
+    beforeEach ->
+      pane.destroyItems()
+
+    describe "when opening a new tab", ->
+      it "adds tab with class 'temp'", ->
+        editor1 = null
+        waitsForPromise ->
+          atom.workspace.open('sample.txt').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          expect($(tabBar).find('.tab .temp').length).toBe 1
+          expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+
 
   describe "when usePreviewTabs is true in package settings", ->
     beforeEach ->
