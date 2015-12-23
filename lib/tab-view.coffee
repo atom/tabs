@@ -6,7 +6,9 @@ class TabView extends HTMLElement
   initialize: (@item) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
-      @isPreviewTab = atom.config.get('tabs.usePreviewTabs')
+      @isPreviewTab = atom.workspace.getActivePane().isActiveItemPending()
+
+    atom.workspace.getActivePane().onDidConfirmPendingItem => @clearPreview()
 
     @classList.add('tab', 'sortable')
 
