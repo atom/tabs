@@ -6,7 +6,7 @@ class TabView extends HTMLElement
   initialize: (@item) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
-      @isPreviewTab = atom.config.get('tabs.usePreviewTabs')
+      @isPreviewTab = @item.isPending()
 
     @classList.add('tab', 'sortable')
 
@@ -37,6 +37,13 @@ class TabView extends HTMLElement
       @updateDataAttributes()
       @updateTitle()
       @updateTooltip()
+
+    if typeof @item.onDidConfirmPendingState is 'function'
+      onDidConfirmPendingStateDisposable = @item.onDidConfirmPendingState => @clearPreview()
+      if Disposable.isDisposable(onDidConfirmPendingStateDisposable)
+        @subscriptions.add(onDidConfirmPendingStateDisposable)
+      else
+        console.warn "::onDidConfirmPendingState does not return a valid Disposable!", @item
 
     if typeof @item.onDidChangeTitle is 'function'
       onDidChangeTitleDisposable = @item.onDidChangeTitle(titleChangedHandler)
