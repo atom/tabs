@@ -16,10 +16,6 @@ module.exports =
       type: 'integer'
       default: 120
       description: 'Threshold for switching to the next/previous tab when the `Tab Scrolling` config setting is enabled. Higher numbers mean that a longer scroll is needed to jump to the next/previous tab.'
-    usePreviewTabs:
-      type: 'boolean'
-      default: false
-      description: 'Tabs will only stay open if they\'re double-clicked or their contents is modified.'
     enableVcsColoring:
       title: "Enable VCS Coloring"
       type: 'boolean'
