@@ -373,7 +373,8 @@ class TabBarView extends HTMLElement
       tab.classList.add('right-clicked')
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
-      @pane.activateItem(tab.item)
+      @pane.setActiveItem(tab.item)
+      tab.item.confirmPendingState()
       setImmediate => @pane.activate()
     else if event.which is 2
       @pane.destroyItem(tab.item)
