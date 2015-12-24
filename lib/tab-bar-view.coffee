@@ -70,6 +70,9 @@ class TabBarView extends HTMLElement
       @destroyPreviousPreviewTab()
       @updateActiveTab()
 
+    @subscriptions.add @pane.onDidConfirmPendingItem ({item}) =>
+      @tabForItem(item)?.clearPreview()
+
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
