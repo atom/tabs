@@ -38,12 +38,12 @@ class TabView extends HTMLElement
       @updateTitle()
       @updateTooltip()
 
-    if typeof @item.onDidConfirmPendingState is 'function'
-      onDidConfirmPendingStateDisposable = @item.onDidConfirmPendingState => @clearPreview()
-      if Disposable.isDisposable(onDidConfirmPendingStateDisposable)
-        @subscriptions.add(onDidConfirmPendingStateDisposable)
+    if typeof @item.onDidTerminatePendingState is 'function'
+      onDidTerminatePendingStateDisposable = @item.onDidTerminatePendingState => @clearPreview()
+      if Disposable.isDisposable(onDidTerminatePendingStateDisposable)
+        @subscriptions.add(onDidTerminatePendingStateDisposable)
       else
-        console.warn "::onDidConfirmPendingState does not return a valid Disposable!", @item
+        console.warn "::onDidTerminatePendingState does not return a valid Disposable!", @item
 
     if typeof @item.onDidChangeTitle is 'function'
       onDidChangeTitleDisposable = @item.onDidChangeTitle(titleChangedHandler)

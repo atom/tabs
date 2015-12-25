@@ -374,7 +374,7 @@ class TabBarView extends HTMLElement
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
-      tab.item.confirmPendingState?()
+      tab.item.terminatePendingState?()
       setImmediate => @pane.activate()
     else if event.which is 2
       @pane.destroyItem(tab.item)
