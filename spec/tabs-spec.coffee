@@ -1029,6 +1029,21 @@ describe "TabBarView", ->
     describe "when double clicking a file in the tree view", ->
       it "makes the tab for that file permanent", ->
         editor1 = null
+
+        waitsForPromise ->
+          atom.workspace.open('sample.js').then (o) -> editor1 = o
+
+        runs ->
+          pane.activateItem(editor1)
+          expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
+          dbclickEvt = document.createEvent 'MouseEvents'
+          dbclickEvt.initEvent 'dblclick'
+          tabBar.tabForItem(editor1).dispatchEvent dbclickEvt
+          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+    describe "when press enter on a file in the tree view", ->
+      it "makes the tab for that file permanent", ->
+        editor1 = null
         workspaceElement = atom.views.getView(atom.workspace)
         jasmine.attachToDOM(workspaceElement)
 
@@ -1042,7 +1057,7 @@ describe "TabBarView", ->
           workspaceElement.querySelector('.tree-view')
 
         waitsForPromise ->
-          atom.workspace.open('sample.js').then (o) -> editor1 = o
+          atom.project.open('sample.js').then (o) -> editor1 = o
 
         runs ->
           pane.activateItem(editor1)
@@ -1050,10 +1065,7 @@ describe "TabBarView", ->
           expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
 
           fileNode = workspaceElement.querySelector(".tree-view [data-path=\"#{path.join(__dirname, 'fixtures', 'sample.js')}\"]")
-          fileNode.dispatchEvent(new MouseEvent('click', detail: 1, bubbles: true, cancelable: true))
-          fileNode.dispatchEvent(new MouseEvent('click', detail: 2, bubbles: true, cancelable: true))
-          fileNode.dispatchEvent(new MouseEvent('dblclick', detail: 2, bubbles: true, cancelable: true))
-
+          atom.commands.dispatch(fileNode, 'tree-view:open-selected-entry')
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
   describe "integration with version control systems", ->
