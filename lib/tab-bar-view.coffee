@@ -100,7 +100,7 @@ class TabBarView extends HTMLElement
       if itemPath = target.dataset.path
         @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
 
-    $(document.body).on('dblclick', treeViewSelector, clearPreviewTabForFile)
+    document.body.addEventListener('dblclick', clearPreviewTabForFile)
 
     atom.commands.add '.tree-view',
       'tree-view:open-selected-entry': ({target}) =>
