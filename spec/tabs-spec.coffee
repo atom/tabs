@@ -1039,8 +1039,8 @@ describe "TabBarView", ->
           fileNode.dispatchEvent(new MouseEvent('click', detail: 2, bubbles: true, cancelable: true))
           fileNode.dispatchEvent(new MouseEvent('dblclick', detail: 2, bubbles: true, cancelable: true))
 
-          waits(1) # wait for click handlers to get invoked
           expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+          waits(10) # async nature causes uncaught exceptions, so wait a little bit before we cleanup
 
   describe "integration with version control systems", ->
     [repository, tab, tab1] = []
