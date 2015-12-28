@@ -25,6 +25,10 @@ module.exports =
       type: 'boolean'
       default: false
       description: 'Color file names in tabs based on VCS status, similar to how file names are colored in the tree view.'
+    alwaysOpenNewTabAtEnd:
+      type: 'boolean'
+      default: false
+      description: 'New tabs will be inserted at the end of the current list of tabs'
 
   activate: (state) ->
     state = [] unless Array.isArray(state)
