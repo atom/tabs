@@ -892,18 +892,18 @@ describe "TabBarView", ->
           expect(tabBar.tabForItem(editor1)).not.toExist()
           expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
-      it 'makes the tab permanent when double clicking the tab', ->
+      it 'makes the tab permanent when clicking the tab', ->
         editor2 = null
 
         waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) -> editor2 = o
+          atom.workspace.open('sample.txt', pending: true).then (o) -> editor2 = o
 
         runs ->
           pane.activateItem(editor2)
-          dbclickEvt = document.createEvent 'MouseEvents'
-          dbclickEvt.initEvent 'dblclick'
-          tabBar.tabForItem(editor2).dispatchEvent dbclickEvt
+          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+          triggerMouseEvent('mousedown', tabBar.tabForItem(editor2), which: 1)
           expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
+          waits 0 # To prevent uncaught error "Pane has been destroyed"
 
     describe 'when opening views that do not have file paths', ->
       editor2 = null
@@ -911,21 +911,20 @@ describe "TabBarView", ->
 
       beforeEach ->
         waitsForPromise ->
+          atom.workspace.open('sample.txt', pending: true).then (o) ->
+            editor2 = o
+
+        waitsForPromise ->
           atom.packages.activatePackage('settings-view').then ->
             atom.workspace.open('atom://config').then (o) ->
               settingsView = o
-
-        waitsForPromise ->
-          atom.workspace.open('sample.txt', pending: true).then (o) ->
-            editor2 = o
 
       it 'creates a permanent tab', ->
         expect(tabBar.tabForItem(settingsView)).toExist()
         expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
 
-      it 'keeps an existing temp tab', ->
-        expect(tabBar.tabForItem(editor2)).toExist()
-        expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+      it 'destroys an existing temp tab', ->
+        expect(tabBar.tabForItem(editor2)).not.toExist()
 
     describe 'when editing a file', ->
       it 'makes the tab permanent', ->
