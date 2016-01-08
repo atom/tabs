@@ -18,7 +18,7 @@ class TabBarView extends HTMLElement
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
-      'tabs:keep-preview-tab': => @clearPreviewTabs()
+      'tabs:keep-preview-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
@@ -117,6 +117,10 @@ class TabBarView extends HTMLElement
 
   clearPreviewTabs: ->
     tab.clearPreview() for tab in @getTabs()
+    return
+
+  terminatePendingStates: ->
+    tab.terminatePendingState() for tab in @getTabs()
     return
 
   storePreviewTabToDestroy: ->

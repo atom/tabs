@@ -190,6 +190,9 @@ class TabView extends HTMLElement
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
 
+  terminatePendingState: ->
+    @item.terminatePendingState?()
+
   clearPreview: ->
     @isPreviewTab = false
     @itemTitle.classList.remove('temp')
