@@ -845,7 +845,7 @@ describe "TabBarView", ->
             expect($(tabBar).find('.tab .temp').length).toBe 1
             expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass 'temp'
 
-      describe "when tabs:keep-preview-tab is triggered on the pane", ->
+      describe "when tabs:keep-pending-tab is triggered on the pane", ->
         it "terminates pending state on the tab's item", ->
           editor1 = null
           waitsForPromise ->
@@ -854,7 +854,7 @@ describe "TabBarView", ->
           runs ->
             pane.activateItem(editor1)
             expect(editor1.isPending()).toBe true
-            atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-preview-tab')
+            atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-pending-tab')
             expect(editor1.isPending()).toBe false
 
       describe "when there is a temp tab already", ->
@@ -933,8 +933,8 @@ describe "TabBarView", ->
           runs ->
             expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
-      describe 'when switching from a preview tab to a permanent tab', ->
-        it "closes the preview tab", ->
+      describe 'when switching from a pending tab to a permanent tab', ->
+        it "closes the pending tab", ->
           editor1 = null
           editor2 = null
 
@@ -952,7 +952,7 @@ describe "TabBarView", ->
             expect(pane.getItems()).toEqual [editor1]
             expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
-      describe "when splitting a preview tab", ->
+      describe "when splitting a pending tab", ->
         it "makes the tab permanent in the new pane", ->
           editor1 = null
           waitsForPromise ->
@@ -966,7 +966,7 @@ describe "TabBarView", ->
 
             expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
 
-      describe "when dragging a preview tab to a different pane", ->
+      describe "when dragging a pending tab to a different pane", ->
         it "makes the tab permanent in the other pane", ->
           editor1 = null
           waitsForPromise ->

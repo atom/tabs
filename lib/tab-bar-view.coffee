@@ -18,7 +18,7 @@ class TabBarView extends HTMLElement
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
-      'tabs:keep-preview-tab': => @terminatePendingStates()
+      'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
@@ -53,7 +53,7 @@ class TabBarView extends HTMLElement
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
-    @setInitialPreviewTab(state.previewTabURI)
+    @setInitialPendingTab(state.pendingTabURI)
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -68,7 +68,7 @@ class TabBarView extends HTMLElement
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      @destroyPreviousPreviewTab()
+      @destroyPreviousPendingTab()
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -92,52 +92,52 @@ class TabBarView extends HTMLElement
 
   handleTreeViewEvents: ->
     treeViewSelector = '.tree-view .entry.file'
-    clearPreviewTabForFile = ({target}) =>
+    clearPendingTabForFile = ({target}) =>
       return unless @pane.isFocused()
       return unless matches(target, treeViewSelector)
 
       target = target.querySelector('[data-path]') unless target.dataset.path
 
       if itemPath = target.dataset.path
-        @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
+        @tabForItem(@pane.itemForURI(itemPath))?.clearPending()
 
-    document.body.addEventListener('dblclick', clearPreviewTabForFile)
+    document.body.addEventListener('dblclick', clearPendingTabForFile)
     @subscriptions.add dispose: ->
-      document.body.removeEventListener('dblclick', clearPreviewTabForFile)
+      document.body.removeEventListener('dblclick', clearPendingTabForFile)
 
-  setInitialPreviewTab: (previewTabURI) ->
-    for tab in @getTabs() when tab.isPreviewTab
-      tab.clearPreview() if tab.item.getURI() isnt previewTabURI
+  setInitialPendingTab: (pendingTabURI) ->
+    for tab in @getTabs() when tab.isPendingTab
+      tab.clearPending() if tab.item.getURI() isnt pendingTabURI
     return
 
-  getPreviewTabURI: ->
-    for tab in @getTabs() when tab.isPreviewTab
+  getPendingTabURI: ->
+    for tab in @getTabs() when tab.isPendingTab
       return tab.item.getURI()
     return
 
-  clearPreviewTabs: ->
-    tab.clearPreview() for tab in @getTabs()
+  clearPendingTabs: ->
+    tab.clearPending() for tab in @getTabs()
     return
 
   terminatePendingStates: ->
     tab.terminatePendingState() for tab in @getTabs()
     return
 
-  storePreviewTabToDestroy: ->
-    for tab in @getTabs() when tab.isPreviewTab
-      @previewTabToDestroy = tab
+  storePendingTabToDestroy: ->
+    for tab in @getTabs() when tab.isPendingTab
+      @pendingTabToDestroy = tab
     return
 
-  destroyPreviousPreviewTab: ->
-    if @previewTabToDestroy?.isPreviewTab
-      @pane.destroyItem(@previewTabToDestroy.item)
-    @previewTabToDestroy = null
+  destroyPreviousPendingTab: ->
+    if @pendingTabToDestroy?.isPendingTab
+      @pane.destroyItem(@pendingTabToDestroy.item)
+    @pendingTabToDestroy = null
 
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    tabView.clearPreview() if @isItemMovingBetweenPanes
-    @storePreviewTabToDestroy() if tabView.isPreviewTab
+    tabView.clearPending() if @isItemMovingBetweenPanes
+    @storePendingTabToDestroy() if tabView.isPendingTab
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->

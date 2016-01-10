@@ -48,4 +48,4 @@ module.exports =
 
   serialize: ->
     @tabBarViews.map (tabBarView) ->
-      previewTabURI: tabBarView.getPreviewTabURI()
+      pendingTabURI: tabBarView.getPendingTabURI()

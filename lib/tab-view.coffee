@@ -6,7 +6,7 @@ class TabView extends HTMLElement
   initialize: (@item) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
-      @isPreviewTab = @item.isPending?()
+      @isPendingTab = @item.isPending?()
 
     @classList.add('tab', 'sortable')
 
@@ -27,10 +27,10 @@ class TabView extends HTMLElement
     @updateModifiedStatus()
     @setupTooltip()
 
-    if @isPreviewTab
+    if @isPendingTab
       @itemTitle.classList.add('temp')
-      @classList.add('preview-tab')
-      @addEventListener 'dblclick', => @clearPreview()
+      @classList.add('pending-tab')
+      @addEventListener 'dblclick', => @clearPending()
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -39,7 +39,7 @@ class TabView extends HTMLElement
       @updateTooltip()
 
     if typeof @item.onDidTerminatePendingState is 'function'
-      onDidTerminatePendingStateDisposable = @item.onDidTerminatePendingState => @clearPreview()
+      onDidTerminatePendingStateDisposable = @item.onDidTerminatePendingState => @clearPending()
       if Disposable.isDisposable(onDidTerminatePendingStateDisposable)
         @subscriptions.add(onDidTerminatePendingStateDisposable)
       else
@@ -90,7 +90,7 @@ class TabView extends HTMLElement
 
     if typeof @item.onDidSave is 'function'
       onDidSaveDisposable = @item.onDidSave (event) =>
-        @clearPreview()
+        @clearPending()
         if event.path isnt @path
           @path = event.path
           @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
@@ -193,10 +193,10 @@ class TabView extends HTMLElement
   terminatePendingState: ->
     @item.terminatePendingState?()
 
-  clearPreview: ->
-    @isPreviewTab = false
+  clearPending: ->
+    @isPendingTab = false
     @itemTitle.classList.remove('temp')
-    @classList.remove('preview-tab')
+    @classList.remove('pending-tab')
 
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
@@ -206,7 +206,7 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      @clearPreview()
+      @clearPending()
       @classList.add('modified') unless @isModified
       @isModified = true
     else
