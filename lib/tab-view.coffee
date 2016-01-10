@@ -30,7 +30,6 @@ class TabView extends HTMLElement
     if @isPendingTab
       @itemTitle.classList.add('temp')
       @classList.add('pending-tab')
-      @addEventListener 'dblclick', => @clearPending()
 
   handleEvents: ->
     titleChangedHandler = =>
@@ -90,7 +89,7 @@ class TabView extends HTMLElement
 
     if typeof @item.onDidSave is 'function'
       onDidSaveDisposable = @item.onDidSave (event) =>
-        @clearPending()
+        @terminatePendingState()
         if event.path isnt @path
           @path = event.path
           @setupVcsStatus() if atom.config.get 'tabs.enableVcsColoring'
@@ -206,7 +205,6 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      @clearPending()
       @classList.add('modified') unless @isModified
       @isModified = true
     else

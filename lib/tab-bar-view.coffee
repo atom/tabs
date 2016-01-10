@@ -14,7 +14,7 @@ class TabBarView extends HTMLElement
     @classList.add("inset-panel")
     @setAttribute("tabindex", -1)
 
-  initialize: (@pane, state={}) ->
+  initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
@@ -53,7 +53,6 @@ class TabBarView extends HTMLElement
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
-    @setInitialPendingTab(state.pendingTabURI)
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -75,8 +74,6 @@ class TabBarView extends HTMLElement
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
-    @handleTreeViewEvents()
-
     @updateActiveTab()
 
     @addEventListener "mousedown", @onMouseDown
@@ -90,37 +87,8 @@ class TabBarView extends HTMLElement
     ipcRenderer.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
-  handleTreeViewEvents: ->
-    treeViewSelector = '.tree-view .entry.file'
-    clearPendingTabForFile = ({target}) =>
-      return unless @pane.isFocused()
-      return unless matches(target, treeViewSelector)
-
-      target = target.querySelector('[data-path]') unless target.dataset.path
-
-      if itemPath = target.dataset.path
-        @tabForItem(@pane.itemForURI(itemPath))?.clearPending()
-
-    document.body.addEventListener('dblclick', clearPendingTabForFile)
-    @subscriptions.add dispose: ->
-      document.body.removeEventListener('dblclick', clearPendingTabForFile)
-
-  setInitialPendingTab: (pendingTabURI) ->
-    for tab in @getTabs() when tab.isPendingTab
-      tab.clearPending() if tab.item.getURI() isnt pendingTabURI
-    return
-
-  getPendingTabURI: ->
-    for tab in @getTabs() when tab.isPendingTab
-      return tab.item.getURI()
-    return
-
-  clearPendingTabs: ->
-    tab.clearPending() for tab in @getTabs()
-    return
-
   terminatePendingStates: ->
-    tab.terminatePendingState() for tab in @getTabs()
+    tab.terminatePendingState?() for tab in @getTabs()
     return
 
   storePendingTabToDestroy: ->
@@ -136,7 +104,7 @@ class TabBarView extends HTMLElement
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
-    tabView.clearPending() if @isItemMovingBetweenPanes
+    tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @storePendingTabToDestroy() if tabView.isPendingTab
     @insertTabAtIndex(tabView, index)
 
