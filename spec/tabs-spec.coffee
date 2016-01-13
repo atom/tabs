@@ -880,9 +880,8 @@ describe "TabBarView", ->
           waitsForPromise ->
             atom.workspace.open('sample.txt', pending: true).then (o) -> editor2 = o
 
-          waitsFor (done) ->
+          runs ->
             pane.activateItem(editor2)
-            pane.onDidActivate(done)
             expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
             triggerMouseEvent('mousedown', tabBar.tabForItem(editor2), which: 1)
             expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
