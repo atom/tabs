@@ -880,12 +880,12 @@ describe "TabBarView", ->
           waitsForPromise ->
             atom.workspace.open('sample.txt', pending: true).then (o) -> editor2 = o
 
-          runs ->
+          waitsFor (done) ->
             pane.activateItem(editor2)
+            pane.onDidActivate(done)
             expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
             triggerMouseEvent('mousedown', tabBar.tabForItem(editor2), which: 1)
             expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
-            waits 0 # To prevent uncaught error "Pane has been destroyed"
 
       describe 'when opening views that do not have file paths', ->
         editor2 = null
