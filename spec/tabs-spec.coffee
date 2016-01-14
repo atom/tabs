@@ -873,7 +873,7 @@ describe "TabBarView", ->
             expect(tabBar.tabForItem(editor1)).not.toExist()
             expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
-        it 'makes the tab permanent when clicking the tab', ->
+        it "makes the tab permanent when clicking the tab", ->
           editor2 = null
 
           waitsForPromise ->
@@ -885,8 +885,8 @@ describe "TabBarView", ->
             triggerMouseEvent('mousedown', tabBar.tabForItem(editor2), which: 1)
             expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
 
-      describe 'when editing a file in pending state', ->
-        it 'makes the item and tab permanent', ->
+      describe "when editing a file in pending state", ->
+        it "makes the item and tab permanent", ->
           editor1 = null
           waitsForPromise ->
             atom.workspace.open('sample.txt', pending: true).then (o) ->
@@ -898,8 +898,8 @@ describe "TabBarView", ->
           runs ->
             expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
-      describe 'when saving a file', ->
-        it 'makes the tab permanent', ->
+      describe "when saving a file", ->
+        it "makes the tab permanent", ->
           editor1 = null
           waitsForPromise ->
             atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt'), pending: true).then (o) ->
@@ -910,7 +910,7 @@ describe "TabBarView", ->
           runs ->
             expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
-      describe 'when switching from a pending tab to a permanent tab', ->
+      describe "when switching from a pending tab to a permanent tab", ->
         it "keeps the pending tab open", ->
           editor1 = null
           editor2 = null
