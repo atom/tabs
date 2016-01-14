@@ -870,7 +870,6 @@ describe "TabBarView", ->
 
           runs ->
             expect(editor1.isDestroyed()).toBe true
-            expect(editor2.isDestroyed()).toBe false
             expect(tabBar.tabForItem(editor1)).not.toExist()
             expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
@@ -886,24 +885,11 @@ describe "TabBarView", ->
             triggerMouseEvent('mousedown', tabBar.tabForItem(editor2), which: 1)
             expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
 
-      describe 'when opening views that do not have file paths', ->
-
-        it 'creates a permanent tab', ->
-          settingsView = null
-          waitsForPromise ->
-            atom.packages.activatePackage('settings-view').then ->
-              atom.workspace.open('atom://config').then (o) ->
-                settingsView = o
-
-          runs ->
-            expect(tabBar.tabForItem(settingsView)).toExist()
-            expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
-
-      describe 'when editing a file', ->
-        it 'makes the tab permanent', ->
+      describe 'when editing a file in pending state', ->
+        it 'makes the item and tab permanent', ->
           editor1 = null
           waitsForPromise ->
-            atom.workspace.open('sample.txt').then (o) ->
+            atom.workspace.open('sample.txt', pending: true).then (o) ->
               editor1 = o
               pane.activateItem(editor1)
               editor1.insertText('x')
@@ -916,7 +902,7 @@ describe "TabBarView", ->
         it 'makes the tab permanent', ->
           editor1 = null
           waitsForPromise ->
-            atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt')).then (o) ->
+            atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt'), pending: true).then (o) ->
               editor1 = o
               pane.activateItem(editor1)
               editor1.save()
@@ -966,7 +952,7 @@ describe "TabBarView", ->
         it "makes the tab permanent in the other pane", ->
           editor1 = null
           waitsForPromise ->
-            atom.workspace.open('sample.txt').then (o) -> editor1 = o
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor1 = o
 
           runs ->
             pane.activateItem(editor1)
