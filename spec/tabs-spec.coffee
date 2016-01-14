@@ -887,25 +887,17 @@ describe "TabBarView", ->
             expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
 
       describe 'when opening views that do not have file paths', ->
-        editor2 = null
-        settingsView = null
 
-        beforeEach ->
-          waitsForPromise ->
-            atom.workspace.open('sample.txt', pending: true).then (o) ->
-              editor2 = o
-
+        it 'creates a permanent tab', ->
+          settingsView = null
           waitsForPromise ->
             atom.packages.activatePackage('settings-view').then ->
               atom.workspace.open('atom://config').then (o) ->
                 settingsView = o
 
-        it 'creates a permanent tab', ->
-          expect(tabBar.tabForItem(settingsView)).toExist()
-          expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
-
-        it 'destroys an existing temp tab', ->
-          expect(tabBar.tabForItem(editor2)).not.toExist()
+          runs ->
+            expect(tabBar.tabForItem(settingsView)).toExist()
+            expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
 
       describe 'when editing a file', ->
         it 'makes the tab permanent', ->
@@ -933,7 +925,7 @@ describe "TabBarView", ->
             expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
       describe 'when switching from a pending tab to a permanent tab', ->
-        it "closes the pending tab", ->
+        it "keeps the pending tab open", ->
           editor1 = null
           editor2 = null
 
@@ -947,23 +939,28 @@ describe "TabBarView", ->
 
           runs ->
             pane.activateItem(editor1)
-            expect(pane.getItems().length).toBe 1
-            expect(pane.getItems()).toEqual [editor1]
-            expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+            expect(pane.getItems().length).toBe 2
+            expect(pane.getItems()).toEqual [editor1, editor2]
+            expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
       describe "when splitting a pending tab", ->
-        it "makes the tab permanent in the new pane", ->
-          editor1 = null
+        editor1 = null
+        beforeEach ->
           waitsForPromise ->
-            atom.workspace.open('sample.txt').then (o) -> editor1 = o
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor1 = o
 
-          runs ->
-            pane.activateItem(editor1)
-            pane2 = pane.splitRight(copyActiveItem: true)
-            tabBar2 = new TabBarView
-            tabBar2.initialize(pane2)
+        it "makes the tab permanent in the new pane", ->
+          pane.activateItem(editor1)
+          pane2 = pane.splitRight(copyActiveItem: true)
+          tabBar2 = new TabBarView
+          tabBar2.initialize(pane2)
+          newEditor = pane2.getActiveItem()
+          expect(newEditor.isPending()).toBe false
+          expect($(tabBar2.tabForItem(newEditor)).find('.title')).not.toHaveClass 'temp'
 
-            expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
+        it "keeps the pending tab in the old pane", ->
+          expect(editor1.isPending()).toBe true
+          expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
 
       describe "when dragging a pending tab to a different pane", ->
         it "makes the tab permanent in the other pane", ->
