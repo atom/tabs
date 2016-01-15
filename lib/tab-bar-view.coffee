@@ -67,7 +67,6 @@ class TabBarView extends HTMLElement
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      @destroyPreviousPendingTab()
       @updateActiveTab()
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
@@ -91,21 +90,10 @@ class TabBarView extends HTMLElement
     tab.terminatePendingState?() for tab in @getTabs()
     return
 
-  storePendingTabToDestroy: ->
-    for tab in @getTabs() when tab.isPendingTab
-      @pendingTabToDestroy = tab
-    return
-
-  destroyPreviousPendingTab: ->
-    if @pendingTabToDestroy?.isPendingTab
-      @pane.destroyItem(@pendingTabToDestroy.item)
-    @pendingTabToDestroy = null
-
   addTabForItem: (item, index) ->
     tabView = new TabView()
     tabView.initialize(item)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
-    @storePendingTabToDestroy() if tabView.isPendingTab
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
