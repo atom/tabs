@@ -22,8 +22,8 @@ menu: [
     {label: 'Split Left', command: 'tabs:split-left'}
     {label: 'Split Right', command: 'tabs:split-right'}
   ]
-  '.tab.preview-tab': [
-    {label: 'Keep Preview Tab', command: 'tabs:keep-preview-tab'}
+  '.tab.pending-tab': [
+    {label: 'Keep Pending Tab', command: 'tabs:keep-pending-tab'}
   ]
   '.tab-bar': [
     {label: 'Reopen Closed Tab', command: 'pane:reopen-closed-item'}
