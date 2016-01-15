@@ -335,14 +335,16 @@ class TabBarView extends HTMLElement
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
-      tab.item.terminatePendingState?()
       setImmediate => @pane.activate() unless @pane.isDestroyed()
     else if event.which is 2
       @pane.destroyItem(tab.item)
       event.preventDefault()
 
   onDoubleClick: (event) ->
-    if event.target is this
+    if tab = closest(event.target, '.tab')
+      tab.item.terminatePendingState?()
+
+    else if event.target is this
       atom.commands.dispatch(this, 'application:new-file')
       event.preventDefault()
 

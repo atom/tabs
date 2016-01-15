@@ -873,7 +873,7 @@ describe "TabBarView", ->
             expect(tabBar.tabForItem(editor1)).not.toExist()
             expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
 
-        it "makes the tab permanent when clicking the tab", ->
+        it "makes the tab permanent when double-clicking the tab", ->
           editor2 = null
 
           waitsForPromise ->
@@ -882,7 +882,7 @@ describe "TabBarView", ->
           runs ->
             pane.activateItem(editor2)
             expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
-            triggerMouseEvent('mousedown', tabBar.tabForItem(editor2), which: 1)
+            triggerMouseEvent('dblclick', tabBar.tabForItem(editor2), which: 1)
             expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
 
       describe "when editing a file in pending state", ->
