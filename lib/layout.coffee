@@ -10,6 +10,8 @@ module.exports =
   deactivate: ->
     @view.parentElement?.removeChild @view
 
+  test: {}
+
   drag: (e) ->
     @lastCoords = e
     pane = @getPaneAt e
@@ -44,10 +46,10 @@ module.exports =
     closest document.elementFromPoint(clientX, clientY), selector
 
   getItemViewAt: (coords) ->
-    @getElement coords, '.item-views'
+    @test.itemView or @getElement coords, '.item-views'
 
   getPaneAt: (coords) ->
-    @getElement(@lastCoords, 'atom-pane')?.getModel()
+    @test.pane or @getElement(@lastCoords, 'atom-pane')?.getModel()
 
   paneForTab: (tab) ->
     tab.parentElement.pane
@@ -88,7 +90,7 @@ module.exports =
 
   updateView: (pane, coords) ->
     @view.classList.add 'visible'
-    rect = pane.getBoundingClientRect()
+    rect = @test.rect or pane.getBoundingClientRect()
     split = if coords then @splitType @normalizeCoords rect, coords
     @updateViewBounds @innerBounds rect, @boundsForSplit split
     split
