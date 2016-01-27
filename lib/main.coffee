@@ -1,7 +1,9 @@
 FileIcons = require './file-icons'
+layout = require './layout'
 
 module.exports =
   activate: (state) ->
+    layout.activate()
     @tabBarViews = []
 
     TabBarView = require './tab-bar-view'
@@ -27,6 +29,7 @@ module.exports =
       pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
 
   deactivate: ->
+    layout.deactivate()
     @paneSubscription.dispose()
     @fileIconsDisposable?.dispose()
     tabBarView.remove() for tabBarView in @tabBarViews
