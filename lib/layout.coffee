@@ -78,8 +78,10 @@ module.exports =
       else               [0,   0,   1,   1  ]
 
   innerBounds: ({left, top, width, height}, [x, y, w, h]) ->
-    left += x*width; top += y*height
-    width *= w; height *= h
+    left += x*width
+    top  += y*height
+    width  *= w
+    height *= h
     {left, top, width, height}
 
   updateViewBounds: ({left, top, width, height}) ->
