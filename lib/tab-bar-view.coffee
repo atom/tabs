@@ -69,7 +69,7 @@ class TabBarView extends HTMLElement
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
       @updateActiveTab()
 
-    @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
+    @subscriptions.add atom.config.observe 'tabs.tabScrolling', @updateTabScrolling.bind(this)
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
@@ -358,9 +358,13 @@ class TabBarView extends HTMLElement
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
 
-  updateTabScrolling: ->
-    @tabScrolling = atom.config.get('tabs.tabScrolling')
+  updateTabScrolling: (value) ->
+    if value is 'platform'
+      @tabScrolling = (process.platform is 'linux')
+    else
+      @tabScrolling = value
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
+
     if @tabScrolling
       @addEventListener 'mousewheel', @onMouseWheel
     else
