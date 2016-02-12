@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.90.0",
+  "version": "0.90.1",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
@@ -25,7 +25,11 @@
     },
     "tabScrolling": {
       "type": "any",
-      "enum": [true, false, "platform"],
+      "enum": [
+        true,
+        false,
+        "platform"
+      ],
       "default": "platform",
       "description": "Jump to next or previous tab by scrolling on the tab bar."
     },
