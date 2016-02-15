@@ -59,6 +59,7 @@ class TabBarView extends HTMLElement
 
     @subscriptions.add @pane.onDidAddItem ({item, index}) =>
       @addTabForItem(item, index)
+      @subscribeToTabPath(item)
 
     @subscriptions.add @pane.onDidMoveItem ({item, newIndex}) =>
       @moveItemTabToIndex(item, newIndex)
@@ -85,6 +86,12 @@ class TabBarView extends HTMLElement
   unsubscribe: ->
     ipcRenderer.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
+
+  subscribeToTabPath: (item) ->
+    if typeof item.buffer?.onDidChangePath is 'function'
+      @subscriptions.add item.buffer?.onDidChangePath (path) =>
+        if process.platform is 'darwin' and /.Trash/.test(path)
+          @closeTab(@tabForItem(item))
 
   terminatePendingStates: ->
     tab.terminatePendingState?() for tab in @getTabs()
