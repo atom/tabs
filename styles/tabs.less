@@ -63,6 +63,17 @@
       border: 2px solid @background-color-info;
       border-radius: 12px;
     }
+
+    &.pinned {
+
+      .title {
+        font-weight: bold;
+      }
+
+      &:not(:hover) .close-icon {
+        .octicon(lock, @close-icon-size);
+      }
+    }
   }
 
   /* Drag and Drop */

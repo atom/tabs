@@ -181,10 +181,12 @@ class TabView extends HTMLElement
 
   updateIcon: ->
     if @iconName
-      @itemTitle.classList.remove('icon', "icon-#{@iconName}")
+      @itemTitle.classList.remove("icon-#{@iconName}")
 
     if @iconName = @item.getIconName?()
-      @itemTitle.classList.add('icon', "icon-#{@iconName}")
+      @itemTitle.classList.add("icon-#{@iconName}")
+
+    @itemTitle.classList.toggle('icon', @iconName)
 
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
@@ -262,5 +264,18 @@ class TabView extends HTMLElement
     @repoSubscriptions?.dispose()
     delete @status
     @updateVcsColoring()
+
+  setPinnedStatus: (@pinned) ->
+    @classList.toggle('pinned', @pinned)
+    @updateIcon()
+
+  pin: ->
+    @setPinnedStatus(true)
+
+  unpin: ->
+    @setPinnedStatus(false)
+
+  togglePin: ->
+    @setPinnedStatus(not @pinned)
 
 module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
