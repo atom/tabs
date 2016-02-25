@@ -87,12 +87,12 @@ class TabBarView extends HTMLElement
     @subscriptions.dispose()
 
   terminatePendingStates: ->
-    tab.terminatePendingState?() for tab in @getTabs()
+    tab.terminatePendingState() for tab in @getTabs()
     return
 
   addTabForItem: (item, index) ->
     tabView = new TabView()
-    tabView.initialize(item)
+    tabView.initialize(item, @pane)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @insertTabAtIndex(tabView, index)
 
@@ -342,7 +342,7 @@ class TabBarView extends HTMLElement
 
   onDoubleClick: (event) ->
     if tab = closest(event.target, '.tab')
-      tab.item.terminatePendingState?()
+      tab.terminatePendingState()
 
     else if event.target is this
       atom.commands.dispatch(this, 'application:new-file')
