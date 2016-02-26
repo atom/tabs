@@ -189,7 +189,7 @@ class TabView extends HTMLElement
     @parentElement?.querySelectorAll('.tab') ? []
 
   terminatePendingState: ->
-    @pane.setPendingItem(null) if @pane.getPendingItem() == @item
+    @pane.clearPendingItem() if @pane.getPendingItem() is @item
 
   clearPending: ->
     @isPendingTab = false
