@@ -6,7 +6,7 @@ class TabView extends HTMLElement
   initialize: (@item, @pane) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
-      @isPendingTab = @pane.isItemPending(@item)
+      @isPendingTab = @pane.getPendingItem() is @item
 
     @classList.add('tab', 'sortable')
 
