@@ -44,6 +44,8 @@ class TabBarView extends HTMLElement
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
+      'tabs:copy-full-path': => @copyTabPath(false)
+      'tabs:copy-project-path': => @copyTabPath(true)
 
     @addEventListener "dragstart", @onDragStart
     @addEventListener "dragend", @onDragEnd
@@ -172,6 +174,11 @@ class TabBarView extends HTMLElement
 
   closeAllTabs: ->
     @closeTab(tab) for tab in @getTabs()
+
+  copyTabPath: (relativePath = false) ->
+    tab = @querySelector('.right-clicked')
+    ## Provided in the atom/text-editor module
+    tab.item.copyPathToClipboard?(relativePath)
 
   getWindowId: ->
     @windowId ?= atom.getCurrentWindow().id

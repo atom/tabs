@@ -17,6 +17,11 @@ menu: [
 
     {type: 'separator'}
 
+    {label: 'Copy Full Path', command: 'tabs:copy-full-path'}
+    {label: 'Copy Project Path', command: 'tabs:copy-project-path'}
+
+    {type: 'separator'}
+
     {label: 'Split Up', command: 'tabs:split-up'}
     {label: 'Split Down', command: 'tabs:split-down'}
     {label: 'Split Left', command: 'tabs:split-left'}
