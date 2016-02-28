@@ -92,7 +92,7 @@ class TabBarView extends HTMLElement
 
   addTabForItem: (item, index) ->
     tabView = new TabView()
-    tabView.initialize(item)
+    tabView.initialize(item, @pane)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @insertTabAtIndex(tabView, index)
 

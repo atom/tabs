@@ -3,10 +3,10 @@ path = require 'path'
 
 module.exports =
 class TabView extends HTMLElement
-  initialize: (@item) ->
+  initialize: (@item, @pane) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
-      @isPendingTab = @item.isPending?()
+      @isPendingTab = @isItemPending()
 
     @classList.add('tab', 'sortable')
 
@@ -37,7 +37,10 @@ class TabView extends HTMLElement
       @updateTitle()
       @updateTooltip()
 
-    if typeof @item.onDidTerminatePendingState is 'function'
+    if typeof @pane.onDidTerminatePendingState is 'function'
+      @subscriptions.add @pane.onDidTerminatePendingState =>
+        @clearPending() if @isPendingTab and not @isItemPending()
+    else if typeof @item.onDidTerminatePendingState is 'function'
       onDidTerminatePendingStateDisposable = @item.onDidTerminatePendingState => @clearPending()
       if Disposable.isDisposable(onDidTerminatePendingStateDisposable)
         @subscriptions.add(onDidTerminatePendingStateDisposable)
@@ -189,8 +192,17 @@ class TabView extends HTMLElement
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
 
+  isItemPending: ->
+    if @pane.getPendingItem?
+      @pane.getPendingItem() is @item
+    else if @item.isPending?
+      @item.isPending()
+
   terminatePendingState: ->
-    @item.terminatePendingState?()
+    if @pane.clearPendingItem?
+      @pane.clearPendingItem() if @pane.getPendingItem() is @item
+    else if @item.terminatePendingState?
+      @item.terminatePendingState()
 
   clearPending: ->
     @isPendingTab = false
