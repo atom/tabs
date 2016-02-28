@@ -103,7 +103,7 @@ class TabBarView extends HTMLElement
 
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
-    if followingTab
+    if followingTab and not atom.config.get('tabs.addNewTabsAtEnd')
       @insertBefore(tab, followingTab)
     else
       @appendChild(tab)
