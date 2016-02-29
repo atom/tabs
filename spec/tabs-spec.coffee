@@ -910,25 +910,6 @@ describe "TabBarView", ->
           runs ->
             expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
-      describe "when switching from a pending tab to a permanent tab", ->
-        it "keeps the pending tab open", ->
-          editor1 = null
-          editor2 = null
-
-          waitsForPromise ->
-            atom.workspace.open('sample.txt').then (o) ->
-              editor1 = o
-
-          waitsForPromise ->
-            atom.workspace.open('sample2.txt', pending: true).then (o) ->
-              editor2 = o
-
-          runs ->
-            pane.activateItem(editor1)
-            expect(pane.getItems().length).toBe 2
-            expect(pane.getItems()).toEqual [editor1, editor2]
-            expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
-
       describe "when splitting a pending tab", ->
         editor1 = null
         beforeEach ->
