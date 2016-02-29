@@ -152,13 +152,6 @@ describe "TabBarView", ->
       expect($(tabBar).find('.tab:eq(2)')).toHaveClass 'active'
 
   describe "when a new item is added to the pane", ->
-    it "adds a tab for the new item at the same index as the item in the pane", ->
-      pane.activateItem(item1)
-      item3 = new TestView('Item 3')
-      pane.activateItem(item3)
-      expect($(tabBar).find('.tab').length).toBe 4
-      expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
-
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
       editor2 = null
 
@@ -175,6 +168,23 @@ describe "TabBarView", ->
         editor2.insertText('x')
         pane.activateItem(editor2)
         expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
+
+    describe "when addNewTabsAtEnd is set to false in package settings", ->
+      it "adds a tab for the new item at the same index as the item in the pane", ->
+        atom.config.set("tabs.addNewTabsAtEnd", false)
+        pane.activateItem(item1)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect($(tabBar).find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
+
+    describe "when addNewTabsAtEnd is set to true in package settings", ->
+      it "adds a tab for the new item at the end of the tab bar", ->
+        atom.config.set("tabs.showIcons", true)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect($(tabBar).find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
 
   describe "when an item is removed from the pane", ->
     it "removes the item's tab from the tab bar", ->
