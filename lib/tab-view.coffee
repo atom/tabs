@@ -26,7 +26,7 @@ class TabView extends HTMLElement
     @updateModifiedStatus()
     @setupTooltip()
 
-    if @pane.getPendingItem() is @item
+    if @isItemPending()
       @itemTitle.classList.add('temp')
       @classList.add('pending-tab')
 
