@@ -3,10 +3,9 @@ path = require 'path'
 
 module.exports =
 class TabView extends HTMLElement
-  initialize: (@item) ->
+  initialize: (@item, @pane) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
-      @isPendingTab = @item.isPending?()
 
     @classList.add('tab', 'sortable')
 
@@ -27,7 +26,7 @@ class TabView extends HTMLElement
     @updateModifiedStatus()
     @setupTooltip()
 
-    if @isPendingTab
+    if @isItemPending()
       @itemTitle.classList.add('temp')
       @classList.add('pending-tab')
 
@@ -37,7 +36,11 @@ class TabView extends HTMLElement
       @updateTitle()
       @updateTooltip()
 
-    if typeof @item.onDidTerminatePendingState is 'function'
+    # TODO: remove else condition once pending API is on stable [MKT]
+    if typeof @pane.onItemDidTerminatePendingState is 'function'
+      @subscriptions.add @pane.onItemDidTerminatePendingState (item) =>
+        @clearPending() if item is @item
+    else if typeof @item.onDidTerminatePendingState is 'function'
       onDidTerminatePendingStateDisposable = @item.onDidTerminatePendingState => @clearPending()
       if Disposable.isDisposable(onDidTerminatePendingStateDisposable)
         @subscriptions.add(onDidTerminatePendingStateDisposable)
@@ -189,11 +192,19 @@ class TabView extends HTMLElement
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
 
+  isItemPending: ->
+    if @pane.getPendingItem?
+      @pane.getPendingItem() is @item
+    else if @item.isPending?
+      @item.isPending()
+
   terminatePendingState: ->
-    @item.terminatePendingState?()
+    if @pane.clearPendingItem?
+      @pane.clearPendingItem() if @pane.getPendingItem() is @item
+    else if @item.terminatePendingState?
+      @item.terminatePendingState()
 
   clearPending: ->
-    @isPendingTab = false
     @itemTitle.classList.remove('temp')
     @classList.remove('pending-tab')
 
