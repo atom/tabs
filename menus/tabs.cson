@@ -3,6 +3,7 @@ menu: [
     label: 'File'
     submenu: [
       {label: 'Close All Tabs', command: 'tabs:close-all-tabs'}
+      {label: 'Toggle pin tab', command: 'tabs:toggle-pin-tab'}
     ]
   }
 ]
@@ -27,4 +28,10 @@ menu: [
   ]
   '.tab-bar': [
     {label: 'Reopen Closed Tab', command: 'pane:reopen-closed-item'}
+  ]
+  '.tab.pinned': [
+    {label: 'Unpin Tab', command: 'tabs:unpin-tab'}
+  ]
+  '.tab:not(.pinned)': [
+    {label: 'Pin Tab', command: 'tabs:pin-tab'}
   ]

@@ -20,6 +20,7 @@ class TabBarView extends HTMLElement
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
+      'tabs:toggle-pin-tab': => @togglePinTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
       'tabs:close-saved-tabs': => @closeSavedTabs()
@@ -40,6 +41,8 @@ class TabBarView extends HTMLElement
       'tabs:close-tabs-to-right': => @closeTabsToRight()
       'tabs:close-saved-tabs': => @closeSavedTabs()
       'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:pin-tab': => @pinTab()
+      'tabs:unpin-tab': => @unpinTab()
       'tabs:split-up': => @splitTab('splitUp')
       'tabs:split-down': => @splitTab('splitDown')
       'tabs:split-left': => @splitTab('splitLeft')
@@ -141,14 +144,26 @@ class TabBarView extends HTMLElement
   updateActiveTab: ->
     @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
-  closeTab: (tab) ->
+  closeTab: (tab, evenIfPinned = true) ->
     tab ?= @querySelector('.right-clicked')
-    @pane.destroyItem(tab.item) if tab?
+    @pane.destroyItem(tab.item) if tab? and (not tab.pinned or evenIfPinned)
 
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
         @pane[fn](items: [copiedItem])
+
+  pinTab: (tab) ->
+    tab ?= @querySelector('.right-clicked')
+    tab.pin() if tab?
+
+  unpinTab: (tab) ->
+    tab ?= @querySelector('.right-clicked')
+    tab.unpin() if tab?
+
+  togglePinTab: (tab) ->
+    tab ?= @querySelector('.right-clicked')
+    tab.togglePin() if tab?
 
   copyItem: (item) ->
     item.copy?() ? atom.deserializers.deserialize(item.serialize())
@@ -157,21 +172,21 @@ class TabBarView extends HTMLElement
     tabs = @getTabs()
     active ?= @querySelector('.right-clicked')
     return unless active?
-    @closeTab tab for tab in tabs when tab isnt active
+    @closeTab(tab, false) for tab in tabs when tab isnt active
 
   closeTabsToRight: (active) ->
     tabs = @getTabs()
     active ?= @querySelector('.right-clicked')
     index = tabs.indexOf(active)
     return if index is -1
-    @closeTab tab for tab, i in tabs when i > index
+    @closeTab(tab, false) for tab, i in tabs when i > index
 
   closeSavedTabs: ->
     for tab in @getTabs()
-      @closeTab(tab) unless tab.item.isModified?()
+      @closeTab(tab, false) unless tab.item.isModified?()
 
   closeAllTabs: ->
-    @closeTab(tab) for tab in @getTabs()
+    @closeTab(tab, false) for tab in @getTabs()
 
   getWindowId: ->
     @windowId ?= atom.getCurrentWindow().id

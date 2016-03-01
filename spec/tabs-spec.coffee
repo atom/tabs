@@ -388,51 +388,70 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
+
+    pinnedItem = null
+
     beforeEach ->
       paneElement = atom.views.getView(pane)
       paneElement.insertBefore(tabBar, paneElement.firstChild)
       jasmine.attachToDOM(paneElement) # Remove after Atom 1.2.0 is released
+      pinnedItem = new TestView('Pinned item', null)
+      pane.addItem(pinnedItem)
+      triggerMouseEvent('mousedown', tabBar.tabForItem(pinnedItem), which: 3)
+      atom.commands.dispatch(tabBar, 'tabs:pin-tab')
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-tab')
-        expect(pane.getItems().length).toBe 2
+        expect(pane.getItems().length).toBe 3
         expect(pane.getItems().indexOf(item2)).toBe -1
-        expect(tabBar.getTabs().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 3
         expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
 
+      describe "on a pinned tab", ->
+        it "closes the active tab", ->
+          triggerMouseEvent('mousedown', tabBar.tabForItem(pinnedItem), which: 3)
+          atom.commands.dispatch(tabBar, 'tabs:close-tab')
+          expect(pane.getItems().length).toBe 3
+          expect(pane.getItems().indexOf(pinnedItem)).toBe -1
+          expect(tabBar.getTabs().length).toBe 3
+          expect($(tabBar).find('.tab:contains(Pinned item)')).not.toExist()
+
     describe "when tabs:close-other-tabs is fired", ->
-      it "closes all other tabs except the active tab", ->
+      it "closes all other tabs except the active and pinned tabs", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-other-tabs')
-        expect(pane.getItems().length).toBe 1
-        expect(tabBar.getTabs().length).toBe 1
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
         expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
         expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
+        expect($(tabBar).find('.tab:contains(Pinned item)')).toExist()
 
     describe "when tabs:close-tabs-to-right is fired", ->
-      it "closes only the tabs to the right of the active tab", ->
+      it "closes only the tabs to the right of the active and pinned tabs", ->
         pane.activateItem(editor1)
         triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-tabs-to-right')
-        expect(pane.getItems().length).toBe 2
-        expect(tabBar.getTabs().length).toBe 2
+        expect(pane.getItems().length).toBe 3
+        expect(tabBar.getTabs().length).toBe 3
         expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
         expect($(tabBar).find('.tab:contains(Item 1)')).toExist()
+        expect($(tabBar).find('.tab:contains(Pinned item)')).toExist()
 
     describe "when tabs:close-all-tabs is fired", ->
-      it "closes all the tabs", ->
+      it "closes all the tabs except pinned ones", ->
         expect(pane.getItems().length).toBeGreaterThan 0
         atom.commands.dispatch(tabBar, 'tabs:close-all-tabs')
-        expect(pane.getItems().length).toBe 0
+        expect(pane.getItems().length).toBe 1
 
     describe "when tabs:close-saved-tabs is fired", ->
-      it "closes all the saved tabs", ->
+      it "closes all the saved tabs except pinned ones", ->
         item1.isModified = -> true
         atom.commands.dispatch(tabBar, 'tabs:close-saved-tabs')
-        expect(pane.getItems().length).toBe 1
+        expect(pane.getItems().length).toBe 2
         expect(pane.getItems()[0]).toBe item1
+        expect(pane.getItems()[1]).toBe pinnedItem
 
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
@@ -524,6 +543,17 @@ describe "TabBarView", ->
         atom.commands.dispatch(paneElement, 'tabs:close-saved-tabs')
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
+
+    describe "when tabs:toggle-pin-tab is fired", ->
+      it "pins the active tab", ->
+        atom.commands.dispatch(paneElement, 'tabs:toggle-pin-tab')
+        expect($(tabBar).find('.tab.pinned:contains(Item 2)')).toExist()
+
+      describe "on an already pinned tab", ->
+        it "unpins the active tab", ->
+          atom.commands.dispatch(paneElement, 'tabs:toggle-pin-tab')
+          atom.commands.dispatch(paneElement, 'tabs:toggle-pin-tab')
+          expect($(tabBar).find('.tab.pinned:contains(Item 2)')).not.toExist()
 
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
