@@ -129,9 +129,6 @@ class TabBarView extends HTMLElement
       @paneView.removeEventListener 'dragover', @onPaneDragOver
 
   onPaneDragOver: ->
-    @unhideBar()
-
-  unhideBar: ->
     return unless @classList.contains('hidden')
     @classList.remove('hidden')
 
