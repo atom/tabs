@@ -55,7 +55,7 @@ class TabBarView extends HTMLElement
 
     if not atom.config.get('tabs.alwaysShowTabBar')
       @paneView.addEventListener "dragover", =>
-        @classList.remove('hidden')
+        @unhideBar()
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
@@ -124,8 +124,14 @@ class TabBarView extends HTMLElement
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @classList.add('hidden')
+      @paneView.addEventListener "dragover", =>
+        @unhideBar()
     else
       @classList.remove('hidden')
+      @paneView.removeEventListener "dragover", @unhideBar
+
+  unhideBar: ->
+    @classList.remove('hidden')
 
   getTabs: ->
     tab for tab in @querySelectorAll(".tab")
