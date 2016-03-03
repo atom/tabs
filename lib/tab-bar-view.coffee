@@ -124,7 +124,6 @@ class TabBarView extends HTMLElement
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @classList.add('hidden')
       @paneView.addEventListener 'dragover', @onPaneDragOver.bind(this)
-
     else
       @classList.remove('hidden')
       @paneView.removeEventListener 'dragover', @onPaneDragOver
