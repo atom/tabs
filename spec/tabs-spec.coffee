@@ -839,7 +839,13 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 1
         expect(tabBar).toHaveClass 'hidden'
 
-  if atom.workspace.buildTextEditor().isPending?
+  if atom.workspace.buildTextEditor().isPending? or atom.workspace.getActivePane().getActiveItem?
+    isPending = (item) ->
+      if item.isPending?
+        item.isPending()
+      else
+        atom.workspace.getActivePane().getPendingItem() is item
+
     describe "when tab's pane item is pending", ->
       beforeEach ->
         pane.destroyItems()
@@ -863,9 +869,9 @@ describe "TabBarView", ->
 
           runs ->
             pane.activateItem(editor1)
-            expect(editor1.isPending()).toBe true
+            expect(isPending(editor1)).toBe true
             atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-pending-tab')
-            expect(editor1.isPending()).toBe false
+            expect(isPending(editor1)).toBe false
 
       describe "when there is a temp tab already", ->
         it "it will replace an existing temporary tab", ->
@@ -932,11 +938,11 @@ describe "TabBarView", ->
           tabBar2 = new TabBarView
           tabBar2.initialize(pane2)
           newEditor = pane2.getActiveItem()
-          expect(newEditor.isPending()).toBe false
+          expect(isPending(newEditor)).toBe false
           expect($(tabBar2.tabForItem(newEditor)).find('.title')).not.toHaveClass 'temp'
 
         it "keeps the pending tab in the old pane", ->
-          expect(editor1.isPending()).toBe true
+          expect(isPending(editor1)).toBe true
           expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
 
       describe "when dragging a pending tab to a different pane", ->
