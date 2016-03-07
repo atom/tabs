@@ -6,6 +6,16 @@ TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
 {triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
+addItemToPane = (pane, item, index) ->
+  # Support both the 1.5 and 1.6 API
+  # TODO: Remove once 1.6 is stable [MKT]
+  if pane.addItem.length is 2
+    pane.addItem(item, index: index)
+  else if pane.addItem.length is 3 or pane.addItem.length is 4
+    pane.addItem(item, index)
+  else
+    throw new Error("Unspoorted pane.addItem API")
+
 describe "Tabs package main", ->
   workspaceElement = null
 
@@ -81,8 +91,8 @@ describe "TabBarView", ->
     runs ->
       editor1 = atom.workspace.getActiveTextEditor()
       pane = atom.workspace.getActivePane()
-      pane.addItem(item1, 0)
-      pane.addItem(item2, 2)
+      addItemToPane(pane, item1, 0)
+      addItemToPane(pane, item2, 2)
       pane.activateItem(item2)
       tabBar = new TabBarView
       tabBar.initialize(pane)
