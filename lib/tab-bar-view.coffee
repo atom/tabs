@@ -150,6 +150,7 @@ class TabBarView extends HTMLElement
     tab ?= @querySelector('.right-clicked')
     item = tab.item
     return unless item?
+    return unless item.constructor.name == 'TextEditor'
     if typeof item.getURI is 'function'
       itemURI = item.getURI()
     else if typeof item.getPath is 'function'
@@ -158,8 +159,8 @@ class TabBarView extends HTMLElement
       itemURI = item.getUri()
     return unless itemURI?
     @closeTab(tab)
-    console.log(atom.window)
-    atom.open({pathsToOpen: [itemURI], newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
+    pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
+    atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
   
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
