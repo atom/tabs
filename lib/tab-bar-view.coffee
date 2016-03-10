@@ -150,7 +150,9 @@ class TabBarView extends HTMLElement
     tab ?= @querySelector('.right-clicked')
     item = tab.item
     return unless item?
-    return unless item.constructor.name == 'TextEditor'
+    unless item.constructor.name == 'TextEditor'
+      alert("'Open In New Window' only works for TextEditor tabs, for now.")
+      return 
     if typeof item.getURI is 'function'
       itemURI = item.getURI()
     else if typeof item.getPath is 'function'
