@@ -6,6 +6,16 @@ TabBarView = require '../lib/tab-bar-view'
 TabView = require '../lib/tab-view'
 {triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
+addItemToPane = (pane, item, index) ->
+  # Support both the 1.5 and 1.6 API
+  # TODO: Remove once 1.6 is stable [MKT]
+  if pane.addItem.length is 2
+    pane.addItem(item, index: index)
+  else if pane.addItem.length is 3 or pane.addItem.length is 4
+    pane.addItem(item, index)
+  else
+    throw new Error("Unspoorted pane.addItem API")
+
 describe "Tabs package main", ->
   workspaceElement = null
 
@@ -43,27 +53,6 @@ describe "Tabs package main", ->
       pane.splitRight()
       expect(workspaceElement.querySelectorAll('.pane').length).toBe 3
       expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
-
-    it "serializes preview tab state", ->
-      atom.config.set('tabs.usePreviewTabs', true)
-
-      waitsForPromise ->
-        atom.workspace.open('sample.txt')
-
-      runs ->
-        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
-        expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
-
-        atom.packages.deactivatePackage('tabs')
-
-        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 0
-
-      waitsForPromise ->
-        atom.packages.activatePackage('tabs')
-
-      runs ->
-        expect(workspaceElement.querySelectorAll('.tab.preview-tab .title').length).toBe 1
-        expect(workspaceElement.querySelector('.tab.preview-tab .title')?.textContent).toBe 'sample.txt'
 
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
@@ -103,8 +92,8 @@ describe "TabBarView", ->
     runs ->
       editor1 = atom.workspace.getActiveTextEditor()
       pane = atom.workspace.getActivePane()
-      pane.addItem(item1, 0)
-      pane.addItem(item2, 2)
+      addItemToPane(pane, item1, 0)
+      addItemToPane(pane, item2, 2)
       pane.activateItem(item2)
       tabBar = new TabBarView
       tabBar.initialize(pane)
@@ -174,13 +163,6 @@ describe "TabBarView", ->
       expect($(tabBar).find('.tab:eq(2)')).toHaveClass 'active'
 
   describe "when a new item is added to the pane", ->
-    it "adds a tab for the new item at the same index as the item in the pane", ->
-      pane.activateItem(item1)
-      item3 = new TestView('Item 3')
-      pane.activateItem(item3)
-      expect($(tabBar).find('.tab').length).toBe 4
-      expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
-
     it "adds the 'modified' class to the new tab if the item is initially modified", ->
       editor2 = null
 
@@ -197,6 +179,23 @@ describe "TabBarView", ->
         editor2.insertText('x')
         pane.activateItem(editor2)
         expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
+
+    describe "when addNewTabsAtEnd is set to false in package settings", ->
+      it "adds a tab for the new item at the same index as the item in the pane", ->
+        atom.config.set("tabs.addNewTabsAtEnd", false)
+        pane.activateItem(item1)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect($(tabBar).find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
+
+    describe "when addNewTabsAtEnd is set to true in package settings", ->
+      it "adds a tab for the new item at the end of the tab bar", ->
+        atom.config.set("tabs.showIcons", true)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect($(tabBar).find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
 
   describe "when an item is removed from the pane", ->
     it "removes the item's tab from the tab bar", ->
@@ -866,211 +865,127 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 1
         expect(tabBar).toHaveClass 'hidden'
 
-  describe "when usePreviewTabs is true in package settings", ->
-    beforeEach ->
-      atom.config.set("tabs.usePreviewTabs", true)
-      pane.destroyItems()
+  if atom.workspace.buildTextEditor().isPending? or atom.workspace.getActivePane().getActiveItem?
+    isPending = (item) ->
+      if item.isPending?
+        item.isPending()
+      else
+        atom.workspace.getActivePane().getPendingItem() is item
 
-    describe "when opening a new tab", ->
-      it "adds tab with class 'temp'", ->
-        editor1 = null
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) -> editor1 = o
-
-        runs ->
-          pane.activateItem(editor1)
-          expect($(tabBar).find('.tab .temp').length).toBe 1
-          expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass 'temp'
-
-    describe "when tabs:keep-preview-tab is trigger on the pane", ->
-      it "removes the 'temp' class", ->
-        editor1 = null
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) -> editor1 = o
-
-        runs ->
-          pane.activateItem(editor1)
-          expect($(tabBar).find('.tab .temp').length).toBe 1
-          atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-preview-tab')
-          expect($(tabBar).find('.tab .temp').length).toBe 0
-
-    describe "when there is a temp tab already", ->
-      it "it will replace an existing temporary tab", ->
-        editor1 = null
-        editor2 = null
-
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) ->
-            editor1 = o
-            pane.activateItem(editor1)
-            atom.workspace.open('sample2.txt').then (o) ->
-              editor2 = o
-              pane.activateItem(editor2)
-
-        runs ->
-          expect(editor1.isDestroyed()).toBe true
-          expect(editor2.isDestroyed()).toBe false
-          expect(tabBar.tabForItem(editor1)).not.toExist()
-          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
-
-      it 'makes the tab permanent when double clicking the tab', ->
-        editor2 = null
-
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) -> editor2 = o
-
-        runs ->
-          pane.activateItem(editor2)
-          dbclickEvt = document.createEvent 'MouseEvents'
-          dbclickEvt.initEvent 'dblclick'
-          tabBar.tabForItem(editor2).dispatchEvent dbclickEvt
-          expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
-
-    describe 'when opening views that do not have file paths', ->
-      editor2 = null
-      settingsView = null
-
+    describe "when tab's pane item is pending", ->
       beforeEach ->
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) ->
-            editor2 = o
+        pane.destroyItems()
+
+      describe "when opening a new tab", ->
+        it "adds tab with class 'temp'", ->
+          editor1 = null
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor1 = o
+
+          runs ->
+            pane.activateItem(editor1)
+            expect($(tabBar).find('.tab .temp').length).toBe 1
+            expect($(tabBar).find('.tab:eq(0) .title')).toHaveClass 'temp'
+
+      describe "when tabs:keep-pending-tab is triggered on the pane", ->
+        it "terminates pending state on the tab's item", ->
+          editor1 = null
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor1 = o
+
+          runs ->
+            pane.activateItem(editor1)
+            expect(isPending(editor1)).toBe true
+            atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-pending-tab')
+            expect(isPending(editor1)).toBe false
+
+      describe "when there is a temp tab already", ->
+        it "it will replace an existing temporary tab", ->
+          editor1 = null
+          editor2 = null
+
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) ->
+              editor1 = o
+              atom.workspace.open('sample2.txt', pending: true).then (o) ->
+                editor2 = o
+
+          runs ->
+            expect(editor1.isDestroyed()).toBe true
+            expect(tabBar.tabForItem(editor1)).not.toExist()
+            expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+
+        it "makes the tab permanent when double-clicking the tab", ->
+          editor2 = null
+
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor2 = o
+
+          runs ->
             pane.activateItem(editor2)
+            expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+            triggerMouseEvent('dblclick', tabBar.tabForItem(editor2), which: 1)
+            expect($(tabBar.tabForItem(editor2)).find('.title')).not.toHaveClass 'temp'
 
-        waitsForPromise ->
-          atom.packages.activatePackage('settings-view').then ->
-            atom.workspace.open('atom://config').then (o) ->
-              settingsView = o
-              pane.activateItem(settingsView)
+      describe "when editing a file in pending state", ->
+        it "makes the item and tab permanent", ->
+          editor1 = null
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) ->
+              editor1 = o
+              pane.activateItem(editor1)
+              editor1.insertText('x')
+              advanceClock(editor1.buffer.stoppedChangingDelay)
 
-      it 'creates a permanent tab', ->
-        expect(tabBar.tabForItem(settingsView)).toExist()
-        expect($(tabBar.tabForItem(settingsView)).find('.title')).not.toHaveClass 'temp'
+          runs ->
+            expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
 
-      it 'keeps an existing temp tab', ->
-        expect(tabBar.tabForItem(editor2)).toExist()
-        expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
+      describe "when saving a file", ->
+        it "makes the tab permanent", ->
+          editor1 = null
+          waitsForPromise ->
+            atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt'), pending: true).then (o) ->
+              editor1 = o
+              pane.activateItem(editor1)
+              editor1.save()
 
-    describe 'when editing a file', ->
-      it 'makes the tab permanent', ->
+          runs ->
+            expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+
+      describe "when splitting a pending tab", ->
         editor1 = null
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) ->
-            editor1 = o
-            pane.activateItem(editor1)
-            editor1.insertText('x')
-            advanceClock(editor1.buffer.stoppedChangingDelay)
+        beforeEach ->
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor1 = o
 
-        runs ->
-          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
-
-    describe 'when saving a file', ->
-      it 'makes the tab permanent', ->
-        editor1 = null
-        waitsForPromise ->
-          atom.workspace.open(path.join(temp.mkdirSync('tabs-'), 'sample.txt')).then (o) ->
-            editor1 = o
-            pane.activateItem(editor1)
-            editor1.save()
-
-        runs ->
-          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
-
-    describe 'when switching from a preview tab to a permanent tab', ->
-      it "keeps the preview tab open", ->
-        atom.config.set("tabs.usePreviewTabs", false)
-        editor1 = null
-        editor2 = null
-
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) ->
-            editor1 = o
-            pane.activateItem(editor1)
-
-        runs ->
-          atom.config.set("tabs.usePreviewTabs", true)
-
-        waitsForPromise ->
-          atom.workspace.open('sample2.txt').then (o) ->
-            editor2 = o
-            pane.activateItem(editor2)
-
-        runs ->
-          pane.activateItem(editor1)
-          expect(pane.getItems().length).toBe 2
-          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
-          expect($(tabBar.tabForItem(editor2)).find('.title')).toHaveClass 'temp'
-
-    describe "when splitting a preview tab", ->
-      it "makes the tab permanent in the new pane", ->
-        editor1 = null
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) -> editor1 = o
-
-        runs ->
+        it "makes the tab permanent in the new pane", ->
           pane.activateItem(editor1)
           pane2 = pane.splitRight(copyActiveItem: true)
           tabBar2 = new TabBarView
           tabBar2.initialize(pane2)
+          newEditor = pane2.getActiveItem()
+          expect(isPending(newEditor)).toBe false
+          expect($(tabBar2.tabForItem(newEditor)).find('.title')).not.toHaveClass 'temp'
 
-          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
-
-    describe "when dragging a preview tab to a different pane", ->
-      it "makes the tab permanent in the other pane", ->
-        editor1 = null
-        waitsForPromise ->
-          atom.workspace.open('sample.txt').then (o) -> editor1 = o
-
-        runs ->
-          pane.activateItem(editor1)
-          pane2 = pane.splitRight()
-
-          tabBar2 = new TabBarView
-          tabBar2.initialize(pane2)
-          tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
-
-          expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
-
-    describe "when a non-text file is opened", ->
-      it "opens a preview tab", ->
-        imageView = null
-        waitsForPromise ->
-          atom.workspace.open('sample.png').then (o) ->
-            imageView = o
-            pane.activateItem(imageView)
-
-        runs ->
-          expect(tabBar.tabForItem(imageView)).toExist()
-          expect($(tabBar.tabForItem(imageView)).find('.title')).toHaveClass 'temp'
-
-    describe "when double clicking a file in the tree view", ->
-      it "makes the tab for that file permanent", ->
-        editor1 = null
-        workspaceElement = atom.views.getView(atom.workspace)
-        jasmine.attachToDOM(workspaceElement)
-
-        waitsForPromise ->
-          atom.packages.activatePackage('tree-view')
-
-        runs ->
-          atom.commands.dispatch(workspaceElement, 'tree-view:show')
-
-        waitsFor ->
-          workspaceElement.querySelector('.tree-view')
-
-        waitsForPromise ->
-          atom.workspace.open('sample.js').then (o) -> editor1 = o
-
-        runs ->
-          pane.activateItem(editor1)
-
+        it "keeps the pending tab in the old pane", ->
+          expect(isPending(editor1)).toBe true
           expect($(tabBar.tabForItem(editor1)).find('.title')).toHaveClass 'temp'
 
-          fileNode = workspaceElement.querySelector(".tree-view [data-path=\"#{path.join(__dirname, 'fixtures', 'sample.js')}\"]")
-          fileNode.dispatchEvent(new MouseEvent('click', detail: 1, bubbles: true, cancelable: true))
-          fileNode.dispatchEvent(new MouseEvent('click', detail: 2, bubbles: true, cancelable: true))
-          fileNode.dispatchEvent(new MouseEvent('dblclick', detail: 2, bubbles: true, cancelable: true))
+      describe "when dragging a pending tab to a different pane", ->
+        it "makes the tab permanent in the other pane", ->
+          editor1 = null
+          waitsForPromise ->
+            atom.workspace.open('sample.txt', pending: true).then (o) -> editor1 = o
 
-          expect($(tabBar.tabForItem(editor1)).find('.title')).not.toHaveClass 'temp'
+          runs ->
+            pane.activateItem(editor1)
+            pane2 = pane.splitRight()
+
+            tabBar2 = new TabBarView
+            tabBar2.initialize(pane2)
+            tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
+
+            expect($(tabBar2.tabForItem(pane2.getActiveItem())).find('.title')).not.toHaveClass 'temp'
 
   describe "integration with version control systems", ->
     [repository, tab, tab1] = []

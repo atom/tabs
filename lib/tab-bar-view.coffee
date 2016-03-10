@@ -1,5 +1,6 @@
 BrowserWindow = null # Defer require until actually used
-RendererIpc = require 'ipc'
+# TODO: Remove the catch once Electron 0.35.0 is bundled in Atom
+try {ipcRenderer} = require 'electron' catch then ipcRenderer = require 'ipc'
 
 {matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
@@ -13,11 +14,11 @@ class TabBarView extends HTMLElement
     @classList.add("inset-panel")
     @setAttribute("tabindex", -1)
 
-  initialize: (@pane, state={}) ->
+  initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
-      'tabs:keep-preview-tab': => @clearPreviewTabs()
+      'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
@@ -53,7 +54,6 @@ class TabBarView extends HTMLElement
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
-    @setInitialPreviewTab(state.previewTabURI)
 
     @subscriptions.add @pane.onDidDestroy =>
       @unsubscribe()
@@ -68,14 +68,11 @@ class TabBarView extends HTMLElement
       @removeTabForItem(item)
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
-      @destroyPreviousPreviewTab()
       @updateActiveTab()
 
-    @subscriptions.add atom.config.observe 'tabs.tabScrolling', => @updateTabScrolling()
+    @subscriptions.add atom.config.observe 'tabs.tabScrolling', @updateTabScrolling.bind(this)
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
-
-    @handleTreeViewEvents()
 
     @updateActiveTab()
 
@@ -83,56 +80,21 @@ class TabBarView extends HTMLElement
     @addEventListener "dblclick", @onDoubleClick
     @addEventListener "click", @onClick
 
-    RendererIpc.on('tab:dropped', @onDropOnOtherWindow.bind(this))
+    @onDropOnOtherWindow = @onDropOnOtherWindow.bind(this)
+    ipcRenderer.on('tab:dropped',  @onDropOnOtherWindow)
 
   unsubscribe: ->
-    RendererIpc.removeListener('tab:dropped', @onDropOnOtherWindow.bind(this))
+    ipcRenderer.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
 
-  handleTreeViewEvents: ->
-    treeViewSelector = '.tree-view .entry.file'
-    clearPreviewTabForFile = ({target}) =>
-      return unless @pane.isFocused()
-      return unless matches(target, treeViewSelector)
-
-      target = target.querySelector('[data-path]') unless target.dataset.path
-
-      if itemPath = target.dataset.path
-        @tabForItem(@pane.itemForURI(itemPath))?.clearPreview()
-
-    document.body.addEventListener('dblclick', clearPreviewTabForFile)
-    @subscriptions.add dispose: ->
-      document.body.removeEventListener('dblclick', clearPreviewTabForFile)
-
-  setInitialPreviewTab: (previewTabURI) ->
-    for tab in @getTabs() when tab.isPreviewTab
-      tab.clearPreview() if tab.item.getURI() isnt previewTabURI
+  terminatePendingStates: ->
+    tab.terminatePendingState?() for tab in @getTabs()
     return
-
-  getPreviewTabURI: ->
-    for tab in @getTabs() when tab.isPreviewTab
-      return tab.item.getURI()
-    return
-
-  clearPreviewTabs: ->
-    tab.clearPreview() for tab in @getTabs()
-    return
-
-  storePreviewTabToDestroy: ->
-    for tab in @getTabs() when tab.isPreviewTab
-      @previewTabToDestroy = tab
-    return
-
-  destroyPreviousPreviewTab: ->
-    if @previewTabToDestroy?.isPreviewTab
-      @pane.destroyItem(@previewTabToDestroy.item)
-    @previewTabToDestroy = null
 
   addTabForItem: (item, index) ->
     tabView = new TabView()
-    tabView.initialize(item)
-    tabView.clearPreview() if @isItemMovingBetweenPanes
-    @storePreviewTabToDestroy() if tabView.isPreviewTab
+    tabView.initialize(item, @pane)
+    tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @insertTabAtIndex(tabView, index)
 
   moveItemTabToIndex: (item, index) ->
@@ -142,7 +104,7 @@ class TabBarView extends HTMLElement
 
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
-    if followingTab
+    if followingTab and not atom.config.get('tabs.addNewTabsAtEnd')
       @insertBefore(tab, followingTab)
     else
       @appendChild(tab)
@@ -389,13 +351,16 @@ class TabBarView extends HTMLElement
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
-      setImmediate => @pane.activate()
+      setImmediate => @pane.activate() unless @pane.isDestroyed()
     else if event.which is 2
       @pane.destroyItem(tab.item)
       event.preventDefault()
 
   onDoubleClick: (event) ->
-    if event.target is this
+    if tab = closest(event.target, '.tab')
+      tab.item.terminatePendingState?()
+
+    else if event.target is this
       atom.commands.dispatch(this, 'application:new-file')
       event.preventDefault()
 
@@ -409,16 +374,24 @@ class TabBarView extends HTMLElement
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
 
-  updateTabScrolling: ->
-    @tabScrolling = atom.config.get('tabs.tabScrolling')
+  updateTabScrolling: (value) ->
+    if value is 'platform'
+      @tabScrolling = (process.platform is 'linux')
+    else
+      @tabScrolling = value
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
+
     if @tabScrolling
       @addEventListener 'mousewheel', @onMouseWheel
     else
       @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
-    BrowserWindow ?= require('remote').require('browser-window')
+    try
+      BrowserWindow ?= require('electron').remote.BrowserWindow
+    catch # TODO: Remove once Electron 0.35.0 is bundled in Atom
+      BrowserWindow ?= require('remote').require('browser-window')
+
     BrowserWindow.fromId id
 
   moveItemBetweenPanes: (fromPane, fromIndex, toPane, toIndex, item) ->
