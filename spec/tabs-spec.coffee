@@ -682,6 +682,66 @@ describe "TabBarView", ->
           expect(pane2.activeItem).toBe item1
           expect(pane2.activate).toHaveBeenCalled()
 
+      describe "when alwaysShowTabBar is set to false in package settings", ->
+        beforeEach: ->
+          atom.config.set('tabs.alwaysShowTabBar', false)
+
+        afterEach: ->
+          atom.config.set('tabs.alwaysShowTabBar', true)
+
+        describe "when target pane has one tab", ->
+          it "starts with tab bar hidden then reveals it", ->
+            expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+            expect(pane.getItems()).toEqual [item1, editor1, item2]
+            expect(pane.getActiveItem()).toBe item2
+
+            expect(tabBar2).toHaveClass 'hidden'
+            expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2"]
+            expect(pane2.getItems()).toEqual [item2b]
+            expect(pane2.activeItem).toBe item2b
+            spyOn(pane2, 'activate')
+
+            [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar2.tabAtIndex(0))
+            tabBar.onDragStart(dragStartEvent)
+            tabBar2.onDrop(dropEvent)
+
+            expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2"]
+            expect(pane.getItems()).toEqual [editor1, item2]
+            expect(pane.getActiveItem()).toBe item2
+
+            expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2", "Item 1"]
+            expect(pane2.getItems()).toEqual [item2b, item1]
+            expect(pane2.activeItem).toBe item1
+            expect(pane2.activate).toHaveBeenCalled()
+            expect(tabBar2).not.toHaveClass 'hidden'
+
+        describe "when source pane has only two tabs", ->
+          it "hides the tab bar after dragging one tab away", ->
+            pane.destroyItem(editor1)
+            expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2"]
+            expect(pane.getItems()).toEqual [item1, item2]
+            expect(pane.getActiveItem()).toBe item2
+
+            expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2"]
+            expect(pane2.getItems()).toEqual [item2b]
+            expect(pane2.activeItem).toBe item2b
+            spyOn(pane2, 'activate')
+
+            [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar2.tabAtIndex(0))
+            tabBar.onDragStart(dragStartEvent)
+            tabBar2.onDrop(dropEvent)
+
+            expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2"]
+            expect(pane.getItems()).toEqual [item2]
+            expect(pane.getActiveItem()).toBe item2
+            expect(tabBar).toHaveClass 'hidden'
+
+            expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2", "Item 1"]
+            expect(pane2.getItems()).toEqual [item2b, item1]
+            expect(pane2.activeItem).toBe item1
+            expect(pane2.activate).toHaveBeenCalled()
+            expect(tabBar2).not.toHaveClass 'hidden'
+
     describe "when a non-tab is dragged to pane", ->
       it "has no effect", ->
         expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]

@@ -17,7 +17,9 @@ class TabBarView extends HTMLElement
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+    @paneView = atom.views.getView(@pane)
+
+    @subscriptions.add atom.commands.add @paneView,
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
@@ -51,6 +53,9 @@ class TabBarView extends HTMLElement
     @addEventListener "dragleave", @onDragLeave
     @addEventListener "dragover", @onDragOver
     @addEventListener "drop", @onDrop
+
+    if not atom.config.get('tabs.alwaysShowTabBar')
+      @paneView.addEventListener "dragover", @onPaneDragOver.bind(this)
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
@@ -119,8 +124,14 @@ class TabBarView extends HTMLElement
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @classList.add('hidden')
+      @paneView.addEventListener 'dragover', @onPaneDragOver.bind(this)
     else
       @classList.remove('hidden')
+      @paneView.removeEventListener 'dragover', @onPaneDragOver
+
+  onPaneDragOver: ->
+    return unless @classList.contains('hidden')
+    @classList.remove('hidden')
 
   getTabs: ->
     tab for tab in @querySelectorAll(".tab")
@@ -193,7 +204,10 @@ class TabBarView extends HTMLElement
     @windowId ?= atom.getCurrentWindow().id
 
   shouldAllowDrag: ->
-    (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
+    if not atom.config.get('tabs.alwaysShowTabBar')
+      (@pane.getItems().length > 1)
+    else
+      (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) ->
     return unless matches(event.target, '.sortable')
