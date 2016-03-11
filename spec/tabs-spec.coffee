@@ -60,9 +60,10 @@ describe "TabBarView", ->
   class TestView extends View
     @deserialize: ({title, longTitle, iconName}) -> new TestView(title, longTitle, iconName)
     @content: (title) -> @div title
-    initialize: (@title, @longTitle, @iconName) ->
+    initialize: (@title, @longTitle, @iconName, @pathURI) ->
     getTitle: -> @title
     getLongTitle: -> @longTitle
+    getURI: -> @pathURI
     getIconName: -> @iconName
     serialize: -> {deserializer: 'TestView', @title, @longTitle, @iconName}
     onDidChangeTitle: (callback) ->
@@ -82,7 +83,7 @@ describe "TabBarView", ->
 
   beforeEach ->
     deserializerDisposable = atom.deserializers.add(TestView)
-    item1 = new TestView('Item 1', undefined, "squirrel")
+    item1 = new TestView('Item 1', undefined, "squirrel", "sample.js")
     item2 = new TestView('Item 2')
 
     waitsForPromise ->
@@ -484,11 +485,26 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[0]).toBe pane
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
+    describe "when tabs:open-in-new-window is fired", ->
+      it "opens new window, closes current tab", ->
+        triggerMouseEvent('mousedown', tabBar.tabForItem(item1), which: 3)
+        expect(atom.workspace.getPanes().length).toBe 1
+
+        spyOn(atom, 'open')
+        atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
+        expect(atom.open).toHaveBeenCalled()
+
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
+        expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
+
   describe "command palette commands", ->
     paneElement = null
 
     beforeEach ->
       paneElement = atom.views.getView(pane)
+
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->

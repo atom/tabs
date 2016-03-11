@@ -21,6 +21,12 @@ menu: [
     {label: 'Split Down', command: 'tabs:split-down'}
     {label: 'Split Left', command: 'tabs:split-left'}
     {label: 'Split Right', command: 'tabs:split-right'}
+    
+  ]
+  '.tab.texteditor': [
+    {type: 'separator'}
+    {label: 'Open In New Window', command: 'tabs:open-in-new-window'}
+    {type: 'separator'}
   ]
   '.tab.pending-tab': [
     {label: 'Keep Pending Tab', command: 'tabs:keep-pending-tab'}

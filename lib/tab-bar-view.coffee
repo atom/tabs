@@ -24,6 +24,7 @@ class TabBarView extends HTMLElement
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
       'tabs:close-saved-tabs': => @closeSavedTabs()
       'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:open-in-new-window': => @openInNewWindow()
 
     addElementCommands = (commands) =>
       commandsWithPropagationStopped = {}
@@ -145,6 +146,21 @@ class TabBarView extends HTMLElement
     tab ?= @querySelector('.right-clicked')
     @pane.destroyItem(tab.item) if tab?
 
+  openInNewWindow: (tab) ->
+    tab ?= @querySelector('.right-clicked')
+    item = tab.item
+    return unless item?
+    if typeof item.getURI is 'function'
+      itemURI = item.getURI()
+    else if typeof item.getPath is 'function'
+      itemURI = item.getPath()
+    else if typeof item.getUri is 'function'
+      itemURI = item.getUri()
+    return unless itemURI?
+    @closeTab(tab)
+    pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
+    atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
+  
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
