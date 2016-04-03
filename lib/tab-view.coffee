@@ -34,6 +34,9 @@ class TabView extends HTMLElement
 
   handleEvents: ->
     titleChangedHandler = =>
+      if typeof @item.getPath is 'function'
+        @path = @item.getPath()
+
       @updateDataAttributes()
       @updateTitle()
       @updateTooltip()
