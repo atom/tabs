@@ -180,6 +180,14 @@ describe "TabBarView", ->
         pane.activateItem(editor2)
         expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
 
+    describe "when addNewTabsAtEnd is set to true in package settings", ->
+      it "adds a tab for the new item at the end of the tab bar", ->
+        atom.config.set("tabs.addNewTabsAtEnd", true)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect($(tabBar).find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
+
     describe "when addNewTabsAtEnd is set to false in package settings", ->
       it "adds a tab for the new item at the same index as the item in the pane", ->
         atom.config.set("tabs.addNewTabsAtEnd", false)
@@ -188,14 +196,6 @@ describe "TabBarView", ->
         pane.activateItem(item3)
         expect($(tabBar).find('.tab').length).toBe 4
         expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
-
-    describe "when addNewTabsAtEnd is set to true in package settings", ->
-      it "adds a tab for the new item at the end of the tab bar", ->
-        atom.config.set("tabs.showIcons", true)
-        item3 = new TestView('Item 3')
-        pane.activateItem(item3)
-        expect($(tabBar).find('.tab').length).toBe 4
-        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
 
   describe "when an item is removed from the pane", ->
     it "removes the item's tab from the tab bar", ->
@@ -389,14 +389,28 @@ describe "TabBarView", ->
       expect(tab).not.toHaveClass 'modified'
 
   describe "when a pane item moves to a new index", ->
-    it "updates the order of the tabs to match the new item order", ->
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
-      pane.moveItem(item2, 1)
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
-      pane.moveItem(editor1, 0)
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
-      pane.moveItem(item1, 2)
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
+    # behavior is independent of addNewTabs config
+    describe "when addNewTabsAtEnd is set to true in package settings", ->
+      it "updates the order of the tabs to match the new item order", ->
+        atom.config.set("tabs.addNewTabsAtEnd", true)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        pane.moveItem(item2, 1)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
+        pane.moveItem(editor1, 0)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
+        pane.moveItem(item1, 2)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
+
+    describe "when addNewTabsAtEnd is set to false in package settings", ->
+      it "updates the order of the tabs to match the new item order", ->
+        atom.config.set("tabs.addNewTabsAtEnd", false)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        pane.moveItem(item2, 1)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
+        pane.moveItem(editor1, 0)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
+        pane.moveItem(item1, 2)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
     beforeEach ->
