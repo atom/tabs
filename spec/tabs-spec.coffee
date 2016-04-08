@@ -416,7 +416,6 @@ describe "TabBarView", ->
     beforeEach ->
       paneElement = atom.views.getView(pane)
       paneElement.insertBefore(tabBar, paneElement.firstChild)
-      jasmine.attachToDOM(paneElement) # Remove after Atom 1.2.0 is released
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
@@ -445,6 +444,16 @@ describe "TabBarView", ->
         expect(tabBar.getTabs().length).toBe 2
         expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
         expect($(tabBar).find('.tab:contains(Item 1)')).toExist()
+
+    describe "when tabs:close-tabs-to-left is fired", ->
+      it "closes only the tabs to the left of the active tab", ->
+        pane.activateItem(editor1)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
+        atom.commands.dispatch(tabBar, 'tabs:close-tabs-to-left')
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
+        expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
 
     describe "when tabs:close-all-tabs is fired", ->
       it "closes all the tabs", ->

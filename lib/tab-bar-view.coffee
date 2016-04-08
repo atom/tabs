@@ -22,6 +22,7 @@ class TabBarView extends HTMLElement
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
+      'tabs:close-tabs-to-left': => @closeTabsToLeft(@getActiveTab())
       'tabs:close-saved-tabs': => @closeSavedTabs()
       'tabs:close-all-tabs': => @closeAllTabs()
       'tabs:open-in-new-window': => @openInNewWindow()
@@ -39,6 +40,7 @@ class TabBarView extends HTMLElement
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
       'tabs:close-tabs-to-right': => @closeTabsToRight()
+      'tabs:close-tabs-to-left': => @closeTabsToLeft()
       'tabs:close-saved-tabs': => @closeSavedTabs()
       'tabs:close-all-tabs': => @closeAllTabs()
       'tabs:split-up': => @splitTab('splitUp')
@@ -163,7 +165,7 @@ class TabBarView extends HTMLElement
     @closeTab(tab)
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
-  
+
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
@@ -184,6 +186,13 @@ class TabBarView extends HTMLElement
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
+
+  closeTabsToLeft: (active) ->
+    tabs = @getTabs()
+    active ?= @querySelector('.right-clicked')
+    index = tabs.indexOf(active)
+    return if index is -1
+    @closeTab tab for tab, i in tabs when i < index
 
   closeSavedTabs: ->
     for tab in @getTabs()
