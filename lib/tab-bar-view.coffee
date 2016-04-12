@@ -46,6 +46,8 @@ class TabBarView extends HTMLElement
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
 
+    @addEventListener "mouseenter", @onMouseEnter
+    @addEventListener "mouseleave", @onMouseLeave
     @addEventListener "dragstart", @onDragStart
     @addEventListener "dragend", @onDragEnd
     @addEventListener "dragleave", @onDragLeave
@@ -163,7 +165,7 @@ class TabBarView extends HTMLElement
     @closeTab(tab)
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
-  
+
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
@@ -458,5 +460,15 @@ class TabBarView extends HTMLElement
       target
     else
       closest(target, '.tab-bar')
+
+  onMouseEnter: ->
+    for tab in @getTabs()
+      {width} = tab.getBoundingClientRect()
+      tab.style.maxWidth = width.toFixed(2) + 'px'
+    return
+
+  onMouseLeave: ->
+    tab.style.maxWidth = '' for tab in @getTabs()
+    return
 
 module.exports = document.registerElement("atom-tabs", prototype: TabBarView.prototype, extends: "ul")
