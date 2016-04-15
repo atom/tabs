@@ -191,6 +191,8 @@ describe "TabBarView", ->
       it "puts the new tab at the last index of the pane's items", ->
         atom.config.set("tabs.addNewTabsAtEnd", true)
         item3 = new TestView('Item 3')
+        # activate item1 so default is to add immediately after
+        pane.activateItem(item1)
         pane.activateItem(item3)
         expect(pane.getItems()[pane.getItems().length - 1]).toEqual item3
 
