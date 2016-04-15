@@ -188,6 +188,12 @@ describe "TabBarView", ->
         expect($(tabBar).find('.tab').length).toBe 4
         expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
 
+      it "puts the new tab at the last index of the pane's items", ->
+        atom.config.set("tabs.addNewTabsAtEnd", true)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect(pane.getItems()[pane.getItems().length - 1]).toEqual item3
+
     describe "when addNewTabsAtEnd is set to false in package settings", ->
       it "adds a tab for the new item at the same index as the item in the pane", ->
         atom.config.set("tabs.addNewTabsAtEnd", false)
