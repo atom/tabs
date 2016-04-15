@@ -12,6 +12,13 @@
     "temp": "~0.8.1",
     "underscore-plus": "1.x"
   },
+  "consumedServices": {
+    "atom.file-icons": {
+      "versions": {
+        "1.0.0": "consumeFileIcons"
+      }
+    }
+  },
   "configSchema": {
     "showIcons": {
       "type": "boolean",

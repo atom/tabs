@@ -1,5 +1,6 @@
 path = require 'path'
 {Disposable, CompositeDisposable} = require 'atom'
+FileIcons = require './file-icons'
 
 module.exports =
 class TabView extends HTMLElement
@@ -188,7 +189,7 @@ class TabView extends HTMLElement
     if @iconName
       @itemTitle.classList.remove('icon', "icon-#{@iconName}")
 
-    if @iconName = @item.getIconName?()
+    if @iconName = @item.getIconName?() or @path? and @iconName = FileIcons.getService().iconClassForPath(@path)
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
 
   getTabs: ->
