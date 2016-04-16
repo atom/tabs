@@ -95,10 +95,9 @@ class TabBarView extends HTMLElement
     tabView = new TabView()
     tabView.initialize(item, @pane)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
+    @insertTabAtIndex(tabView, index)
     if atom.config.get('tabs.addNewTabsAtEnd')
-      @appendChild(tabView)
-    else
-      @insertTabAtIndex(tabView, index)
+      @pane.moveItem(item, @pane.getItems().length - 1)
 
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)
@@ -163,7 +162,7 @@ class TabBarView extends HTMLElement
     @closeTab(tab)
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
-  
+
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
       if copiedItem = @copyItem(item)
