@@ -388,7 +388,7 @@ class TabBarView extends HTMLElement
       @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
-    {BrowserWindow} ?= require('electron').remote
+    BrowserWindow ?= require('electron').remote.BrowserWindow
 
     BrowserWindow.fromId id
 
