@@ -190,6 +190,8 @@ class TabView extends HTMLElement
       @itemTitle.classList.remove('icon', "icon-#{@iconName}")
 
     if @iconName = @item.getIconName?() or @path? and @iconName = FileIcons.getService().iconClassForPath(@path)
+      # File icons service will return an entire CSS class
+      @iconName = @iconName.replace('icon-', '')
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
 
   getTabs: ->
