@@ -151,7 +151,7 @@ class TabBarView extends HTMLElement
 
   openInNewWindow: (tab) ->
     tab ?= @querySelector('.right-clicked')
-    item = tab.item
+    item = tab?.item
     return unless item?
     if typeof item.getURI is 'function'
       itemURI = item.getURI()
