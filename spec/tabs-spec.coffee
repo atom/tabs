@@ -517,18 +517,28 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:open-in-new-window is fired", ->
-      it "opens new window, closes current tab", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item1), which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+      describe "by right-clicking on a tab", ->
+        beforeEach ->
+          triggerMouseEvent('mousedown', tabBar.tabForItem(item1), which: 3)
+          expect(atom.workspace.getPanes().length).toBe 1
 
-        spyOn(atom, 'open')
-        atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
-        expect(atom.open).toHaveBeenCalled()
+        it "opens new window, closes current tab", ->
+          spyOn(atom, 'open')
+          atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
+          expect(atom.open).toHaveBeenCalled()
 
-        expect(pane.getItems().length).toBe 2
-        expect(tabBar.getTabs().length).toBe 2
-        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
-        expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
+          expect(pane.getItems().length).toBe 2
+          expect(tabBar.getTabs().length).toBe 2
+          expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
+          expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
+
+      describe "from the command palette", ->
+        # See #309 for background
+
+        it "does nothing", ->
+          spyOn(atom, 'open')
+          atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
+          expect(atom.open).not.toHaveBeenCalled()
 
   describe "command palette commands", ->
     paneElement = null
