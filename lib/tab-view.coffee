@@ -187,7 +187,7 @@ class TabView extends HTMLElement
 
   updateIcon: ->
     if @iconName
-      names = @iconName.split /\s+/g
+      names = unless Array.isArray(@iconName) then @iconName.split(/\s+/g) else @iconName
       @itemTitle.classList.remove('icon', "icon-#{names[0]}", names...)
 
     if @iconName = @item.getIconName?()
