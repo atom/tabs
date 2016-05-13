@@ -21,3 +21,34 @@ describe 'FileIcons', ->
     FileIcons.resetService()
 
     expect(FileIcons.getService()).not.toBe(service)
+
+
+  describe 'Class handling', ->
+    workspaceElement = null
+    
+    beforeEach ->
+      workspaceElement = atom.views.getView(atom.workspace)
+      
+      waitsForPromise ->
+        atom.workspace.open('sample.js')
+        
+      waitsForPromise ->
+        atom.packages.activatePackage('tabs')
+  
+    it 'allows multiple classes to be passed', ->
+      service =
+        iconClassForPath: (path) -> 'first second'
+      
+      FileIcons.setService(service)
+      tab = workspaceElement.querySelector('.tab')
+      tab.updateIcon()
+      expect(tab.itemTitle.className).toBe('title icon first second')
+
+    it 'allows an array of classes to be passed', ->
+      service =
+        iconClassForPath: (path) -> ['first', 'second']
+      
+      FileIcons.setService(service)
+      tab = workspaceElement.querySelector('.tab')
+      tab.updateIcon()
+      expect(tab.itemTitle.className).toBe('title icon first second')
