@@ -35,9 +35,7 @@ class TabView extends HTMLElement
 
   handleEvents: ->
     titleChangedHandler = =>
-      @updateDataAttributes()
       @updateTitle()
-      @updateTooltip()
 
     # TODO: remove else condition once pending API is on stable [MKT]
     if typeof @pane.onItemDidTerminatePendingState is 'function'
@@ -61,6 +59,23 @@ class TabView extends HTMLElement
       @item.on('title-changed', titleChangedHandler)
       @subscriptions.add dispose: =>
         @item.off?('title-changed', titleChangedHandler)
+
+    pathChangedHandler = (@path) =>
+      @updateDataAttributes()
+      @updateTitle()
+      @updateTooltip()
+
+    if typeof @item.onDidChangePath is 'function'
+      onDidChangePathDisposable = @item.onDidChangePath(pathChangedHandler)
+      if Disposable.isDisposable(onDidChangePathDisposable)
+        @subscriptions.add(onDidChangePathDisposable)
+      else
+        console.warn "::onDidChangePath does not return a valid Disposable!", @item
+    else if typeof @item.on is 'function'
+      #TODO Remove once old events are no longer supported
+      @item.on('path-changed', pathChangedHandler)
+      @subscriptions.add dispose: =>
+        @item.off?('path-changed', pathChangedHandler)
 
     iconChangedHandler = =>
       @updateIcon()

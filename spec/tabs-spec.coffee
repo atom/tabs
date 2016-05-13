@@ -132,6 +132,7 @@ describe "TabBarView", ->
         onDidChangeIcon: ->
         onDidChangeModified: ->
         onDidSave: ->
+        onDidChangePath: ->
 
       warnings = []
       spyOn(console, "warn").andCallFake (message, object) ->
@@ -143,14 +144,17 @@ describe "TabBarView", ->
       expect(warnings[0].message).toContain("onDidChangeTitle")
       expect(warnings[0].object).toBe(badItem)
 
-      expect(warnings[1].message).toContain("onDidChangeIcon")
+      expect(warnings[1].message).toContain("onDidChangePath")
       expect(warnings[1].object).toBe(badItem)
 
-      expect(warnings[2].message).toContain("onDidChangeModified")
+      expect(warnings[2].message).toContain("onDidChangeIcon")
       expect(warnings[2].object).toBe(badItem)
 
-      expect(warnings[3].message).toContain("onDidSave")
+      expect(warnings[3].message).toContain("onDidChangeModified")
       expect(warnings[3].object).toBe(badItem)
+
+      expect(warnings[4].message).toContain("onDidSave")
+      expect(warnings[4].object).toBe(badItem)
 
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
