@@ -192,7 +192,7 @@ class TabView extends HTMLElement
 
     if @iconName = @item.getIconName?()
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
-    else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path)
+    else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, @)
       unless Array.isArray names = @iconName
         names = names.toString().split /\s+/g
       
