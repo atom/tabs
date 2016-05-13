@@ -202,12 +202,16 @@ class TabView extends HTMLElement
 
   updateIcon: ->
     if @iconName
-      @itemTitle.classList.remove('icon', "icon-#{@iconName}")
+      names = unless Array.isArray(@iconName) then @iconName.split(/\s+/g) else @iconName
+      @itemTitle.classList.remove('icon', "icon-#{names[0]}", names...)
 
-    if @iconName = @item.getIconName?() or @path? and @iconName = FileIcons.getService().iconClassForPath(@path)
-      # File icons service will return an entire CSS class
-      @iconName = @iconName.replace('icon-', '')
+    if @iconName = @item.getIconName?()
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
+    else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, this)
+      unless Array.isArray names = @iconName
+        names = names.toString().split /\s+/g
+      
+      @itemTitle.classList.add('icon', names...)
 
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []
