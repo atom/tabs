@@ -16,14 +16,16 @@ class TabBarView extends HTMLElement
   initialize: (@pane) ->
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add 'atom-workspace',
+    @subscriptions.add atom.commands.add atom.views.getView(@pane),
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
       'tabs:close-tabs-to-left': => @closeTabsToLeft(@getActiveTab())
       'tabs:close-saved-tabs': => @closeSavedTabs()
-      'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:close-all-tabs': (event) =>
+        event.stopPropagation()
+        @closeAllTabs()
       'tabs:open-in-new-window': => @openInNewWindow()
 
     addElementCommands = (commands) =>
