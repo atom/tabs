@@ -23,7 +23,9 @@ class TabBarView extends HTMLElement
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
       'tabs:close-tabs-to-left': => @closeTabsToLeft(@getActiveTab())
       'tabs:close-saved-tabs': => @closeSavedTabs()
-      'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:close-all-tabs': (event) =>
+        event.stopPropagation()
+        @closeAllTabs()
       'tabs:open-in-new-window': => @openInNewWindow()
 
     addElementCommands = (commands) =>
