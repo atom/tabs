@@ -4,8 +4,8 @@ module.exports =
 
   activate: ->
     @view = document.createElement 'div'
-    @view.classList.add 'layout-overlay'
     document.body.appendChild @view
+    @view.classList.add 'tabs-layout-overlay'
 
   deactivate: ->
     @view.parentElement?.removeChild @view
