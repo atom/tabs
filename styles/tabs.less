@@ -4,7 +4,7 @@
 @close-icon-size: 12px;
 
 .tab-bar {
-  display: -webkit-flex;
+  display: flex;
   -webkit-user-select: none;
   margin: 0;
 
@@ -14,12 +14,12 @@
     padding-left: 10px;
     padding-right: 10px + @close-icon-size + 2px;
     -webkit-user-drag: element;
-    -webkit-flex: 1;
+    flex: 1;
     max-width: 175px;
     min-width: 40px;
 
     &.active {
-      -webkit-flex: 2;
+      flex: 2;
       width: -webkit-fit-content;
 
       .title {
