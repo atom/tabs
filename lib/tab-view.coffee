@@ -2,6 +2,8 @@ path = require 'path'
 {Disposable, CompositeDisposable} = require 'atom'
 FileIcons = require './file-icons'
 
+layout = require './layout'
+
 module.exports =
 class TabView extends HTMLElement
   initialize: (@item, @pane) ->
@@ -32,6 +34,9 @@ class TabView extends HTMLElement
     if @isItemPending()
       @itemTitle.classList.add('temp')
       @classList.add('pending-tab')
+
+    @ondrag = (e) -> layout.drag e
+    @ondragend = (e) -> layout.end e
 
   handleEvents: ->
     titleChangedHandler = =>
