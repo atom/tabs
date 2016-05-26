@@ -728,6 +728,28 @@ describe "TabBarView", ->
           expect(pane2.activeItem).toBe item1
           expect(pane2.activate).toHaveBeenCalled()
 
+      describe "when addNewTabsAtEnd is set to true in package settings", ->
+        it "moves the dragged tab to the desired index in the new pane", ->
+          atom.config.set("tabs.addNewTabsAtEnd", true)
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [item1, editor1, item2]
+          expect(pane.getActiveItem()).toBe item2
+
+          expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2"]
+          expect(pane2.getItems()).toEqual [item2b]
+          expect(pane2.activeItem).toBe item2b
+          spyOn(pane2, 'activate')
+
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar2.tabAtIndex(0), tabBar.tabAtIndex(0))
+          tabBar2.onDragStart(dragStartEvent)
+          tabBar.onDrop(dropEvent)
+
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [item1, item2b, editor1, item2]
+          expect(pane.getActiveItem()).toBe item2b
+
+          atom.config.set("tabs.addNewTabsAtEnd", false)
+
     describe "when a tab is dragged over a pane item", ->
       it "draws an overlay over the item", ->
         expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
