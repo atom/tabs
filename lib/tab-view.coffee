@@ -151,13 +151,9 @@ class TabView extends HTMLElement
 
     @destroyTooltip()
 
-    if tooltipTitle = @path
-      if atom.config.get 'tabs.tooltipDisplayRelativePath'
-        [projectPath, relativePath] = atom.project.relativizePath(@path)
-        tooltipTitle = relativePath if projectPath
-
+    if @path
       @tooltip = atom.tooltips.add this,
-        title: tooltipTitle
+        title: @path
         html: false
         placement: 'bottom'
 
