@@ -55,6 +55,11 @@
       "type": "boolean",
       "default": false,
       "description": "Add new tabs at the end of the tab bar, rather than after active tab."
+    },
+    "tooltipDisplayRelativePath": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show relative path to the file at the tab's tooltip."
     }
   },
   "devDependencies": {
