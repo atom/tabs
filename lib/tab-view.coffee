@@ -155,9 +155,6 @@ class TabView extends HTMLElement
       @tooltip = atom.tooltips.add this,
         title: @path
         html: false
-        delay:
-          show: 1000
-          hide: 100
         placement: 'bottom'
 
   destroyTooltip: ->
@@ -215,7 +212,7 @@ class TabView extends HTMLElement
     else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, this)
       unless Array.isArray names = @iconName
         names = names.toString().split /\s+/g
-      
+
       @itemTitle.classList.add('icon', names...)
 
   getTabs: ->
