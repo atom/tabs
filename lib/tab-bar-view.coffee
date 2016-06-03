@@ -100,7 +100,7 @@ class TabBarView extends HTMLElement
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @insertTabAtIndex(tabView, index)
     if atom.config.get('tabs.addNewTabsAtEnd')
-      @pane.moveItem(item, @pane.getItems().length - 1)
+      @pane.moveItem(item, @pane.getItems().length - 1) unless @isItemMovingBetweenPanes
 
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)
