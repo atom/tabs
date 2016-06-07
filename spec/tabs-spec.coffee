@@ -102,6 +102,28 @@ describe "TabBarView", ->
   afterEach ->
     deserializerDisposable.dispose()
 
+  describe "when the mouse is moved over the tab bar", ->
+    it "fixes the width on every tab", ->
+      jasmine.attachToDOM(tabBar)
+
+      event = triggerMouseEvent('mouseenter', tabBar)
+
+      initialWidth1 = tabBar.tabAtIndex(0).getBoundingClientRect().width.toFixed(2)
+      initialWidth2 = tabBar.tabAtIndex(2).getBoundingClientRect().width.toFixed(2)
+
+      expect(tabBar.tabAtIndex(0).style.maxWidth).toBe initialWidth1 + 'px'
+      expect(tabBar.tabAtIndex(2).style.maxWidth).toBe initialWidth2 + 'px'
+
+  describe "when the mouse is moved away from the tab bar", ->
+    it "resets the width on every tab", ->
+      jasmine.attachToDOM(tabBar)
+
+      event = triggerMouseEvent('mouseenter', tabBar)
+      event = triggerMouseEvent('mouseleave', tabBar)
+
+      expect(tabBar.tabAtIndex(0).style.maxWidth).toBe ''
+      expect(tabBar.tabAtIndex(1).style.maxWidth).toBe ''
+
   describe ".initialize(pane)", ->
     it "creates a tab for each item on the tab bar's parent pane", ->
       expect(pane.getItems().length).toBe 3
