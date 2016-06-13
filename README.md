@@ -1,4 +1,5 @@
-# Tabs package [![Build Status](https://travis-ci.org/atom/tabs.svg?branch=master)](https://travis-ci.org/atom/tabs)
+# Tabs package
+[![OS X Build Status](https://travis-ci.org/atom/tabs.svg?branch=master)](https://travis-ci.org/atom/tabs) [![Windows Build Status](https://ci.appveyor.com/api/projects/status/nf4hdmuk4i9xkfmb/branch/master?svg=true)](https://ci.appveyor.com/project/Atom/tabs/branch/master) [![Dependency Status](https://david-dm.org/atom/tabs.svg)](https://david-dm.org/atom/tabs)
 
 Display selectable tabs above the editor.
 
