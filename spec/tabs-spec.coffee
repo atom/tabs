@@ -108,11 +108,12 @@ describe "TabBarView", ->
 
       event = triggerMouseEvent('mouseenter', tabBar)
 
-      initialWidth1 = tabBar.tabAtIndex(0).getBoundingClientRect().width.toFixed(2)
-      initialWidth2 = tabBar.tabAtIndex(2).getBoundingClientRect().width.toFixed(2)
+      initialWidth1 = tabBar.tabAtIndex(0).getBoundingClientRect().width.toFixed(0)
+      initialWidth2 = tabBar.tabAtIndex(2).getBoundingClientRect().width.toFixed(0)
 
-      expect(tabBar.tabAtIndex(0).style.maxWidth).toBe initialWidth1 + 'px'
-      expect(tabBar.tabAtIndex(2).style.maxWidth).toBe initialWidth2 + 'px'
+      # Minor OS differences cause fractional-pixel differences so ignore fractional part
+      expect(parseFloat(tabBar.tabAtIndex(0).style.maxWidth.replace('px', '')).toFixed(0)).toBe initialWidth1
+      expect(parseFloat(tabBar.tabAtIndex(2).style.maxWidth.replace('px', '')).toFixed(0)).toBe initialWidth2
 
   describe "when the mouse is moved away from the tab bar", ->
     it "resets the width on every tab", ->
