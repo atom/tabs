@@ -1,4 +1,4 @@
-{closest, indexOf, matches} = require './html-helpers'
+{closest, matches} = require './html-helpers'
 
 module.exports =
 
@@ -35,9 +35,9 @@ module.exports =
       when 'down'  then target.splitDown()
     tab = e.target
     toPane ?= target
-    fromPane = @paneForTab tab
+    fromPane = tab.pane
     return if toPane is fromPane
-    item = @itemForTab tab
+    item = tab.item
     fromPane.moveItemToPane item, toPane
     toPane.activateItem item
     toPane.activate()
@@ -51,14 +51,8 @@ module.exports =
   getPaneAt: (coords) ->
     @test.pane or @getElement(@lastCoords, 'atom-pane')?.getModel()
 
-  paneForTab: (tab) ->
-    tab.parentElement.pane
-
-  itemForTab: (tab) ->
-    @paneForTab(tab).getItems()[indexOf(tab)]
-
   isOnlyTabInPane: (pane, tab) ->
-    pane.getItems().length is 1 and pane is @paneForTab tab
+    pane.getItems().length is 1 and pane is tab.pane
 
   normalizeCoords: ({left, top, width, height}, [x, y]) ->
     [(x-left)/width, (y-top)/height]
