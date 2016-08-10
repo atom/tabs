@@ -25,7 +25,7 @@ module.exports =
 
   end: (e) ->
     @disableView()
-    return unless @getItemViewAt @lastCoords
+    return unless @lastCoords? and @getItemViewAt @lastCoords
     target = @getPaneAt @lastCoords
     return unless target?
     toPane = switch @lastSplit
