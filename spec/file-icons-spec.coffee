@@ -53,9 +53,9 @@ describe 'FileIcons', ->
       tab.updateIcon()
       expect(tab.itemTitle.className).toBe('title icon first second')
 
-    it 'passes a TabView reference as iconClassForPath\'s second argument', ->
+    it 'passes the package name as iconClassForPath\'s second argument', ->
       FileIcons.setService
-        iconClassForPath: (path, tab) -> tab.constructor.name
+        iconClassForPath: (path, context) -> context
       tab = workspaceElement.querySelector('.tab')
       tab.updateIcon()
-      expect(tab.itemTitle.className).toBe('title icon tabs-tab')
+      expect(tab.itemTitle.className).toBe('title icon tabs')
