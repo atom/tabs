@@ -10,7 +10,7 @@ class TabView extends HTMLElement
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
 
-    if ['TextEditor', 'TestView'].indexOf(item.constructor.name) > -1
+    if ['TextEditor', 'TestView'].indexOf(@item.constructor.name) > -1
       @classList.add('texteditor')
     @classList.add('tab', 'sortable')
 
