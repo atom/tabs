@@ -3,7 +3,6 @@ _ = require 'underscore-plus'
 path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
-TabView = require '../lib/tab-view'
 layout = require '../lib/layout'
 {triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
@@ -106,7 +105,7 @@ describe "TabBarView", ->
     it "fixes the width on every tab", ->
       jasmine.attachToDOM(tabBar)
 
-      event = triggerMouseEvent('mouseenter', tabBar)
+      triggerMouseEvent('mouseenter', tabBar)
 
       initialWidth1 = tabBar.tabAtIndex(0).getBoundingClientRect().width.toFixed(0)
       initialWidth2 = tabBar.tabAtIndex(2).getBoundingClientRect().width.toFixed(0)
@@ -119,8 +118,8 @@ describe "TabBarView", ->
     it "resets the width on every tab", ->
       jasmine.attachToDOM(tabBar)
 
-      event = triggerMouseEvent('mouseenter', tabBar)
-      event = triggerMouseEvent('mouseleave', tabBar)
+      triggerMouseEvent('mouseenter', tabBar)
+      triggerMouseEvent('mouseleave', tabBar)
 
       expect(tabBar.tabAtIndex(0).style.maxWidth).toBe ''
       expect(tabBar.tabAtIndex(1).style.maxWidth).toBe ''
