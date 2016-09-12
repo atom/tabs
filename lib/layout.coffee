@@ -1,7 +1,6 @@
-{closest, matches} = require './html-helpers'
+{closest} = require './html-helpers'
 
 module.exports =
-
   activate: ->
     @view = document.createElement 'div'
     atom.views.getView(atom.workspace).appendChild @view
