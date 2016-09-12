@@ -116,7 +116,6 @@ class TabBarView extends HTMLElement
     else
       @appendChild(tab)
 
-    @scrollToTab(tab)
     tab.updateTitle()
     @updateTabBarVisibility()
 
@@ -126,11 +125,11 @@ class TabBarView extends HTMLElement
     @updateTabBarVisibility()
 
   scrollToTab: (tab) ->
-    tabRightEdge = tab.offsetLeft + tab.offsetWidth
-    tabBarRightEdge = this.scrollLeft + this.offsetWidth
+    tabRightEdge = tab.offsetLeft + tab.clientWidth
+    tabBarRightEdge = this.scrollLeft + this.clientWidth
 
     if tabRightEdge > tabBarRightEdge
-      this.scrollLeft = tabRightEdge - this.offsetWidth
+      this.scrollLeft = tabRightEdge - this.clientWidth
     else if this.scrollLeft > tab.offsetLeft
       this.scrollLeft = tab.offsetLeft
 
