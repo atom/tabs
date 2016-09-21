@@ -5,8 +5,10 @@ module.exports =
   activate: (state) ->
     layout.activate()
     @tabBarViews = []
+    @mruListViews = []
 
     TabBarView = require './tab-bar-view'
+    MRUListView = require './mru-list-view'
     _ = require 'underscore-plus'
 
     # If the command bubbles up without being handled by a particular pane,
@@ -21,18 +23,23 @@ module.exports =
     @paneSubscription = atom.workspace.observePanes (pane) =>
       tabBarView = new TabBarView
       tabBarView.initialize(pane)
+      mruListView = new MRUListView
+      mruListView.initialize(pane)
 
       paneElement = atom.views.getView(pane)
       paneElement.insertBefore(tabBarView, paneElement.firstChild)
 
       @tabBarViews.push(tabBarView)
       pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
+      @mruListViews.push(mruListView)
+      pane.onDidDestroy => _.remove(@mruListViews, mruListView)
 
   deactivate: ->
     layout.deactivate()
     @paneSubscription.dispose()
     @fileIconsDisposable?.dispose()
     tabBarView.remove() for tabBarView in @tabBarViews
+    mruListView.remove() for mruListView in @mruListViews
     return
 
   consumeFileIcons: (service) ->
