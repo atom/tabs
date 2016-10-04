@@ -309,7 +309,7 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().length).toBe 2
       expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
 
-  describe "scrollToTab", ->
+  describe "when an item is activated", ->
     [item3] = []
     beforeEach ->
       item3 = new TestView("Item 3")
@@ -328,7 +328,7 @@ describe "TabBarView", ->
       # Expect there to be content to scroll
       expect(tabBar.scrollWidth).toBeGreaterThan tabBar.clientWidth
 
-    it "does not scroll new active pane item is completely visible", ->
+    it "does not scroll to the item when it is visible", ->
       pane.activateItem(item1)
       expect(tabBar.scrollLeft).toBe 0
 
@@ -341,7 +341,7 @@ describe "TabBarView", ->
       pane.activateItem(item3)
       expect(tabBar.scrollLeft).not.toBe 0
 
-    it "scrolls when the new active pane item is not completely visible", ->
+    it "scrolls to the item when it isn't completely visible", ->
       tabBar.scrollLeft = 5
       expect(tabBar.scrollLeft).toBe 5 # This can be 0 if there is no horizontal scrollbar
 
