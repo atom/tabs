@@ -619,6 +619,18 @@ describe "TabBarView", ->
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
+    describe "when pane:close is fired", ->
+      it "destroys all the tabs within the pane", ->
+        pane2 = pane.splitDown(copyActiveItem: true)
+        [item2] = pane2.getItems()
+        tabBar2 = new TabBarView
+        tabBar2.initialize(pane2)
+        tab2 = tabBar2.tabAtIndex(0)
+        spyOn(tab2, 'destroy')
+
+        pane2.close()
+        expect(tab2.destroy).toHaveBeenCalled()
+
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
       describe "when it is dropped on tab that's later in the list", ->

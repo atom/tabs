@@ -42,6 +42,8 @@ class TabView extends HTMLElement
     titleChangedHandler = =>
       @updateTitle()
 
+    @subscriptions.add @pane.onDidDestroy => @destroy()
+
     # TODO: remove else condition once pending API is on stable [MKT]
     if typeof @pane.onItemDidTerminatePendingState is 'function'
       @subscriptions.add @pane.onItemDidTerminatePendingState (item) =>
@@ -215,7 +217,7 @@ class TabView extends HTMLElement
     else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, "tabs")
       unless Array.isArray names = @iconName
         names = names.toString().split /\s+/g
-      
+
       @itemTitle.classList.add('icon', names...)
 
   getTabs: ->
