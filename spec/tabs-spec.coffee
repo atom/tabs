@@ -622,7 +622,6 @@ describe "TabBarView", ->
     describe "when pane:close is fired", ->
       it "destroys all the tabs within the pane", ->
         pane2 = pane.splitDown(copyActiveItem: true)
-        [item2] = pane2.getItems()
         tabBar2 = new TabBarView
         tabBar2.initialize(pane2)
         tab2 = tabBar2.tabAtIndex(0)
