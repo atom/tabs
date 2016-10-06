@@ -264,6 +264,7 @@ class TabBarView extends HTMLElement
       false
 
   onDragLeave: (event) ->
+    tab.style.maxWidth = '' for tab in @getTabs()
     @removePlaceholder()
 
   onDragEnd: (event) ->
