@@ -124,6 +124,16 @@ describe "TabBarView", ->
       expect(tabBar.tabAtIndex(0).style.maxWidth).toBe ''
       expect(tabBar.tabAtIndex(1).style.maxWidth).toBe ''
 
+  describe "when a drag leave event moves the mouse from the tab bar", ->
+    it "resets the width on every tab", ->
+      jasmine.attachToDOM(tabBar)
+
+      triggerMouseEvent('mouseenter', tabBar)
+      triggerMouseEvent('dragleave', tabBar)
+
+      expect(tabBar.tabAtIndex(0).style.maxWidth).toBe ''
+      expect(tabBar.tabAtIndex(1).style.maxWidth).toBe ''
+
   describe ".initialize(pane)", ->
     it "creates a tab for each item on the tab bar's parent pane", ->
       expect(pane.getItems().length).toBe 3
