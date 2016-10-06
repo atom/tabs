@@ -277,7 +277,8 @@ class TabBarView extends HTMLElement
     placeholder = @getPlaceholder()
     return unless placeholder?
 
-    top = sortableObjects[Math.max(0, newDropTargetIndex - 1)].offsetTop
+    topEl = sortableObjects[Math.max(0, newDropTargetIndex - 1)]
+    top = topEl?.offsetTop
     placeholder.style.top = if top then "#{top}px" else ""
 
     if newDropTargetIndex < sortableObjects.length
