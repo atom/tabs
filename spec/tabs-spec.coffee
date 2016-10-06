@@ -309,6 +309,48 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().length).toBe 2
       expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
 
+  describe "when an item is activated", ->
+    [item3] = []
+    beforeEach ->
+      item3 = new TestView("Item 3")
+      pane.activateItem(item3)
+
+      # Set up styles so the tab bar has a scrollbar
+      tabBar.style.display = 'flex'
+      tabBar.style.overflowX = 'scroll'
+      tabBar.style.margin = '0'
+
+      container = document.createElement('div')
+      container.style.width = '150px'
+      container.appendChild(tabBar)
+      jasmine.attachToDOM(container)
+
+      # Expect there to be content to scroll
+      expect(tabBar.scrollWidth).toBeGreaterThan tabBar.clientWidth
+
+    it "does not scroll to the item when it is visible", ->
+      pane.activateItem(item1)
+      expect(tabBar.scrollLeft).toBe 0
+
+      pane.activateItem(editor1)
+      expect(tabBar.scrollLeft).toBe 0
+
+      pane.activateItem(item2)
+      expect(tabBar.scrollLeft).toBe 0
+
+      pane.activateItem(item3)
+      expect(tabBar.scrollLeft).not.toBe 0
+
+    it "scrolls to the item when it isn't completely visible", ->
+      tabBar.scrollLeft = 5
+      expect(tabBar.scrollLeft).toBe 5 # This can be 0 if there is no horizontal scrollbar
+
+      pane.activateItem(item1)
+      expect(tabBar.scrollLeft).toBe 0
+
+      pane.activateItem(item3)
+      expect(tabBar.scrollLeft).toBe tabBar.scrollWidth - tabBar.clientWidth
+
   describe "when a tab item's title changes", ->
     it "updates the title of the item's tab", ->
       editor1.buffer.setPath('/this/is-a/test.txt')

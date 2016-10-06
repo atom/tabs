@@ -115,6 +115,7 @@ class TabBarView extends HTMLElement
       @insertBefore(tab, followingTab)
     else
       @appendChild(tab)
+
     tab.updateTitle()
     @updateTabBarVisibility()
 
@@ -122,6 +123,15 @@ class TabBarView extends HTMLElement
     @tabForItem(item)?.destroy()
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
+
+  scrollToTab: (tab) ->
+    tabRightEdge = tab.offsetLeft + tab.clientWidth
+    tabBarRightEdge = this.scrollLeft + this.clientWidth
+
+    if tabRightEdge > tabBarRightEdge
+      this.scrollLeft = tabRightEdge - this.clientWidth
+    else if this.scrollLeft > tab.offsetLeft
+      this.scrollLeft = tab.offsetLeft
 
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
@@ -142,6 +152,7 @@ class TabBarView extends HTMLElement
     if tabView? and not tabView.classList.contains('active')
       @querySelector('.tab.active')?.classList.remove('active')
       tabView.classList.add('active')
+      @scrollToTab(tabView)
 
   getActiveTab: ->
     @tabForItem(@pane.getActiveItem())
