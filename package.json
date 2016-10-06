@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.92.0",
+  "version": "0.101.1",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
@@ -11,6 +11,13 @@
   "dependencies": {
     "temp": "~0.8.1",
     "underscore-plus": "1.x"
+  },
+  "consumedServices": {
+    "atom.file-icons": {
+      "versions": {
+        "1.0.0": "consumeFileIcons"
+      }
+    }
   },
   "configSchema": {
     "showIcons": {

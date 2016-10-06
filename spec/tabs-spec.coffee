@@ -3,7 +3,7 @@ _ = require 'underscore-plus'
 path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
-TabView = require '../lib/tab-view'
+layout = require '../lib/layout'
 {triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 addItemToPane = (pane, item, index) ->
@@ -101,6 +101,29 @@ describe "TabBarView", ->
   afterEach ->
     deserializerDisposable.dispose()
 
+  describe "when the mouse is moved over the tab bar", ->
+    it "fixes the width on every tab", ->
+      jasmine.attachToDOM(tabBar)
+
+      triggerMouseEvent('mouseenter', tabBar)
+
+      initialWidth1 = tabBar.tabAtIndex(0).getBoundingClientRect().width.toFixed(0)
+      initialWidth2 = tabBar.tabAtIndex(2).getBoundingClientRect().width.toFixed(0)
+
+      # Minor OS differences cause fractional-pixel differences so ignore fractional part
+      expect(parseFloat(tabBar.tabAtIndex(0).style.maxWidth.replace('px', '')).toFixed(0)).toBe initialWidth1
+      expect(parseFloat(tabBar.tabAtIndex(2).style.maxWidth.replace('px', '')).toFixed(0)).toBe initialWidth2
+
+  describe "when the mouse is moved away from the tab bar", ->
+    it "resets the width on every tab", ->
+      jasmine.attachToDOM(tabBar)
+
+      triggerMouseEvent('mouseenter', tabBar)
+      triggerMouseEvent('mouseleave', tabBar)
+
+      expect(tabBar.tabAtIndex(0).style.maxWidth).toBe ''
+      expect(tabBar.tabAtIndex(1).style.maxWidth).toBe ''
+
   describe ".initialize(pane)", ->
     it "creates a tab for each item on the tab bar's parent pane", ->
       expect(pane.getItems().length).toBe 3
@@ -132,6 +155,7 @@ describe "TabBarView", ->
         onDidChangeIcon: ->
         onDidChangeModified: ->
         onDidSave: ->
+        onDidChangePath: ->
 
       warnings = []
       spyOn(console, "warn").andCallFake (message, object) ->
@@ -143,14 +167,17 @@ describe "TabBarView", ->
       expect(warnings[0].message).toContain("onDidChangeTitle")
       expect(warnings[0].object).toBe(badItem)
 
-      expect(warnings[1].message).toContain("onDidChangeIcon")
+      expect(warnings[1].message).toContain("onDidChangePath")
       expect(warnings[1].object).toBe(badItem)
 
-      expect(warnings[2].message).toContain("onDidChangeModified")
+      expect(warnings[2].message).toContain("onDidChangeIcon")
       expect(warnings[2].object).toBe(badItem)
 
-      expect(warnings[3].message).toContain("onDidSave")
+      expect(warnings[3].message).toContain("onDidChangeModified")
       expect(warnings[3].object).toBe(badItem)
+
+      expect(warnings[4].message).toContain("onDidSave")
+      expect(warnings[4].object).toBe(badItem)
 
   describe "when the active pane item changes", ->
     it "highlights the tab for the new active pane item", ->
@@ -180,6 +207,22 @@ describe "TabBarView", ->
         pane.activateItem(editor2)
         expect(tabBar.tabForItem(editor2)).toHaveClass 'modified'
 
+    describe "when addNewTabsAtEnd is set to true in package settings", ->
+      it "adds a tab for the new item at the end of the tab bar", ->
+        atom.config.set("tabs.addNewTabsAtEnd", true)
+        item3 = new TestView('Item 3')
+        pane.activateItem(item3)
+        expect($(tabBar).find('.tab').length).toBe 4
+        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
+
+      it "puts the new tab at the last index of the pane's items", ->
+        atom.config.set("tabs.addNewTabsAtEnd", true)
+        item3 = new TestView('Item 3')
+        # activate item1 so default is to add immediately after
+        pane.activateItem(item1)
+        pane.activateItem(item3)
+        expect(pane.getItems()[pane.getItems().length - 1]).toEqual item3
+
     describe "when addNewTabsAtEnd is set to false in package settings", ->
       it "adds a tab for the new item at the same index as the item in the pane", ->
         atom.config.set("tabs.addNewTabsAtEnd", false)
@@ -188,14 +231,6 @@ describe "TabBarView", ->
         pane.activateItem(item3)
         expect($(tabBar).find('.tab').length).toBe 4
         expect($(tabBar.tabAtIndex(1)).find('.title')).toHaveText 'Item 3'
-
-    describe "when addNewTabsAtEnd is set to true in package settings", ->
-      it "adds a tab for the new item at the end of the tab bar", ->
-        atom.config.set("tabs.showIcons", true)
-        item3 = new TestView('Item 3')
-        pane.activateItem(item3)
-        expect($(tabBar).find('.tab').length).toBe 4
-        expect($(tabBar.tabAtIndex(3)).find('.title')).toHaveText 'Item 3'
 
   describe "when an item is removed from the pane", ->
     it "removes the item's tab from the tab bar", ->
@@ -389,20 +424,33 @@ describe "TabBarView", ->
       expect(tab).not.toHaveClass 'modified'
 
   describe "when a pane item moves to a new index", ->
-    it "updates the order of the tabs to match the new item order", ->
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
-      pane.moveItem(item2, 1)
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
-      pane.moveItem(editor1, 0)
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
-      pane.moveItem(item1, 2)
-      expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
+    # behavior is independent of addNewTabs config
+    describe "when addNewTabsAtEnd is set to true in package settings", ->
+      it "updates the order of the tabs to match the new item order", ->
+        atom.config.set("tabs.addNewTabsAtEnd", true)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        pane.moveItem(item2, 1)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
+        pane.moveItem(editor1, 0)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
+        pane.moveItem(item1, 2)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
+
+    describe "when addNewTabsAtEnd is set to false in package settings", ->
+      it "updates the order of the tabs to match the new item order", ->
+        atom.config.set("tabs.addNewTabsAtEnd", false)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        pane.moveItem(item2, 1)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js"]
+        pane.moveItem(editor1, 0)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 1", "Item 2"]
+        pane.moveItem(item1, 2)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2", "Item 1"]
 
   describe "context menu commands", ->
     beforeEach ->
       paneElement = atom.views.getView(pane)
       paneElement.insertBefore(tabBar, paneElement.firstChild)
-      jasmine.attachToDOM(paneElement) # Remove after Atom 1.2.0 is released
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
@@ -431,6 +479,16 @@ describe "TabBarView", ->
         expect(tabBar.getTabs().length).toBe 2
         expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
         expect($(tabBar).find('.tab:contains(Item 1)')).toExist()
+
+    describe "when tabs:close-tabs-to-left is fired", ->
+      it "closes only the tabs to the left of the active tab", ->
+        pane.activateItem(editor1)
+        triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
+        atom.commands.dispatch(tabBar, 'tabs:close-tabs-to-left')
+        expect(pane.getItems().length).toBe 2
+        expect(tabBar.getTabs().length).toBe 2
+        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
+        expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
 
     describe "when tabs:close-all-tabs is fired", ->
       it "closes all the tabs", ->
@@ -486,18 +544,28 @@ describe "TabBarView", ->
         expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:open-in-new-window is fired", ->
-      it "opens new window, closes current tab", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item1), which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+      describe "by right-clicking on a tab", ->
+        beforeEach ->
+          triggerMouseEvent('mousedown', tabBar.tabForItem(item1), which: 3)
+          expect(atom.workspace.getPanes().length).toBe 1
 
-        spyOn(atom, 'open')
-        atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
-        expect(atom.open).toHaveBeenCalled()
+        it "opens new window, closes current tab", ->
+          spyOn(atom, 'open')
+          atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
+          expect(atom.open).toHaveBeenCalled()
 
-        expect(pane.getItems().length).toBe 2
-        expect(tabBar.getTabs().length).toBe 2
-        expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
-        expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
+          expect(pane.getItems().length).toBe 2
+          expect(tabBar.getTabs().length).toBe 2
+          expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
+          expect($(tabBar).find('.tab:contains(Item 1)')).not.toExist()
+
+      describe "from the command palette", ->
+        # See #309 for background
+
+        it "does nothing", ->
+          spyOn(atom, 'open')
+          atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
+          expect(atom.open).not.toHaveBeenCalled()
 
   describe "command palette commands", ->
     paneElement = null
@@ -681,6 +749,95 @@ describe "TabBarView", ->
           expect(pane2.getItems()).toEqual [item1]
           expect(pane2.activeItem).toBe item1
           expect(pane2.activate).toHaveBeenCalled()
+
+      describe "when addNewTabsAtEnd is set to true in package settings", ->
+        it "moves the dragged tab to the desired index in the new pane", ->
+          atom.config.set("tabs.addNewTabsAtEnd", true)
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [item1, editor1, item2]
+          expect(pane.getActiveItem()).toBe item2
+
+          expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 2"]
+          expect(pane2.getItems()).toEqual [item2b]
+          expect(pane2.activeItem).toBe item2b
+          spyOn(pane2, 'activate')
+
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar2.tabAtIndex(0), tabBar.tabAtIndex(0))
+          tabBar2.onDragStart(dragStartEvent)
+          tabBar.onDrop(dropEvent)
+
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "Item 2", "sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [item1, item2b, editor1, item2]
+          expect(pane.getActiveItem()).toBe item2b
+
+          atom.config.set("tabs.addNewTabsAtEnd", false)
+
+    describe "when a tab is dragged over a pane item", ->
+      it "draws an overlay over the item", ->
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        tab = tabBar.tabAtIndex(2)
+        layout.test =
+          pane: pane
+          itemView: atom.views.getView(pane).querySelector('.item-views')
+          rect: {top: 0, left: 0, width: 100, height: 100}
+
+        expect(layout.view.classList.contains('visible')).toBe(false)
+        # Drag into pane
+        tab.ondrag target: tab, clientX: 50, clientY: 50
+        expect(layout.view.classList.contains('visible')).toBe(true)
+        expect(layout.view.style.height).toBe("100px")
+        expect(layout.view.style.width).toBe("100px")
+        # Drag out of pane
+        delete layout.test.pane
+        tab.ondrag target: tab, clientX: 200, clientY: 200
+        expect(layout.view.classList.contains('visible')).toBe(false)
+
+      it "cleaves the pane in twain", ->
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        tab = tabBar.tabAtIndex(2)
+        layout.test =
+          pane: pane
+          itemView: atom.views.getView(pane).querySelector('.item-views')
+          rect: {top: 0, left: 0, width: 100, height: 100}
+
+        tab.ondrag target: tab, clientX: 80, clientY: 50
+        tab.ondragend target: tab, clientX: 80, clientY: 50
+        expect(atom.workspace.getPanes().length).toEqual(2)
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js"]
+        expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
+
+      describe "when the dragged tab is the only one in the pane", ->
+        it "does nothing", ->
+          tabBar.getTabs()[0].querySelector('.close-icon').click()
+          tabBar.getTabs()[1].querySelector('.close-icon').click()
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js"]
+          tab = tabBar.tabAtIndex(0)
+          layout.test =
+            pane: pane
+            itemView: atom.views.getView(pane).querySelector('.item-views')
+            rect: {top: 0, left: 0, width: 100, height: 100}
+
+          tab.ondrag target: tab, clientX: 80, clientY: 50
+          tab.ondragend target: tab, clientX: 80, clientY: 50
+          expect(atom.workspace.getPanes().length).toEqual(1)
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js"]
+
+      describe "when the pane is empty", ->
+        it "moves the tab to the target pane", ->
+          toPane = pane.splitDown()
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(toPane.getItems().length).toBe(0)
+          tab = tabBar.tabAtIndex(2)
+          layout.test =
+            pane: toPane
+            itemView: atom.views.getView(toPane).querySelector('.item-views')
+            rect: {top: 0, left: 0, width: 100, height: 100}
+
+          tab.ondrag target: tab, clientX: 80, clientY: 50
+          tab.ondragend target: tab, clientX: 80, clientY: 50
+          expect(atom.workspace.getPanes().length).toEqual(2)
+          expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js"]
+          expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
 
     describe "when a non-tab is dragged to pane", ->
       it "has no effect", ->

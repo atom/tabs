@@ -1,5 +1,8 @@
 path = require 'path'
 {Disposable, CompositeDisposable} = require 'atom'
+FileIcons = require './file-icons'
+
+layout = require './layout'
 
 module.exports =
 class TabView extends HTMLElement
@@ -7,7 +10,7 @@ class TabView extends HTMLElement
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
 
-    if ['TextEditor', 'TestView'].indexOf(item.constructor.name) > -1
+    if ['TextEditor', 'TestView'].indexOf(@item.constructor.name) > -1
       @classList.add('texteditor')
     @classList.add('tab', 'sortable')
 
@@ -32,11 +35,12 @@ class TabView extends HTMLElement
       @itemTitle.classList.add('temp')
       @classList.add('pending-tab')
 
+    @ondrag = (e) -> layout.drag e
+    @ondragend = (e) -> layout.end e
+
   handleEvents: ->
     titleChangedHandler = =>
-      @updateDataAttributes()
       @updateTitle()
-      @updateTooltip()
 
     # TODO: remove else condition once pending API is on stable [MKT]
     if typeof @pane.onItemDidTerminatePendingState is 'function'
@@ -60,6 +64,23 @@ class TabView extends HTMLElement
       @item.on('title-changed', titleChangedHandler)
       @subscriptions.add dispose: =>
         @item.off?('title-changed', titleChangedHandler)
+
+    pathChangedHandler = (@path) =>
+      @updateDataAttributes()
+      @updateTitle()
+      @updateTooltip()
+
+    if typeof @item.onDidChangePath is 'function'
+      onDidChangePathDisposable = @item.onDidChangePath(pathChangedHandler)
+      if Disposable.isDisposable(onDidChangePathDisposable)
+        @subscriptions.add(onDidChangePathDisposable)
+      else
+        console.warn "::onDidChangePath does not return a valid Disposable!", @item
+    else if typeof @item.on is 'function'
+      #TODO Remove once old events are no longer supported
+      @item.on('path-changed', pathChangedHandler)
+      @subscriptions.add dispose: =>
+        @item.off?('path-changed', pathChangedHandler)
 
     iconChangedHandler = =>
       @updateIcon()
@@ -186,10 +207,16 @@ class TabView extends HTMLElement
 
   updateIcon: ->
     if @iconName
-      @itemTitle.classList.remove('icon', "icon-#{@iconName}")
+      names = unless Array.isArray(@iconName) then @iconName.split(/\s+/g) else @iconName
+      @itemTitle.classList.remove('icon', "icon-#{names[0]}", names...)
 
     if @iconName = @item.getIconName?()
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
+    else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, "tabs")
+      unless Array.isArray names = @iconName
+        names = names.toString().split /\s+/g
+      
+      @itemTitle.classList.add('icon', names...)
 
   getTabs: ->
     @parentElement?.querySelectorAll('.tab') ? []

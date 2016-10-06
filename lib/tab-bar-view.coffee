@@ -1,6 +1,5 @@
 BrowserWindow = null # Defer require until actually used
-# TODO: Remove the catch once Electron 0.35.0 is bundled in Atom
-try {ipcRenderer} = require 'electron' catch then ipcRenderer = require 'ipc'
+{ipcRenderer} = require 'electron'
 
 {matches, closest, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
@@ -22,8 +21,11 @@ class TabBarView extends HTMLElement
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
+      'tabs:close-tabs-to-left': => @closeTabsToLeft(@getActiveTab())
       'tabs:close-saved-tabs': => @closeSavedTabs()
-      'tabs:close-all-tabs': => @closeAllTabs()
+      'tabs:close-all-tabs': (event) =>
+        event.stopPropagation()
+        @closeAllTabs()
       'tabs:open-in-new-window': => @openInNewWindow()
 
     addElementCommands = (commands) =>
@@ -39,6 +41,7 @@ class TabBarView extends HTMLElement
       'tabs:close-tab': => @closeTab()
       'tabs:close-other-tabs': => @closeOtherTabs()
       'tabs:close-tabs-to-right': => @closeTabsToRight()
+      'tabs:close-tabs-to-left': => @closeTabsToLeft()
       'tabs:close-saved-tabs': => @closeSavedTabs()
       'tabs:close-all-tabs': => @closeAllTabs()
       'tabs:split-up': => @splitTab('splitUp')
@@ -46,6 +49,8 @@ class TabBarView extends HTMLElement
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
 
+    @addEventListener "mouseenter", @onMouseEnter
+    @addEventListener "mouseleave", @onMouseLeave
     @addEventListener "dragstart", @onDragStart
     @addEventListener "dragend", @onDragEnd
     @addEventListener "dragleave", @onDragLeave
@@ -96,6 +101,8 @@ class TabBarView extends HTMLElement
     tabView.initialize(item, @pane)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @insertTabAtIndex(tabView, index)
+    if atom.config.get('tabs.addNewTabsAtEnd')
+      @pane.moveItem(item, @pane.getItems().length - 1) unless @isItemMovingBetweenPanes
 
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)
@@ -104,7 +111,7 @@ class TabBarView extends HTMLElement
 
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabAtIndex(index) if index?
-    if followingTab and not atom.config.get('tabs.addNewTabsAtEnd')
+    if followingTab
       @insertBefore(tab, followingTab)
     else
       @appendChild(tab)
@@ -148,7 +155,7 @@ class TabBarView extends HTMLElement
 
   openInNewWindow: (tab) ->
     tab ?= @querySelector('.right-clicked')
-    item = tab.item
+    item = tab?.item
     return unless item?
     if typeof item.getURI is 'function'
       itemURI = item.getURI()
@@ -181,6 +188,13 @@ class TabBarView extends HTMLElement
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
+
+  closeTabsToLeft: (active) ->
+    tabs = @getTabs()
+    active ?= @querySelector('.right-clicked')
+    index = tabs.indexOf(active)
+    return if index is -1
+    @closeTab tab for tab, i in tabs when i < index
 
   closeSavedTabs: ->
     for tab in @getTabs()
@@ -390,10 +404,7 @@ class TabBarView extends HTMLElement
       @removeEventListener 'mousewheel', @onMouseWheel
 
   browserWindowForId: (id) ->
-    try
-      BrowserWindow ?= require('electron').remote.BrowserWindow
-    catch # TODO: Remove once Electron 0.35.0 is bundled in Atom
-      BrowserWindow ?= require('remote').require('browser-window')
+    BrowserWindow ?= require('electron').remote.BrowserWindow
 
     BrowserWindow.fromId id
 
@@ -458,5 +469,15 @@ class TabBarView extends HTMLElement
       target
     else
       closest(target, '.tab-bar')
+
+  onMouseEnter: ->
+    for tab in @getTabs()
+      {width} = tab.getBoundingClientRect()
+      tab.style.maxWidth = width.toFixed(2) + 'px'
+    return
+
+  onMouseLeave: ->
+    tab.style.maxWidth = '' for tab in @getTabs()
+    return
 
 module.exports = document.registerElement("atom-tabs", prototype: TabBarView.prototype, extends: "ul")

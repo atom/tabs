@@ -1,5 +1,3 @@
-{$} = require 'atom-space-pen-views'
-
 buildMouseEvent = (type, target, {which, ctrlKey}={}) ->
   event = new MouseEvent(type, {bubbles: true, cancelable: true})
   Object.defineProperty(event, 'which', get: -> which) if which?
