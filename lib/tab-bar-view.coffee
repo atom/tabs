@@ -377,9 +377,6 @@ class TabBarView extends HTMLElement
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
       setImmediate => @pane.activate() unless @pane.isDestroyed()
-    else if event.which is 2
-      @pane.destroyItem(tab.item)
-      event.preventDefault()
 
   onDoubleClick: (event) ->
     if tab = closest(event.target, '.tab')
@@ -390,11 +387,15 @@ class TabBarView extends HTMLElement
       event.preventDefault()
 
   onClick: (event) ->
-    return unless matches(event.target, ".tab .close-icon")
+    return unless matches(event.target, ".tab")
 
     tab = closest(event.target, '.tab')
-    @pane.destroyItem(tab.item)
-    false
+    if event.which is 2
+      @pane.destroyItem(tab.item)
+      event.preventDefault()
+    else if event.target.classList.contains('close-icon')
+      @pane.destroyItem(tab.item)
+      event.preventDefault()
 
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
