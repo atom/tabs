@@ -178,6 +178,7 @@ class TabBarView extends HTMLElement
     @closeTab(tab)
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
+    # tab.style.maxWidth = '' for tab in @getTabs()
 
   splitTab: (fn) ->
     if item = @querySelector('.right-clicked')?.item
