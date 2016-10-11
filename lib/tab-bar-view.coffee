@@ -390,10 +390,7 @@ class TabBarView extends HTMLElement
     return unless matches(event.target, ".tab")
 
     tab = closest(event.target, '.tab')
-    if event.which is 2
-      @pane.destroyItem(tab.item)
-      event.preventDefault()
-    else if event.target.classList.contains('close-icon')
+    if event.which is 2 or event.target.classList.contains('close-icon')
       @pane.destroyItem(tab.item)
       event.preventDefault()
 
