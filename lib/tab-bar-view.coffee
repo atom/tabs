@@ -393,7 +393,10 @@ class TabBarView extends HTMLElement
     return unless matches(event.target, ".tab .close-icon")
 
     tab = closest(event.target, '.tab')
-    @pane.destroyItem(tab.item)
+    if tab.item.isModified?()
+      @setActiveTab(tab)
+      @pane.activateItem(tab.item)
+    setImmediate => @pane.destroyItem(tab.item)
     false
 
   updateTabScrollingThreshold: ->
