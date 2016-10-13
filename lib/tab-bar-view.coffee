@@ -169,10 +169,9 @@ class TabBarView extends HTMLElement
       @setActiveTab(tab)
       @pane.activateItem(tab.item)
 
-    setTimeout =>
-      @pane.destroyItem(tab.item)
-      , 100
-
+    callback = => @pane.destroyItem(tab.item)
+    setTimeout(callback, 100)
+    
   openInNewWindow: (tab) ->
     tab ?= @querySelector('.right-clicked')
     item = tab?.item

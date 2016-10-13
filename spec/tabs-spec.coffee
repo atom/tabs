@@ -16,10 +16,16 @@ addItemToPane = (pane, item, index) ->
   else
     throw new Error("Unspoorted pane.addItem API")
 
+waitsForTimeout = ->
+  window.timeouts.map ([id, time, callback]) -> callback()
+
 describe "Tabs package main", ->
   workspaceElement = null
+  confirm = null
 
   beforeEach ->
+    confirm = spyOn(atom.applicationDelegate, 'confirm')
+    confirm.andReturn(1)
     workspaceElement = atom.views.getView(atom.workspace)
 
     waitsForPromise ->
@@ -303,6 +309,7 @@ describe "TabBarView", ->
       jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
 
       $(tabBar.tabForItem(editor1)).find('.close-icon').click()
+      waitsForTimeout()
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
       expect(editor1.destroyed).toBeTruthy()
@@ -498,6 +505,7 @@ describe "TabBarView", ->
       it "closes the active tab", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-tab')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
         expect(tabBar.getTabs().length).toBe 2
@@ -507,6 +515,7 @@ describe "TabBarView", ->
       it "closes all other tabs except the active tab", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-other-tabs')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
         expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
@@ -517,6 +526,7 @@ describe "TabBarView", ->
         pane.activateItem(editor1)
         triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-tabs-to-right')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
         expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
@@ -527,6 +537,7 @@ describe "TabBarView", ->
         pane.activateItem(editor1)
         triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 3)
         atom.commands.dispatch(tabBar, 'tabs:close-tabs-to-left')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
         expect($(tabBar).find('.tab:contains(Item 2)')).toExist()
@@ -536,12 +547,14 @@ describe "TabBarView", ->
       it "closes all the tabs", ->
         expect(pane.getItems().length).toBeGreaterThan 0
         atom.commands.dispatch(tabBar, 'tabs:close-all-tabs')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 0
 
     describe "when tabs:close-saved-tabs is fired", ->
       it "closes all the saved tabs", ->
         item1.isModified = -> true
         atom.commands.dispatch(tabBar, 'tabs:close-saved-tabs')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
@@ -594,6 +607,7 @@ describe "TabBarView", ->
         it "opens new window, closes current tab", ->
           spyOn(atom, 'open')
           atom.commands.dispatch(tabBar, 'tabs:open-in-new-window')
+          waitsForTimeout()
           expect(atom.open).toHaveBeenCalled()
 
           expect(pane.getItems().length).toBe 2
@@ -619,6 +633,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
         atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
         expect(tabBar.getTabs().length).toBe 2
@@ -626,14 +641,18 @@ describe "TabBarView", ->
 
       it "does nothing if no tabs are open", ->
         atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        waitsForTimeout()
         atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        waitsForTimeout()
         atom.commands.dispatch(paneElement, 'tabs:close-tab')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 0
         expect(tabBar.getTabs().length).toBe 0
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
         atom.commands.dispatch(paneElement, 'tabs:close-other-tabs')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
         expect($(tabBar).find('.tab:contains(sample.js)')).not.toExist()
@@ -643,6 +662,7 @@ describe "TabBarView", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
         atom.commands.dispatch(paneElement, 'tabs:close-tabs-to-right')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
         expect($(tabBar).find('.tab:contains(Item 2)')).not.toExist()
@@ -652,12 +672,14 @@ describe "TabBarView", ->
       it "closes all the tabs", ->
         expect(pane.getItems().length).toBeGreaterThan 0
         atom.commands.dispatch(paneElement, 'tabs:close-all-tabs')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 0
 
     describe "when tabs:close-saved-tabs is fired", ->
       it "closes all the saved tabs", ->
         item1.isModified = -> true
         atom.commands.dispatch(paneElement, 'tabs:close-saved-tabs')
+        waitsForTimeout()
         expect(pane.getItems().length).toBe 1
         expect(pane.getItems()[0]).toBe item1
 
@@ -670,6 +692,7 @@ describe "TabBarView", ->
         spyOn(tab2, 'destroy')
 
         pane2.close()
+        waitsForTimeout()
         expect(tab2.destroy).toHaveBeenCalled()
 
   describe "dragging and dropping tabs", ->
@@ -862,7 +885,8 @@ describe "TabBarView", ->
       describe "when the dragged tab is the only one in the pane", ->
         it "does nothing", ->
           tabBar.getTabs()[0].querySelector('.close-icon').click()
-          tabBar.getTabs()[1].querySelector('.close-icon').click()
+          tabBar.getTabs()[2].querySelector('.close-icon').click()
+          waitsForTimeout()
           expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js"]
           tab = tabBar.tabAtIndex(0)
           layout.test =
@@ -872,6 +896,7 @@ describe "TabBarView", ->
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
           tab.ondragend target: tab, clientX: 80, clientY: 50
+          waitsForTimeout()
           expect(atom.workspace.getPanes().length).toEqual(1)
           expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js"]
 
