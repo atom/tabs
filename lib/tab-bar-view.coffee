@@ -334,6 +334,12 @@ class TabBarView extends HTMLElement
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
+      if fromPane?.id isnt fromPaneId
+        # If dragging from a different pane container, we have to be more
+        # exhaustive in our search.
+        fromPane = Array.from document.querySelectorAll('atom-pane')
+          .map (paneEl) -> paneEl.model
+          .find (pane) -> pane.id is fromPaneId
       item = fromPane.getItems()[fromIndex]
       @moveItemBetweenPanes(fromPane, fromIndex, toPane, toIndex, item) if item?
     else

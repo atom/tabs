@@ -975,6 +975,52 @@ describe "TabBarView", ->
           expect(atom.workspace.getActiveTextEditor().getText()).toBe 'I have no path'
           expect(atom.workspace.getActiveTextEditor().getPath()).toBeUndefined()
 
+    describe "when a tab is dragged to another pane container", ->
+      [workspaceElement, pane2, tabBar2] = []
+
+      beforeEach ->
+        # Make sure the workspace view is in the document. It will be searched
+        # for the source pane.
+        workspaceElement = atom.views.getView atom.workspace
+        document.body.appendChild workspaceElement
+
+        pane = atom.workspace.getActivePane()
+
+        # Create a new pane container.
+        PaneContainer = atom.workspace.paneContainer.constructor
+        paneContainer = new PaneContainer config: atom.config
+        pane2 = paneContainer.getActivePane()
+        tabBar2 = new TabBarView
+        tabBar2.initialize pane2
+
+      afterEach ->
+        workspaceElement.remove()
+
+      it "removes the tab and item from their original pane and moves them to the target pane", ->
+        pane2.destroyItems()
+
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+        expect(pane.getItems()).toEqual [item1, editor1, item2]
+        expect(pane.getActiveItem()).toBe item2
+
+        expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual []
+        expect(pane2.getItems()).toEqual []
+        expect(pane2.activeItem).toBeUndefined()
+        spyOn(pane2, 'activate')
+        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0), tabBar2)
+        tabBar.onDragStart(dragStartEvent)
+        tabBar2.onDragOver(dropEvent)
+        tabBar2.onDrop(dropEvent)
+
+        expect(tabBar.getTabs().map (tab) -> tab.textContent).toEqual ["sample.js", "Item 2"]
+        expect(pane.getItems()).toEqual [editor1, item2]
+        expect(pane.getActiveItem()).toBe item2
+
+        expect(tabBar2.getTabs().map (tab) -> tab.textContent).toEqual ["Item 1"]
+        expect(pane2.getItems()).toEqual [item1]
+        expect(pane2.activeItem).toBe item1
+        expect(pane2.activate).toHaveBeenCalled()
+
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->
       newFileHandler = jasmine.createSpy('newFileHandler')
