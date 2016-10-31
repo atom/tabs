@@ -273,7 +273,7 @@ describe "TabBarView", ->
     it "closes the tab when middle clicked", ->
       jasmine.attachToDOM(tabBar) # Remove after Atom 1.2.0 is released
 
-      event = triggerMouseEvent('mousedown', tabBar.tabForItem(editor1), which: 2)
+      event = triggerMouseEvent('click', tabBar.tabForItem(editor1), which: 2)
 
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
