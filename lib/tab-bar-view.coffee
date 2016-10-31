@@ -162,8 +162,16 @@ class TabBarView extends HTMLElement
 
   closeTab: (tab) ->
     tab ?= @querySelector('.right-clicked')
-    @pane.destroyItem(tab.item) if tab?
 
+    return unless tab?
+
+    if tab.item.isModified?()
+      @setActiveTab(tab)
+      @pane.activateItem(tab.item)
+
+    callback = => @pane.destroyItem(tab.item)
+    setTimeout(callback, 100)
+    
   openInNewWindow: (tab) ->
     tab ?= @querySelector('.right-clicked')
     item = tab?.item
@@ -399,7 +407,7 @@ class TabBarView extends HTMLElement
     return unless matches(event.target, ".tab .close-icon")
 
     tab = closest(event.target, '.tab')
-    @pane.destroyItem(tab.item)
+    @closeTab(tab)
     false
 
   updateTabScrollingThreshold: ->
