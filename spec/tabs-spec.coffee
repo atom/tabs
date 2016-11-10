@@ -1,8 +1,9 @@
 {$, View}  = require 'atom-space-pen-views'
 _ = require 'underscore-plus'
 path = require 'path'
-temp = require 'temp'
+temp = require('temp').track()
 TabBarView = require '../lib/tab-bar-view'
+FileIcons = require '../lib/file-icons'
 layout = require '../lib/layout'
 {triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
@@ -100,6 +101,7 @@ describe "TabBarView", ->
 
   afterEach ->
     deserializerDisposable.dispose()
+    temp.cleanup()
 
   describe "when the mouse is moved over the tab bar", ->
     it "fixes the width on every tab", ->
@@ -1351,3 +1353,72 @@ describe "TabBarView", ->
 
         runs ->
           expect($(tabBar).find('.tab:eq(1) .title')).toHaveClass "status-modified"
+
+describe "File-icons service", ->
+  [tabBar, workspaceElement] = []
+
+  addNew = ->
+    editor = atom.workspace.buildTextEditor()
+    pane = atom.workspace.getActivePane()
+    pane.addItem(editor)
+    pane.setActiveItem(editor)
+
+  beforeEach ->
+    FileIcons.setService
+      iconClassForPath: (path) ->
+        switch path.match(/\w*$/)[0]
+          when 'js'  then 'icon-file-js'
+          when 'pdf' then 'icon-file-pdf'
+          else 'icon-file-text'
+
+    spyOn(FileIcons.getService(), 'iconClassForPath').andCallThrough()
+
+    waitsForPromise ->
+      atom.packages.activatePackage 'tabs'
+
+    runs ->
+      workspaceElement = atom.views.getView(atom.workspace)
+      tabBar = new TabBarView
+      tabBar.initialize atom.workspace.getActivePane()
+
+  it "shows an icon when a file is opened", ->
+    waitsForPromise ->
+      atom.workspace.open 'sample.js'
+
+    runs ->
+      tab = workspaceElement.querySelector('.tab')
+      expect(tab).not.toBeNull()
+      expect(tab.itemTitle.className).toBe "title icon icon-file-js"
+
+  it "keeps a tab-icon updated when the buffer path changes", ->
+    waitsForPromise ->
+      atom.workspace.open 'temp.js'
+
+    runs ->
+      tab = workspaceElement.querySelector('.tab')
+      expect(tab.itemTitle.className).toBe "title icon icon-file-js"
+      editor = atom.workspace.getActiveTextEditor()
+      editor.buffer.setPath 'temp.pdf'
+      expect(tab.itemTitle.className).toBe "title icon icon-file-pdf"
+
+  describe "when an empty editor is opened", ->
+    it "doesn't call the file-icon service", ->
+      tab = tabBar.tabForItem addNew()
+      expect(tab).not.toBeNull()
+      expect(tab.itemTitle.className).toBe "title"
+      expect(FileIcons.getService().iconClassForPath).not.toHaveBeenCalled()
+
+    it "updates the editor's tab when the buffer is saved", ->
+      editor = addNew()
+      tab = tabBar.tabForItem editor
+      expect(tab.itemTitle.className).toBe "title"
+      iconService = FileIcons.getService().iconClassForPath
+      expect(iconService).not.toHaveBeenCalled()
+
+      editor.saveAs path.join(temp.mkdirSync('tabs-'), 'NAH.txt')
+      expect(tab.itemTitle.className).toBe "title icon icon-file-text"
+      expect(tab.itemTitle.textContent).toBe "NAH.txt"
+      expect(iconService).toHaveBeenCalled()
+
+    afterEach ->
+      temp.cleanup()
