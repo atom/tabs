@@ -19,6 +19,7 @@ class TabBarView extends HTMLElement
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
+      'tabs:copy-uri': => @copyUri()
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
       'tabs:close-tabs-to-right': => @closeTabsToRight(@getActiveTab())
       'tabs:close-tabs-to-left': => @closeTabsToLeft(@getActiveTab())
@@ -104,6 +105,11 @@ class TabBarView extends HTMLElement
     if atom.config.get('tabs.addNewTabsAtEnd')
       @pane.moveItem(item, @pane.getItems().length - 1) unless @isItemMovingBetweenPanes
 
+  copyUri: ->
+    itemURI = @getItemUri()
+    return unless itemURI?
+    atom.clipboard.write(itemURI)
+
   moveItemTabToIndex: (item, index) ->
     if tab = @tabForItem(item)
       tab.remove()
@@ -157,14 +163,7 @@ class TabBarView extends HTMLElement
   getActiveTab: ->
     @tabForItem(@pane.getActiveItem())
 
-  updateActiveTab: ->
-    @setActiveTab(@tabForItem(@pane.getActiveItem()))
-
-  closeTab: (tab) ->
-    tab ?= @querySelector('.right-clicked')
-    @pane.destroyItem(tab.item) if tab?
-
-  openInNewWindow: (tab) ->
+  getItemUri: (tab) ->
     tab ?= @querySelector('.right-clicked')
     item = tab?.item
     return unless item?
@@ -174,6 +173,17 @@ class TabBarView extends HTMLElement
       itemURI = item.getPath()
     else if typeof item.getUri is 'function'
       itemURI = item.getUri()
+    itemURI
+
+  updateActiveTab: ->
+    @setActiveTab(@tabForItem(@pane.getActiveItem()))
+
+  closeTab: (tab) ->
+    tab ?= @querySelector('.right-clicked')
+    @pane.destroyItem(tab.item) if tab?
+
+  openInNewWindow: (tab) ->
+    itemURI = @getItemUri()
     return unless itemURI?
     @closeTab(tab)
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []

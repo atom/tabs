@@ -9,6 +9,10 @@ menu: [
 
 'context-menu':
   '.tab': [
+    {label: 'Copy URI', command: 'tabs:copy-uri'}
+
+    {type: 'separator'}
+
     {label: 'Close Tab', command: 'tabs:close-tab'}
     {label: 'Close Other Tabs', command: 'tabs:close-other-tabs'}
     {label: 'Close Tabs to the Right', command: 'tabs:close-tabs-to-right'}
