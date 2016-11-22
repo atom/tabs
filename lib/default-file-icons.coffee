@@ -2,7 +2,9 @@ fs = require 'fs-plus'
 path = require 'path'
 
 class DefaultFileIcons
-  iconClassForPath: (filePath) ->
+  iconClassForPath: (filePath, caller) ->
+    return '' unless caller is 'tabs-mru-switcher'
+
     extension = path.extname(filePath)
 
     if fs.isSymbolicLinkSync(filePath)
