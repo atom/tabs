@@ -1,3 +1,4 @@
+{Disposable} = require 'atom'
 FileIcons = require './file-icons'
 layout = require './layout'
 
@@ -44,10 +45,10 @@ module.exports =
 
   consumeFileIcons: (service) ->
     FileIcons.setService(service)
-    @fileIconsDisposable = service.onWillDeactivate ->
+    @updateFileIcons()
+    new Disposable =>
       FileIcons.resetService()
       @updateFileIcons()
-    @updateFileIcons()
 
   updateFileIcons: ->
     for tabBarView in @tabBarViews
