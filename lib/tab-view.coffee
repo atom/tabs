@@ -157,9 +157,6 @@ class TabView extends HTMLElement
       @tooltip = atom.tooltips.add this,
         title: @path
         html: false
-        delay:
-          show: 1000
-          hide: 100
         placement: 'bottom'
 
   destroyTooltip: ->
