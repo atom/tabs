@@ -137,13 +137,7 @@ class TabBarView extends HTMLElement
     @updateTabBarVisibility()
 
   scrollToTab: (tab) ->
-    tabRightEdge = tab.offsetLeft + tab.clientWidth
-    tabBarRightEdge = this.scrollLeft + this.clientWidth
-
-    if tabRightEdge > tabBarRightEdge
-      this.scrollLeft = tabRightEdge - this.clientWidth
-    else if this.scrollLeft > tab.offsetLeft
-      this.scrollLeft = tab.offsetLeft
+    tab.element.scrollIntoView(false)
 
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
