@@ -391,9 +391,9 @@ class TabBarView extends HTMLElement
 
     tab = @tabForElement(event.target)
     if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
-      @rightClickedTab?.classList.remove('right-clicked')
+      @rightClickedTab?.element.classList.remove('right-clicked')
       @rightClickedTab = tab
-      @rightClickedTab.classList.add('right-clicked')
+      @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)

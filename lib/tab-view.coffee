@@ -37,8 +37,11 @@ class TabView
       @itemTitle.classList.add('temp')
       @element.classList.add('pending-tab')
 
-    @ondrag = (e) -> layout.drag e
-    @ondragend = (e) -> layout.end e
+    @element.ondrag = (e) -> layout.drag e
+    @element.ondragend = (e) -> layout.end e
+
+    @element.pane = @pane
+    @element.item = @item
 
   handleEvents: ->
     titleChangedHandler = =>
