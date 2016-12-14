@@ -1,7 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 {ipcRenderer} = require 'electron'
 
-{matches, indexOf} = require './html-helpers'
+{matches} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
@@ -136,9 +136,6 @@ class TabBarView extends HTMLElement
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
-  scrollToTab: (tab) ->
-    tab.element.scrollIntoView(false)
-
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
       @classList.add('hidden')
@@ -159,7 +156,7 @@ class TabBarView extends HTMLElement
       @activeTab?.element.classList.remove('active')
       @activeTab = tabView
       @activeTab.element.classList.add('active')
-      @scrollToTab(tabView)
+      @activeTab.element.scrollIntoView(false)
 
   getActiveTab: ->
     @tabForItem(@pane.getActiveItem())
