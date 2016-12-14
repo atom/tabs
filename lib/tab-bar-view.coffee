@@ -99,10 +99,9 @@ class TabBarView extends HTMLElement
     return
 
   addTabForItem: (item, index) ->
-    tabView = new TabView()
-    tabView.initialize(item, @pane)
+    tabView = new TabView(item, @pane)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
-    @tabsByElement.set(tabView, tabView)
+    @tabsByElement.set(tabView.element, tabView)
     @insertTabAtIndex(tabView, index)
     if atom.config.get('tabs.addNewTabsAtEnd')
       @pane.moveItem(item, @pane.getItems().length - 1) unless @isItemMovingBetweenPanes
@@ -111,17 +110,17 @@ class TabBarView extends HTMLElement
     tabIndex = @tabs.findIndex((t) -> t.item is item)
     if tabIndex isnt -1
       tab = @tabs[tabIndex]
-      tab.remove()
+      tab.element.remove()
       @tabs.splice(tabIndex, 1)
       @insertTabAtIndex(tab, index)
 
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabs[index] if index?
     if followingTab
-      @insertBefore(tab, followingTab)
+      @insertBefore(tab.element, followingTab.element)
       @tabs.splice(index, 0, tab)
     else
-      @appendChild(tab)
+      @appendChild(tab.element)
       @tabs.push(tab)
 
     tab.updateTitle()
@@ -163,9 +162,9 @@ class TabBarView extends HTMLElement
 
   setActiveTab: (tabView) ->
     if tabView? and tabView isnt @activeTab
-      @activeTab?.classList.remove('active')
+      @activeTab?.element.classList.remove('active')
       @activeTab = tabView
-      @activeTab.classList.add('active')
+      @activeTab.element.classList.add('active')
       @scrollToTab(tabView)
 
   getActiveTab: ->
@@ -239,18 +238,19 @@ class TabBarView extends HTMLElement
 
     event.dataTransfer.setData 'atom-event', 'true'
 
-    element = @tabForElement(event.target)
-    element.classList.add('is-dragging')
-    element.destroyTooltip()
+    @draggedTab = @tabForElement(event.target)
+    @draggedTab.element.classList.add('is-dragging')
+    @draggedTab.destroyTooltip()
 
-    event.dataTransfer.setData 'sortable-index', indexOf(element)
+    tabIndex = @tabs.indexOf(@draggedTab)
+    event.dataTransfer.setData 'sortable-index', tabIndex
 
     paneIndex = @paneContainer.getPanes().indexOf(@pane)
     event.dataTransfer.setData 'from-pane-index', paneIndex
     event.dataTransfer.setData 'from-pane-id', @pane.id
     event.dataTransfer.setData 'from-window-id', @getWindowId()
 
-    item = @pane.getItems()[indexOf(element)]
+    item = @pane.getItems()[@tabs.indexOf(@draggedTab)]
     return unless item?
 
     if typeof item.getURI is 'function'
@@ -322,9 +322,9 @@ class TabBarView extends HTMLElement
     @clearDropTarget()
 
   clearDropTarget: ->
-    element = @querySelector(".is-dragging")
-    element?.classList.remove('is-dragging')
-    element?.updateTooltip()
+    @draggedTab?.element.classList.remove('is-dragging')
+    @draggedTab?.updateTooltip()
+    @draggedTab = null
     @removeDropTargetClasses()
     @removePlaceholder()
 
@@ -464,15 +464,15 @@ class TabBarView extends HTMLElement
 
     return if @isPlaceholder(target)
 
-    sortables = @getTabs()
-    element = @tabForElement(target)
-    element ?= sortables[sortables.length - 1]
+    tabs = @getTabs()
+    tab = @tabForElement(target)
+    tab ?= tabs[tabs.length - 1]
 
-    return 0 unless element?
+    return 0 unless tab?
 
-    {left, width} = element.getBoundingClientRect()
+    {left, width} = tab.element.getBoundingClientRect()
     elementCenter = left + width / 2
-    elementIndex = indexOf(element, sortables)
+    elementIndex = tabs.indexOf(tab)
 
     if event.pageX < elementCenter
       elementIndex
@@ -495,12 +495,12 @@ class TabBarView extends HTMLElement
 
   onMouseEnter: ->
     for tab in @getTabs()
-      {width} = tab.getBoundingClientRect()
-      tab.style.maxWidth = width.toFixed(2) + 'px'
+      {width} = tab.element.getBoundingClientRect()
+      tab.element.style.maxWidth = width.toFixed(2) + 'px'
     return
 
   onMouseLeave: ->
-    tab.style.maxWidth = '' for tab in @getTabs()
+    tab.element.style.maxWidth = '' for tab in @getTabs()
     return
 
   tabForElement: (element) ->
