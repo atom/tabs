@@ -14,6 +14,7 @@ class TabBarView extends HTMLElement
     @setAttribute("tabindex", -1)
 
   initialize: (@pane) ->
+    @tabs = []
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
@@ -105,22 +106,30 @@ class TabBarView extends HTMLElement
       @pane.moveItem(item, @pane.getItems().length - 1) unless @isItemMovingBetweenPanes
 
   moveItemTabToIndex: (item, index) ->
-    if tab = @tabForItem(item)
+    tabIndex = @tabs.findIndex((t) -> t.item is item)
+    if tabIndex isnt -1
+      tab = @tabs[tabIndex]
       tab.remove()
+      @tabs.splice(tabIndex, 1)
       @insertTabAtIndex(tab, index)
 
   insertTabAtIndex: (tab, index) ->
-    followingTab = @tabAtIndex(index) if index?
+    followingTab = @tabs[index] if index?
     if followingTab
       @insertBefore(tab, followingTab)
+      @tabs.splice(index, 0, tab)
     else
       @appendChild(tab)
+      @tabs.push(tab)
 
     tab.updateTitle()
     @updateTabBarVisibility()
 
   removeTabForItem: (item) ->
-    @tabForItem(item)?.destroy()
+    tabIndex = @tabs.findIndex((t) -> t.item is item)
+    if tabIndex isnt -1
+      @tabs[tabIndex].destroy()
+      @tabs.splice(tabIndex, 1)
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
@@ -140,13 +149,13 @@ class TabBarView extends HTMLElement
       @classList.remove('hidden')
 
   getTabs: ->
-    tab for tab in @querySelectorAll(".tab")
+    @tabs.slice()
 
   tabAtIndex: (index) ->
-    @querySelectorAll(".tab")[index]
+    @tabs[index]
 
   tabForItem: (item) ->
-    _.detect @getTabs(), (tab) -> tab.item is item
+    @tabs.find((t) -> t.item is item)
 
   setActiveTab: (tabView) ->
     if tabView? and not tabView.classList.contains('active')
