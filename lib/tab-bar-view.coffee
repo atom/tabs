@@ -171,11 +171,11 @@ class TabBarView extends HTMLElement
     @setActiveTab(@tabForItem(@pane.getActiveItem()))
 
   closeTab: (tab) ->
-    tab ?= @querySelector('.right-clicked')
+    tab ?= @rightClickedTab
     @pane.destroyItem(tab.item) if tab?
 
   openInNewWindow: (tab) ->
-    tab ?= @querySelector('.right-clicked')
+    tab ?= @rightClickedTab
     item = tab?.item
     return unless item?
     if typeof item.getURI is 'function'
@@ -190,7 +190,7 @@ class TabBarView extends HTMLElement
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
 
   splitTab: (fn) ->
-    if item = @querySelector('.right-clicked')?.item
+    if item = @rightClickedTab?.item
       if copiedItem = @copyItem(item)
         @pane[fn](items: [copiedItem])
 
@@ -199,20 +199,20 @@ class TabBarView extends HTMLElement
 
   closeOtherTabs: (active) ->
     tabs = @getTabs()
-    active ?= @querySelector('.right-clicked')
+    active ?= @rightClickedTab
     return unless active?
     @closeTab tab for tab in tabs when tab isnt active
 
   closeTabsToRight: (active) ->
     tabs = @getTabs()
-    active ?= @querySelector('.right-clicked')
+    active ?= @rightClickedTab
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i > index
 
   closeTabsToLeft: (active) ->
     tabs = @getTabs()
-    active ?= @querySelector('.right-clicked')
+    active ?= @rightClickedTab
     index = tabs.indexOf(active)
     return if index is -1
     @closeTab tab for tab, i in tabs when i < index
@@ -387,8 +387,9 @@ class TabBarView extends HTMLElement
 
     tab = closest(event.target, '.tab')
     if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
-      @querySelector('.right-clicked')?.classList.remove('right-clicked')
-      tab.classList.add('right-clicked')
+      @rightClickedTab?.classList.remove('right-clicked')
+      @rightClickedTab = tab
+      @rightClickedTab.classList.add('right-clicked')
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
