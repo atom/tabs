@@ -19,7 +19,6 @@ class TabView
     @itemTitle = document.createElement('div')
     @itemTitle.classList.add('title')
     @element.appendChild(@itemTitle)
-    @element.itemTitle = @itemTitle
 
     closeIcon = document.createElement('div')
     closeIcon.classList.add('close-icon')
@@ -43,6 +42,8 @@ class TabView
 
     @element.pane = @pane
     @element.item = @item
+    @element.itemTitle = @itemTitle
+    @element.path = @path
 
   handleEvents: ->
     titleChangedHandler = =>
