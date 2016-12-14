@@ -1,7 +1,7 @@
 BrowserWindow = null # Defer require until actually used
 {ipcRenderer} = require 'electron'
 
-{matches, closest, indexOf} = require './html-helpers'
+{matches, indexOf} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
@@ -15,6 +15,7 @@ class TabBarView extends HTMLElement
 
   initialize: (@pane) ->
     @tabs = []
+    @tabsByElement = new WeakMap
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add atom.commands.add atom.views.getView(@pane),
@@ -101,6 +102,7 @@ class TabBarView extends HTMLElement
     tabView = new TabView()
     tabView.initialize(item, @pane)
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
+    @tabsByElement.set(tabView, tabView)
     @insertTabAtIndex(tabView, index)
     if atom.config.get('tabs.addNewTabsAtEnd')
       @pane.moveItem(item, @pane.getItems().length - 1) unless @isItemMovingBetweenPanes
@@ -128,8 +130,10 @@ class TabBarView extends HTMLElement
   removeTabForItem: (item) ->
     tabIndex = @tabs.findIndex((t) -> t.item is item)
     if tabIndex isnt -1
-      @tabs[tabIndex].destroy()
+      tab = @tabs[tabIndex]
       @tabs.splice(tabIndex, 1)
+      @tabsByElement.delete(tab)
+      tab.destroy()
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
@@ -235,7 +239,7 @@ class TabBarView extends HTMLElement
 
     event.dataTransfer.setData 'atom-event', 'true'
 
-    element = closest(event.target, '.sortable')
+    element = @tabForElement(event.target)
     element.classList.add('is-dragging')
     element.destroyTooltip()
 
@@ -293,7 +297,7 @@ class TabBarView extends HTMLElement
 
     @removeDropTargetClasses()
 
-    tabBar = @getTabBar(event.target)
+    tabBar = event.target.closest('.tab-bar')
     sortableObjects = tabBar.querySelectorAll(".sortable")
     placeholder = @getPlaceholder()
     return unless placeholder?
@@ -385,7 +389,7 @@ class TabBarView extends HTMLElement
   onMouseDown: (event) ->
     return unless matches(event.target, ".tab")
 
-    tab = closest(event.target, '.tab')
+    tab = @tabForElement(event.target)
     if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
       @rightClickedTab?.classList.remove('right-clicked')
       @rightClickedTab = tab
@@ -399,7 +403,7 @@ class TabBarView extends HTMLElement
       event.preventDefault()
 
   onDoubleClick: (event) ->
-    if tab = closest(event.target, '.tab')
+    if tab = @tabForElement(event.target)
       tab.item.terminatePendingState?()
 
     else if event.target is this
@@ -409,7 +413,7 @@ class TabBarView extends HTMLElement
   onClick: (event) ->
     return unless matches(event.target, ".tab .close-icon")
 
-    tab = closest(event.target, '.tab')
+    tab = @tabForElement(event.target)
     @pane.destroyItem(tab.item)
     false
 
@@ -456,12 +460,12 @@ class TabBarView extends HTMLElement
 
   getDropTargetIndex: (event) ->
     target = event.target
-    tabBar = @getTabBar(target)
+    tabBar = target.closest('.tab-bar')
 
     return if @isPlaceholder(target)
 
-    sortables = tabBar.querySelectorAll(".sortable")
-    element = closest(target, '.sortable')
+    sortables = @getTabs()
+    element = @tabForElement(target)
     element ?= sortables[sortables.length - 1]
 
     return 0 unless element?
@@ -489,12 +493,6 @@ class TabBarView extends HTMLElement
   isPlaceholder: (element) ->
     element.classList.contains('placeholder')
 
-  getTabBar: (target) ->
-    if target.classList.contains('tab-bar')
-      target
-    else
-      closest(target, '.tab-bar')
-
   onMouseEnter: ->
     for tab in @getTabs()
       {width} = tab.getBoundingClientRect()
@@ -504,5 +502,13 @@ class TabBarView extends HTMLElement
   onMouseLeave: ->
     tab.style.maxWidth = '' for tab in @getTabs()
     return
+
+  tabForElement: (element) ->
+    currentElement = element
+    while currentElement?
+      if tab = @tabsByElement.get(currentElement)
+        return tab
+      else
+        currentElement = currentElement.parentElement
 
 module.exports = document.registerElement("atom-tabs", prototype: TabBarView.prototype, extends: "ul")
