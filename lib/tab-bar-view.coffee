@@ -158,9 +158,10 @@ class TabBarView extends HTMLElement
     @tabs.find((t) -> t.item is item)
 
   setActiveTab: (tabView) ->
-    if tabView? and not tabView.classList.contains('active')
-      @querySelector('.tab.active')?.classList.remove('active')
-      tabView.classList.add('active')
+    if tabView? and tabView isnt @activeTab
+      @activeTab?.classList.remove('active')
+      @activeTab = tabView
+      @activeTab.classList.add('active')
       @scrollToTab(tabView)
 
   getActiveTab: ->
