@@ -7,13 +7,12 @@ _ = require 'underscore-plus'
 TabView = require './tab-view'
 
 class TabBarView extends HTMLElement
-  createdCallback: ->
+  initialize: (@pane) ->
     @classList.add("list-inline")
     @classList.add("tab-bar")
     @classList.add("inset-panel")
     @setAttribute("tabindex", -1)
 
-  initialize: (@pane) ->
     @tabs = []
     @tabsByElement = new WeakMap
     @subscriptions = new CompositeDisposable
@@ -225,11 +224,11 @@ class TabBarView extends HTMLElement
     (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) ->
-    return unless matches(event.target, '.sortable')
+    @draggedTab = @tabForElement(event.target)
+    return unless @draggedTab
 
     event.dataTransfer.setData 'atom-event', 'true'
 
-    @draggedTab = @tabForElement(event.target)
     @draggedTab.element.classList.add('is-dragging')
     @draggedTab.destroyTooltip()
 
@@ -272,7 +271,7 @@ class TabBarView extends HTMLElement
     @removePlaceholder()
 
   onDragEnd: (event) ->
-    return unless matches(event.target, '.sortable')
+    return unless @tabForElement(event.target)
 
     @clearDropTarget()
 
@@ -289,7 +288,7 @@ class TabBarView extends HTMLElement
     @removeDropTargetClasses()
 
     tabBar = event.target.closest('.tab-bar')
-    sortableObjects = tabBar.querySelectorAll(".sortable")
+    sortableObjects = tabBar.getTabs()
     placeholder = @getPlaceholder()
     return unless placeholder?
 
