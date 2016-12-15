@@ -6,7 +6,7 @@ layout = require './layout'
 
 module.exports =
 class TabView
-  constructor: (@item, @pane) ->
+  constructor: ({@item, @pane, didClickCloseIcon}) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
 
@@ -22,6 +22,7 @@ class TabView
 
     closeIcon = document.createElement('div')
     closeIcon.classList.add('close-icon')
+    closeIcon.onclick = didClickCloseIcon
     @element.appendChild(closeIcon)
 
     @subscriptions = new CompositeDisposable()

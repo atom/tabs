@@ -1,7 +1,6 @@
 BrowserWindow = null # Defer require until actually used
 {ipcRenderer} = require 'electron'
 
-{matches} = require './html-helpers'
 {CompositeDisposable} = require 'atom'
 _ = require 'underscore-plus'
 TabView = require './tab-view'
@@ -84,7 +83,6 @@ class TabBarView extends HTMLElement
 
     @addEventListener "mousedown", @onMouseDown
     @addEventListener "dblclick", @onDoubleClick
-    @addEventListener "click", @onClick
 
     @onDropOnOtherWindow = @onDropOnOtherWindow.bind(this)
     ipcRenderer.on('tab:dropped',  @onDropOnOtherWindow)
@@ -98,7 +96,13 @@ class TabBarView extends HTMLElement
     return
 
   addTabForItem: (item, index) ->
-    tabView = new TabView(item, @pane)
+    tabView = new TabView({
+      item,
+      @pane,
+      didClickCloseIcon: =>
+        @closeTab(tabView)
+        return
+    })
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @tabsByElement.set(tabView.element, tabView)
     @insertTabAtIndex(tabView, index)
@@ -288,21 +292,21 @@ class TabBarView extends HTMLElement
     @removeDropTargetClasses()
 
     tabBar = event.target.closest('.tab-bar')
-    sortableObjects = tabBar.getTabs()
+    tabs = tabBar.getTabs()
     placeholder = @getPlaceholder()
     return unless placeholder?
 
-    if newDropTargetIndex < sortableObjects.length
-      element = sortableObjects[newDropTargetIndex]
-      element.classList.add 'is-drop-target'
-      element.parentElement.insertBefore(placeholder, element)
+    if newDropTargetIndex < tabs.length
+      tab = tabs[newDropTargetIndex]
+      tab.element.classList.add 'is-drop-target'
+      tab.element.parentElement.insertBefore(placeholder, tab.element)
     else
-      if element = sortableObjects[newDropTargetIndex - 1]
-        element.classList.add 'drop-target-is-after'
-        if sibling = element.nextSibling
-          element.parentElement.insertBefore(placeholder, sibling)
+      if tab = tabs[newDropTargetIndex - 1]
+        tab.element.classList.add 'drop-target-is-after'
+        if sibling = tab.element.nextSibling
+          tab.element.parentElement.insertBefore(placeholder, sibling)
         else
-          element.parentElement.appendChild(placeholder)
+          tab.element.parentElement.appendChild(placeholder)
 
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) ->
     if @pane.id is fromPaneId
@@ -377,9 +381,9 @@ class TabBarView extends HTMLElement
       @pane.activatePreviousItem()
 
   onMouseDown: (event) ->
-    return unless matches(event.target, ".tab")
-
     tab = @tabForElement(event.target)
+    return unless tab
+
     if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
       @rightClickedTab?.element.classList.remove('right-clicked')
       @rightClickedTab = tab
@@ -399,13 +403,6 @@ class TabBarView extends HTMLElement
     else if event.target is this
       atom.commands.dispatch(this, 'application:new-file')
       event.preventDefault()
-
-  onClick: (event) ->
-    return unless matches(event.target, ".tab .close-icon")
-
-    tab = @tabForElement(event.target)
-    @pane.destroyItem(tab.item)
-    false
 
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
