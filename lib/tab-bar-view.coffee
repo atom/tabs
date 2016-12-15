@@ -5,12 +5,15 @@ BrowserWindow = null # Defer require until actually used
 _ = require 'underscore-plus'
 TabView = require './tab-view'
 
-class TabBarView extends HTMLElement
-  initialize: (@pane) ->
-    @classList.add("list-inline")
-    @classList.add("tab-bar")
-    @classList.add("inset-panel")
-    @setAttribute("tabindex", -1)
+module.exports =
+class TabBarView
+  constructor: (@pane) ->
+    @element = document.createElement('ul')
+    @element.classList.add("list-inline")
+    @element.classList.add("tab-bar")
+    @element.classList.add("inset-panel")
+    @element.setAttribute('is', 'atom-tabs')
+    @element.setAttribute("tabindex", -1)
 
     @tabs = []
     @tabsByElement = new WeakMap
@@ -35,7 +38,7 @@ class TabBarView extends HTMLElement
           event.stopPropagation()
           commands[name]()
 
-      @subscriptions.add(atom.commands.add(this, commandsWithPropagationStopped))
+      @subscriptions.add(atom.commands.add(@element, commandsWithPropagationStopped))
 
     addElementCommands
       'tabs:close-tab': => @closeTab()
@@ -49,19 +52,19 @@ class TabBarView extends HTMLElement
       'tabs:split-left': => @splitTab('splitLeft')
       'tabs:split-right': => @splitTab('splitRight')
 
-    @addEventListener "mouseenter", @onMouseEnter
-    @addEventListener "mouseleave", @onMouseLeave
-    @addEventListener "dragstart", @onDragStart
-    @addEventListener "dragend", @onDragEnd
-    @addEventListener "dragleave", @onDragLeave
-    @addEventListener "dragover", @onDragOver
-    @addEventListener "drop", @onDrop
+    @element.addEventListener "mouseenter", @onMouseEnter.bind(this)
+    @element.addEventListener "mouseleave", @onMouseLeave.bind(this)
+    @element.addEventListener "dragstart", @onDragStart.bind(this)
+    @element.addEventListener "dragend", @onDragEnd.bind(this)
+    @element.addEventListener "dragleave", @onDragLeave.bind(this)
+    @element.addEventListener "dragover", @onDragOver.bind(this)
+    @element.addEventListener "drop", @onDrop.bind(this)
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
 
     @subscriptions.add @pane.onDidDestroy =>
-      @unsubscribe()
+      @destroy()
 
     @subscriptions.add @pane.onDidAddItem ({item, index}) =>
       @addTabForItem(item, index)
@@ -81,15 +84,16 @@ class TabBarView extends HTMLElement
 
     @updateActiveTab()
 
-    @addEventListener "mousedown", @onMouseDown
-    @addEventListener "dblclick", @onDoubleClick
+    @element.addEventListener "mousedown", @onMouseDown.bind(this)
+    @element.addEventListener "dblclick", @onDoubleClick.bind(this)
 
     @onDropOnOtherWindow = @onDropOnOtherWindow.bind(this)
-    ipcRenderer.on('tab:dropped',  @onDropOnOtherWindow)
+    ipcRenderer.on('tab:dropped', @onDropOnOtherWindow)
 
-  unsubscribe: ->
+  destroy: ->
     ipcRenderer.removeListener('tab:dropped', @onDropOnOtherWindow)
     @subscriptions.dispose()
+    @element.remove()
 
   terminatePendingStates: ->
     tab.terminatePendingState?() for tab in @getTabs()
@@ -99,6 +103,7 @@ class TabBarView extends HTMLElement
     tabView = new TabView({
       item,
       @pane,
+      @tabs,
       didClickCloseIcon: =>
         @closeTab(tabView)
         return
@@ -120,10 +125,10 @@ class TabBarView extends HTMLElement
   insertTabAtIndex: (tab, index) ->
     followingTab = @tabs[index] if index?
     if followingTab
-      @insertBefore(tab.element, followingTab.element)
+      @element.insertBefore(tab.element, followingTab.element)
       @tabs.splice(index, 0, tab)
     else
-      @appendChild(tab.element)
+      @element.appendChild(tab.element)
       @tabs.push(tab)
 
     tab.updateTitle()
@@ -141,9 +146,9 @@ class TabBarView extends HTMLElement
 
   updateTabBarVisibility: ->
     if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
-      @classList.add('hidden')
+      @element.classList.add('hidden')
     else
-      @classList.remove('hidden')
+      @element.classList.remove('hidden')
 
   getTabs: ->
     @tabs.slice()
@@ -398,9 +403,8 @@ class TabBarView extends HTMLElement
   onDoubleClick: (event) ->
     if tab = @tabForElement(event.target)
       tab.item.terminatePendingState?()
-
-    else if event.target is this
-      atom.commands.dispatch(this, 'application:new-file')
+    else if event.target is @element
+      atom.commands.dispatch(@element, 'application:new-file')
       event.preventDefault()
 
   updateTabScrollingThreshold: ->
@@ -414,9 +418,9 @@ class TabBarView extends HTMLElement
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
 
     if @tabScrolling
-      @addEventListener 'mousewheel', @onMouseWheel
+      @element.addEventListener 'mousewheel', @onMouseWheel.bind(this)
     else
-      @removeEventListener 'mousewheel', @onMouseWheel
+      @element.removeEventListener 'mousewheel', @onMouseWheel.bind(this)
 
   browserWindowForId: (id) ->
     BrowserWindow ?= require('electron').remote.BrowserWindow
@@ -495,5 +499,3 @@ class TabBarView extends HTMLElement
         return tab
       else
         currentElement = currentElement.parentElement
-
-module.exports = document.registerElement("atom-tabs", prototype: TabBarView.prototype, extends: "ul")

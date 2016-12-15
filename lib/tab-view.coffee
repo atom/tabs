@@ -6,7 +6,7 @@ layout = require './layout'
 
 module.exports =
 class TabView
-  constructor: ({@item, @pane, didClickCloseIcon}) ->
+  constructor: ({@item, @pane, didClickCloseIcon, @tabs}) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
 
@@ -205,7 +205,7 @@ class TabView
     else
       title = @item.getTitle()
       useLongTitle = false
-      for tab in @getTabs() when tab isnt this
+      for tab in @tabs when tab isnt this
         if tab.item.getTitle() is title
           tab.updateTitle(updateSiblings: false, useLongTitle: true)
           useLongTitle = true
@@ -227,9 +227,6 @@ class TabView
         names = names.toString().split /\s+/g
 
       @itemTitle.classList.add('icon', names...)
-
-  getTabs: ->
-    @element.parentElement?.getTabs() ? []
 
   isItemPending: ->
     if @pane.getPendingItem?
