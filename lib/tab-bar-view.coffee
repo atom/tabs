@@ -455,8 +455,8 @@ class TabBarView extends HTMLElement
 
     return if @isPlaceholder(target)
 
-    tabs = @getTabs()
-    tab = @tabForElement(target)
+    tabs = tabBar.getTabs()
+    tab = tabBar.tabForElement(target)
     tab ?= tabs[tabs.length - 1]
 
     return 0 unless tab?
