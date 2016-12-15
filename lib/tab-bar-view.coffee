@@ -291,8 +291,7 @@ class TabBarView extends HTMLElement
 
     @removeDropTargetClasses()
 
-    tabBar = event.target.closest('.tab-bar')
-    tabs = tabBar.getTabs()
+    tabs = @getTabs()
     placeholder = @getPlaceholder()
     return unless placeholder?
 
@@ -447,12 +446,11 @@ class TabBarView extends HTMLElement
 
   getDropTargetIndex: (event) ->
     target = event.target
-    tabBar = target.closest('.tab-bar')
 
     return if @isPlaceholder(target)
 
-    tabs = tabBar.getTabs()
-    tab = tabBar.tabForElement(target)
+    tabs = @getTabs()
+    tab = @tabForElement(target)
     tab ?= tabs[tabs.length - 1]
 
     return 0 unless tab?
