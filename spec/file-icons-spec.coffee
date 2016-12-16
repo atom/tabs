@@ -21,11 +21,9 @@ describe 'file icon handling', ->
     }
 
     tab = workspaceElement.querySelector('.tab')
-    tab.updateIcon()
     expect(tab.itemTitle.className).toBe('title icon first-icon-class second-icon-class')
 
     fileIconsDisposable.dispose()
-    tab.updateIcon()
     expect(tab.itemTitle.className).toBe('title')
 
   it 'allows the service to provide multiple classes as an array', ->
@@ -34,5 +32,4 @@ describe 'file icon handling', ->
     }
 
     tab = workspaceElement.querySelector('.tab')
-    tab.updateIcon()
     expect(tab.itemTitle.className).toBe('title icon first-icon-class second-icon-class')
