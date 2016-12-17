@@ -5,22 +5,25 @@ FileIcons = require './file-icons'
 layout = require './layout'
 
 module.exports =
-class TabView extends HTMLElement
-  initialize: (@item, @pane) ->
+class TabView
+  constructor: ({@item, @pane, didClickCloseIcon, @tabs}) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
 
+    @element = document.createElement('li')
+    @element.setAttribute('is', 'tabs-tab')
     if ['TextEditor', 'TestView'].indexOf(@item.constructor.name) > -1
-      @classList.add('texteditor')
-    @classList.add('tab', 'sortable')
+      @element.classList.add('texteditor')
+    @element.classList.add('tab', 'sortable')
 
     @itemTitle = document.createElement('div')
     @itemTitle.classList.add('title')
-    @appendChild(@itemTitle)
+    @element.appendChild(@itemTitle)
 
     closeIcon = document.createElement('div')
     closeIcon.classList.add('close-icon')
-    @appendChild(closeIcon)
+    closeIcon.onclick = didClickCloseIcon
+    @element.appendChild(closeIcon)
 
     @subscriptions = new CompositeDisposable()
 
@@ -33,14 +36,21 @@ class TabView extends HTMLElement
 
     if @isItemPending()
       @itemTitle.classList.add('temp')
-      @classList.add('pending-tab')
+      @element.classList.add('pending-tab')
 
-    @ondrag = (e) -> layout.drag e
-    @ondragend = (e) -> layout.end e
+    @element.ondrag = (e) -> layout.drag e
+    @element.ondragend = (e) -> layout.end e
+
+    @element.pane = @pane
+    @element.item = @item
+    @element.itemTitle = @itemTitle
+    @element.path = @path
 
   handleEvents: ->
     titleChangedHandler = =>
       @updateTitle()
+
+    @subscriptions.add @pane.onDidDestroy => @destroy()
 
     # TODO: remove else condition once pending API is on stable [MKT]
     if typeof @pane.onItemDidTerminatePendingState is 'function'
@@ -138,13 +148,13 @@ class TabView extends HTMLElement
       @updateTooltip()
 
       # Trigger again so the tooltip shows
-      @dispatchEvent(new CustomEvent('mouseenter', bubbles: true))
+      @element.dispatchEvent(new CustomEvent('mouseenter', bubbles: true))
 
     @mouseEnterSubscription = dispose: =>
-      @removeEventListener('mouseenter', onMouseEnter)
+      @element.removeEventListener('mouseenter', onMouseEnter)
       @mouseEnterSubscription = null
 
-    @addEventListener('mouseenter', onMouseEnter)
+    @element.addEventListener('mouseenter', onMouseEnter)
 
   updateTooltip: ->
     return unless @hasBeenMousedOver
@@ -152,7 +162,7 @@ class TabView extends HTMLElement
     @destroyTooltip()
 
     if @path
-      @tooltip = atom.tooltips.add this,
+      @tooltip = atom.tooltips.add @element,
         title: @path
         html: false
         delay:
@@ -169,7 +179,7 @@ class TabView extends HTMLElement
     @mouseEnterSubscription?.dispose()
     @repoSubscriptions?.dispose()
     @destroyTooltip()
-    @remove()
+    @element.remove()
 
   updateDataAttributes: ->
     if @path
@@ -180,9 +190,9 @@ class TabView extends HTMLElement
       delete @itemTitle.dataset.path
 
     if itemClass = @item.constructor?.name
-      @dataset.type = itemClass
+      @element.dataset.type = itemClass
     else
-      delete @dataset.type
+      delete @element.dataset.type
 
   updateTitle: ({updateSiblings, useLongTitle}={}) ->
     return if @updatingTitle
@@ -195,7 +205,7 @@ class TabView extends HTMLElement
     else
       title = @item.getTitle()
       useLongTitle = false
-      for tab in @getTabs() when tab isnt this
+      for tab in @tabs when tab isnt this
         if tab.item.getTitle() is title
           tab.updateTitle(updateSiblings: false, useLongTitle: true)
           useLongTitle = true
@@ -215,11 +225,8 @@ class TabView extends HTMLElement
     else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, "tabs")
       unless Array.isArray names = @iconName
         names = names.toString().split /\s+/g
-      
-      @itemTitle.classList.add('icon', names...)
 
-  getTabs: ->
-    @parentElement?.querySelectorAll('.tab') ? []
+      @itemTitle.classList.add('icon', names...)
 
   isItemPending: ->
     if @pane.getPendingItem?
@@ -235,7 +242,7 @@ class TabView extends HTMLElement
 
   clearPending: ->
     @itemTitle.classList.remove('temp')
-    @classList.remove('pending-tab')
+    @element.classList.remove('pending-tab')
 
   updateIconVisibility: ->
     if atom.config.get 'tabs.showIcons'
@@ -245,10 +252,10 @@ class TabView extends HTMLElement
 
   updateModifiedStatus: ->
     if @item.isModified?()
-      @classList.add('modified') unless @isModified
+      @element.classList.add('modified') unless @isModified
       @isModified = true
     else
-      @classList.remove('modified') if @isModified
+      @element.classList.remove('modified') if @isModified
       @isModified = false
 
   setupVcsStatus: ->
@@ -302,5 +309,3 @@ class TabView extends HTMLElement
     @repoSubscriptions?.dispose()
     delete @status
     @updateVcsColoring()
-
-module.exports = document.registerElement('tabs-tab', prototype: TabView.prototype, extends: 'li')
