@@ -22,13 +22,12 @@ module.exports =
           tabBarView.closeAllTabs()
 
     @paneSubscription = atom.workspace.observePanes (pane) =>
-      tabBarView = new TabBarView
-      tabBarView.initialize(pane)
+      tabBarView = new TabBarView(pane)
       mruListView = new MRUListView
       mruListView.initialize(pane)
 
       paneElement = atom.views.getView(pane)
-      paneElement.insertBefore(tabBarView, paneElement.firstChild)
+      paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
 
       @tabBarViews.push(tabBarView)
       pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
@@ -39,7 +38,7 @@ module.exports =
     layout.deactivate()
     @paneSubscription.dispose()
     @fileIconsDisposable?.dispose()
-    tabBarView.remove() for tabBarView in @tabBarViews
+    tabBarView.destroy() for tabBarView in @tabBarViews
     mruListView.remove() for mruListView in @mruListViews
     return
 

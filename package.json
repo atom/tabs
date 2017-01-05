@@ -59,7 +59,6 @@
     }
   },
   "devDependencies": {
-    "atom-space-pen-views": "^2.0.0",
     "coffeelint": "^1.9.7",
     "babel-cli": "6.5.1",
     "babel-eslint": "5.0.0-beta10",

@@ -1,5 +1,3 @@
-{closest} = require './html-helpers'
-
 module.exports =
   activate: ->
     @view = document.createElement 'div'
@@ -42,7 +40,7 @@ module.exports =
     toPane.activate()
 
   getElement: ({clientX, clientY}, selector = '*') ->
-    closest document.elementFromPoint(clientX, clientY), selector
+    document.elementFromPoint(clientX, clientY).closest(selector)
 
   getItemViewAt: (coords) ->
     @test.itemView or @getElement coords, '.item-views'
