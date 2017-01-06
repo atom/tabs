@@ -12,6 +12,30 @@ module.exports =
     MRUListView = require './mru-list-view'
     _ = require 'underscore-plus'
 
+    keyBindSource = 'tabs package'
+    configKey = 'tabs.enableMruTabSwitching'
+
+    @updateTraversalKeybinds = =>
+      # We don't modify keybindings based on our setting if the user has already tweaked them.
+      bindings = atom.keymaps.findKeyBindings(target:document.body, keystrokes:'ctrl-tab')
+      return if bindings.length > 1 and bindings[0].source != keyBindSource
+      bindings = atom.keymaps.findKeyBindings(target:document.body, keystrokes:'ctrl-shift-tab')
+      return if bindings.length > 1 and bindings[0].source != keyBindSource
+
+      if atom.config.get(configKey)
+        atom.keymaps.removeBindingsFromSource(keyBindSource)
+      else
+        disabledBindings =
+          'body':
+            'ctrl-tab': 'pane:show-next-item'
+            'ctrl-tab ^ctrl': 'unset!'
+            'ctrl-shift-tab': 'pane:show-previous-item'
+            'ctrl-shift-tab ^ctrl': 'unset!'
+        atom.keymaps.add(keyBindSource, disabledBindings, 0)
+
+    atom.keymaps.onDidLoadUserKeymap => @updateTraversalKeybinds()
+    atom.config.observe configKey, => @updateTraversalKeybinds()
+
     # If the command bubbles up without being handled by a particular pane,
     # close all tabs in all panes
     atom.commands.add 'atom-workspace',
