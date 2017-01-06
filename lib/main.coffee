@@ -15,12 +15,16 @@ module.exports =
     keyBindSource = 'tabs package'
     configKey = 'tabs.enableMruTabSwitching'
 
-    @updateTraversalKeybinds = =>
+    @updateTraversalKeybinds = ->
       # We don't modify keybindings based on our setting if the user has already tweaked them.
-      bindings = atom.keymaps.findKeyBindings(target:document.body, keystrokes:'ctrl-tab')
-      return if bindings.length > 1 and bindings[0].source != keyBindSource
-      bindings = atom.keymaps.findKeyBindings(target:document.body, keystrokes:'ctrl-shift-tab')
-      return if bindings.length > 1 and bindings[0].source != keyBindSource
+      bindings = atom.keymaps.findKeyBindings(
+        target: document.body,
+        keystrokes: 'ctrl-tab')
+      return if bindings.length > 1 and bindings[0].source isnt keyBindSource
+      bindings = atom.keymaps.findKeyBindings(
+        target: document.body,
+        keystrokes: 'ctrl-shift-tab')
+      return if bindings.length > 1 and bindings[0].source isnt keyBindSource
 
       if atom.config.get(configKey)
         atom.keymaps.removeBindingsFromSource(keyBindSource)
