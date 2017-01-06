@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.103.1",
+  "version": "0.104.0",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
@@ -57,7 +57,7 @@
       "default": false,
       "description": "Add new tabs at the end of the tab bar, rather than after active tab."
     },
-    "enableMruTabSwitching" : {
+    "enableMruTabSwitching": {
       "type": "boolean",
       "title": "Enable MRU Tab Switching",
       "default": true,
