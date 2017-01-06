@@ -37,8 +37,8 @@ module.exports =
             'ctrl-shift-tab ^ctrl': 'unset!'
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
-    atom.keymaps.onDidLoadUserKeymap => @updateTraversalKeybinds()
     atom.config.observe configKey, => @updateTraversalKeybinds()
+    atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
 
     # If the command bubbles up without being handled by a particular pane,
     # close all tabs in all panes
