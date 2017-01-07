@@ -67,7 +67,7 @@ module.exports =
     @paneSubscription.dispose()
     @fileIconsDisposable?.dispose()
     tabBarView.destroy() for tabBarView in @tabBarViews
-    mruListView.remove() for mruListView in @mruListViews
+    mruListView.destroy() for mruListView in @mruListViews
     return
 
   consumeFileIcons: (service) ->
