@@ -229,7 +229,7 @@ class TabView
     else if @path?
       if service = IconServices.get 'element-icons'
         @itemTitle.classList.add 'icon'
-        @iconElement = service @itemTitle, @path
+        @iconElement = service @itemTitle, @path, isTabIcon: true
         @subscriptions.add @iconElement
       else if @iconName = IconServices.get('file-icons').iconClassForPath(@path, "tabs")
         unless Array.isArray names = @iconName
