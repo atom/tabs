@@ -1,6 +1,6 @@
 path = require 'path'
 {Disposable, CompositeDisposable} = require 'atom'
-FileIcons = require './file-icons'
+IconServices = require './icon-services'
 
 layout = require './layout'
 
@@ -94,6 +94,8 @@ class TabView
 
     iconChangedHandler = =>
       @updateIcon()
+
+    @subscriptions.add IconServices.onDidChange => @updateIcon()
 
     if typeof @item.onDidChangeIcon is 'function'
       onDidChangeIconDisposable = @item.onDidChangeIcon? =>
@@ -216,17 +218,23 @@ class TabView
     @updatingTitle = false
 
   updateIcon: ->
+    if @iconElement?
+      return unless @iconElement.disposed
     if @iconName
       names = unless Array.isArray(@iconName) then @iconName.split(/\s+/g) else @iconName
       @itemTitle.classList.remove('icon', "icon-#{names[0]}", names...)
 
     if @iconName = @item.getIconName?()
       @itemTitle.classList.add('icon', "icon-#{@iconName}")
-    else if @path? and @iconName = FileIcons.getService().iconClassForPath(@path, "tabs")
-      unless Array.isArray names = @iconName
-        names = names.toString().split /\s+/g
-
-      @itemTitle.classList.add('icon', names...)
+    else if @path?
+      if service = IconServices.get 'element-icons'
+        @itemTitle.classList.add 'icon'
+        @iconElement = service @itemTitle, @path
+        @subscriptions.add @iconElement
+      else if @iconName = IconServices.get('file-icons').iconClassForPath(@path, "tabs")
+        unless Array.isArray names = @iconName
+          names = names.toString().split /\s+/g
+        @itemTitle.classList.add('icon', names...)
 
   isItemPending: ->
     if @pane.getPendingItem?

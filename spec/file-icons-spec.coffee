@@ -1,5 +1,5 @@
 DefaultFileIcons = require '../lib/default-file-icons'
-FileIcons = require '../lib/file-icons'
+IconServices = require '../lib/icon-services'
 
 describe 'file icon handling', ->
   workspaceElement = null

@@ -1,5 +1,5 @@
 {Disposable} = require 'atom'
-FileIcons = require './file-icons'
+IconServices = require './icon-services'
 layout = require './layout'
 
 module.exports =
@@ -70,11 +70,18 @@ module.exports =
     mruListView.destroy() for mruListView in @mruListViews
     return
 
-  consumeFileIcons: (service) ->
-    FileIcons.setService(service)
+  consumeElementIcons: (service) ->
+    IconServices.set 'element-icons', service
     @updateFileIcons()
     new Disposable =>
-      FileIcons.resetService()
+      IconServices.reset 'element-icons'
+      @updateFileIcons()
+
+  consumeFileIcons: (service) ->
+    IconServices.set 'file-icons', service
+    @updateFileIcons()
+    new Disposable =>
+      IconServices.reset 'file-icons'
       @updateFileIcons()
 
   updateFileIcons: ->
