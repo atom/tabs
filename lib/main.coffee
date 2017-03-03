@@ -1,16 +1,15 @@
 {Disposable} = require 'atom'
 FileIcons = require './file-icons'
 layout = require './layout'
+TabBarView = require './tab-bar-view'
+MRUListView = require './mru-list-view'
+_ = require 'underscore-plus'
 
 module.exports =
   activate: (state) ->
     layout.activate()
     @tabBarViews = []
     @mruListViews = []
-
-    TabBarView = require './tab-bar-view'
-    MRUListView = require './mru-list-view'
-    _ = require 'underscore-plus'
 
     keyBindSource = 'tabs package'
     configKey = 'tabs.enableMruTabSwitching'
