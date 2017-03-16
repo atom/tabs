@@ -15,11 +15,14 @@ addItemToPane = (pane, item, index) ->
   else
     throw new Error("Unspoorted pane.addItem API")
 
+# TODO: Remove this after atom/atom#13977 lands in favor of unguarded `getCenter()` calls
+getCenter = -> atom.workspace.getCenter?() ? atom.workspace
+
 describe "Tabs package main", ->
-  workspaceElement = null
+  centerElement = null
 
   beforeEach ->
-    workspaceElement = atom.views.getView(atom.workspace)
+    centerElement = atom.views.getView(getCenter().paneContainer)
 
     waitsForPromise ->
       atom.workspace.open('sample.js')
@@ -29,29 +32,29 @@ describe "Tabs package main", ->
 
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 1
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 1
+      expect(centerElement.querySelectorAll('.pane').length).toBe 1
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 1
 
       pane = atom.workspace.getActivePane()
       pane.splitRight()
 
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 2
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
 
   describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->
       pane = atom.workspace.getActivePane()
       pane.splitRight()
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 2
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
 
       atom.packages.deactivatePackage('tabs')
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 2
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+      expect(centerElement.querySelectorAll('.pane').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
       pane.splitRight()
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 3
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+      expect(centerElement.querySelectorAll('.pane').length).toBe 3
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
@@ -548,48 +551,48 @@ describe "TabBarView", ->
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        expect(getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-up')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[1]).toBe pane
-        expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(getCenter().getPanes().length).toBe 2
+        expect(getCenter().getPanes()[1]).toBe pane
+        expect(getCenter().getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-down is fired", ->
       it "splits the selected tab down", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        expect(getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-down')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[0]).toBe pane
-        expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(getCenter().getPanes().length).toBe 2
+        expect(getCenter().getPanes()[0]).toBe pane
+        expect(getCenter().getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-left is fired", ->
       it "splits the selected tab to the left", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        expect(getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-left')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[1]).toBe pane
-        expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(getCenter().getPanes().length).toBe 2
+        expect(getCenter().getPanes()[1]).toBe pane
+        expect(getCenter().getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-right is fired", ->
       it "splits the selected tab to the right", ->
         triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        expect(getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-right')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[0]).toBe pane
-        expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(getCenter().getPanes().length).toBe 2
+        expect(getCenter().getPanes()[0]).toBe pane
+        expect(getCenter().getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:open-in-new-window is fired", ->
       describe "by right-clicking on a tab", ->
         beforeEach ->
           triggerMouseEvent('mousedown', tabBar.tabForItem(item1).element, which: 3)
-          expect(atom.workspace.getPanes().length).toBe 1
+          expect(getCenter().getPanes().length).toBe 1
 
         it "opens new window, closes current tab", ->
           spyOn(atom, 'open')
@@ -853,7 +856,7 @@ describe "TabBarView", ->
 
         tab.ondrag target: tab, clientX: 80, clientY: 50
         tab.ondragend target: tab, clientX: 80, clientY: 50
-        expect(atom.workspace.getPanes().length).toEqual(2)
+        expect(getCenter().getPanes().length).toEqual(2)
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js"]
         expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
 
@@ -870,7 +873,7 @@ describe "TabBarView", ->
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
           tab.ondragend target: tab, clientX: 80, clientY: 50
-          expect(atom.workspace.getPanes().length).toEqual(1)
+          expect(getCenter().getPanes().length).toEqual(1)
           expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["sample.js"]
 
       describe "when the pane is empty", ->
@@ -886,7 +889,7 @@ describe "TabBarView", ->
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
           tab.ondragend target: tab, clientX: 80, clientY: 50
-          expect(atom.workspace.getPanes().length).toEqual(2)
+          expect(getCenter().getPanes().length).toEqual(2)
           expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js"]
           expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
 
