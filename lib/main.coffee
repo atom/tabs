@@ -12,7 +12,8 @@ module.exports =
     @mruListViews = []
 
     keyBindSource = 'tabs package'
-    configKey = 'tabs.enableMruTabSwitching'
+    mruConfigKey = 'tabs.enableMruTabSwitching'
+    listConfigKey = 'tabs.enableMruTabList'
 
     @updateTraversalKeybinds = ->
       # We don't modify keybindings based on our setting if the user has already tweaked them.
@@ -25,7 +26,7 @@ module.exports =
         keystrokes: 'ctrl-shift-tab')
       return if bindings.length > 1 and bindings[0].source isnt keyBindSource
 
-      if atom.config.get(configKey)
+      if atom.config.get(mruConfigKey)
         atom.keymaps.removeBindingsFromSource(keyBindSource)
       else
         disabledBindings =
@@ -36,8 +37,39 @@ module.exports =
             'ctrl-shift-tab ^ctrl': 'unset!'
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
-    atom.config.observe configKey, => @updateTraversalKeybinds()
+    @updateTabListSubscription = ->
+      if atom.config.get(mruConfigKey) && atom.config.get(listConfigKey)
+        subscriptions =
+          for location, container of paneContainers
+            continue unless container
+            container.observePanes @registerTabListPanes
+        @tabListPaneSubscription = new CompositeDisposable(subscriptions...)
+      else
+        mruListView.destroy() for mruListView in @mruListViews
+        @tabListPaneSubscription && @tabListPaneSubscription.dispose()
+
+    @registerTabBarPanes = (pane) =>
+      tabBarView = new TabBarView(pane, location)
+
+      paneElement = atom.views.getView(pane)
+      paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
+
+      @tabBarViews.push(tabBarView)
+      pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
+
+    @registerTabListPanes = (pane) =>
+      mruListView = new MRUListView
+      mruListView.initialize(pane)
+
+      @mruListViews.push(mruListView)
+      pane.onDidDestroy => _.remove(@mruListViews, mruListView)
+
     atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
+    atom.config.observe mruConfigKey, =>
+      @updateTraversalKeybinds()
+      atom.config.get(listConfigKey) && @updateTabListSubscription()
+
+    atom.config.observe listConfigKey, => @updateTabListSubscription()
 
     # If the command bubbles up without being handled by a particular pane,
     # close all tabs in all panes
@@ -57,24 +89,14 @@ module.exports =
     subscriptions =
       for location, container of paneContainers
         continue unless container
-        container.observePanes (pane) =>
-          tabBarView = new TabBarView(pane, location)
-          mruListView = new MRUListView
-          mruListView.initialize(pane)
+        container.observePanes @registerTabBarPanes
 
-          paneElement = atom.views.getView(pane)
-          paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
-
-          @tabBarViews.push(tabBarView)
-          pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
-          @mruListViews.push(mruListView)
-          pane.onDidDestroy => _.remove(@mruListViews, mruListView)
-
-    @paneSubscription = new CompositeDisposable(subscriptions...)
+    @tabBarPaneSubscription = new CompositeDisposable(subscriptions...)
 
   deactivate: ->
     layout.deactivate()
-    @paneSubscription.dispose()
+    @tabBarPaneSubscription.dispose()
+    @tabListPaneSubscription.dispose()
     @fileIconsDisposable?.dispose()
     tabBarView.destroy() for tabBarView in @tabBarViews
     mruListView.destroy() for mruListView in @mruListViews
