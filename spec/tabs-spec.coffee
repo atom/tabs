@@ -989,7 +989,10 @@ describe "TabBarView", ->
 
         # Create a new pane container.
         PaneContainer = atom.workspace.paneContainer.constructor
-        paneContainer = new PaneContainer config: atom.config
+        paneContainer = new PaneContainer
+          applicationDelegate: atom.applicationDelegate
+          config: atom.config
+          viewRegistry: atom.views
         pane2 = paneContainer.getActivePane()
         tabBar2 = new TabBarView(pane2)
 
