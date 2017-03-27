@@ -7,7 +7,7 @@ TabView = require './tab-view'
 
 module.exports =
 class TabBarView
-  constructor: (@pane) ->
+  constructor: (@pane, @location) ->
     @element = document.createElement('ul')
     @element.classList.add("list-inline")
     @element.classList.add("tab-bar")
@@ -107,6 +107,7 @@ class TabBarView
       didClickCloseIcon: =>
         @closeTab(tabView)
         return
+      @location
     })
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @tabsByElement.set(tabView.element, tabView)
