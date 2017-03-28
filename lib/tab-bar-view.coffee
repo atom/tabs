@@ -260,6 +260,9 @@ class TabBarView
     else if typeof item.getUri is 'function'
       itemURI = item.getUri() ? ''
 
+    if typeof item.getAllowedLocations is 'function'
+      event.dataTransfer.setData 'allowed-locations', item.getAllowedLocations().join('|')
+
     if itemURI?
       event.dataTransfer.setData 'text/plain', itemURI
 
@@ -336,6 +339,8 @@ class TabBarView
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(event.dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(event.dataTransfer.getData('from-pane-index'))
+    allowedLocations = (event.dataTransfer.getData('allowed-locations') or '').trim()
+    itemIsAllowed = not allowedLocations or allowedLocations.split('|').includes(@location)
 
     hasUnsavedChanges = event.dataTransfer.getData('has-unsaved-changes') is 'true'
     modifiedText = event.dataTransfer.getData('modified-text')
@@ -344,6 +349,8 @@ class TabBarView
     toPane = @pane
 
     @clearDropTarget()
+
+    return unless itemIsAllowed
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]

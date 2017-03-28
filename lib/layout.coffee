@@ -13,7 +13,8 @@ module.exports =
     @lastCoords = e
     pane = @getPaneAt e
     itemView = @getItemViewAt e
-    if pane? and itemView?
+    item = e.target.item
+    if pane? and itemView? and item and itemIsAllowedInPane(item, pane)
       coords = if not (@isOnlyTabInPane(pane, e.target) or pane.getItems().length is 0)
         [e.clientX, e.clientY]
       @lastSplit = @updateView itemView, coords
@@ -35,6 +36,7 @@ module.exports =
     fromPane = tab.pane
     return if toPane is fromPane
     item = tab.item
+    return unless itemIsAllowedInPane(item, toPane)
     fromPane.moveItemToPane item, toPane
     toPane.activateItem item
     toPane.activate()
@@ -90,3 +92,10 @@ module.exports =
 
   disableView: ->
     @view.classList.remove 'visible'
+
+itemIsAllowedInPane = (item, pane) ->
+  allowedLocations = item.getAllowedLocations?()
+  return true unless allowedLocations?
+  container = pane.getContainer()
+  location = container.getLocation?() ? 'center'
+  return location in allowedLocations
