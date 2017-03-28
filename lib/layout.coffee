@@ -26,17 +26,17 @@ module.exports =
     return unless @lastCoords? and @getItemViewAt @lastCoords
     target = @getPaneAt @lastCoords
     return unless target?
+    tab = e.target
+    fromPane = tab.pane
+    item = tab.item
+    return unless itemIsAllowedInPane(item, toPane ? target)
     toPane = switch @lastSplit
       when 'left'  then target.splitLeft()
       when 'right' then target.splitRight()
       when 'up'    then target.splitUp()
       when 'down'  then target.splitDown()
-    tab = e.target
     toPane ?= target
-    fromPane = tab.pane
     return if toPane is fromPane
-    item = tab.item
-    return unless itemIsAllowedInPane(item, toPane)
     fromPane.moveItemToPane item, toPane
     toPane.activateItem item
     toPane.activate()
