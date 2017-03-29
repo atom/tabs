@@ -18,6 +18,13 @@ module.exports.buildDragEvents = (dragged, dropTarget) ->
     setData: (key, value) -> @data[key] = "#{value}" # Drag events stringify data values
     getData: (key) -> @data[key]
 
+  Object.defineProperty(
+    dataTransfer,
+    'items',
+    get: ->
+      Object.keys(dataTransfer.data).map((key) -> {type: key})
+  )
+
   dragStartEvent = buildMouseEvent("dragstart", dragged)
   Object.defineProperty(dragStartEvent, 'dataTransfer', get: -> dataTransfer)
 
