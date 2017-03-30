@@ -61,9 +61,12 @@ describe "TabBarView", ->
 
   class TestView
     @deserialize: ({title, longTitle, iconName}) -> new TestView(title, longTitle, iconName)
-    constructor: (@title, @longTitle, @iconName, @pathURI) ->
+    constructor: (@title, @longTitle, @iconName, @pathURI, isPermanentDockItem) ->
+      @_isPermanentDockItem = isPermanentDockItem
       @element = document.createElement('div')
       @element.textContent = @title
+      if isPermanentDockItem?
+        @isPermanentDockItem = -> isPermanentDockItem
     getTitle: -> @title
     getLongTitle: -> @longTitle
     getURI: -> @pathURI
@@ -98,7 +101,7 @@ describe "TabBarView", ->
       addItemToPane(pane, item1, 0)
       addItemToPane(pane, item2, 2)
       pane.activateItem(item2)
-      tabBar = new TabBarView(pane)
+      tabBar = new TabBarView(pane, 'center')
 
   afterEach ->
     deserializerDisposable.dispose()
@@ -376,6 +379,49 @@ describe "TabBarView", ->
 
       expect(tabBar.tabForItem(item1).element.textContent).toMatch "Grumpy Old Man"
       expect(tabBar.tabForItem(item2).element.textContent).toMatch "Old Man"
+
+  describe "the close button", ->
+    it "is present in the center, regardless of the value returned by isPermanentDockItem()", ->
+      item3 = new TestView('Item 3', undefined, "squirrel", "sample.js")
+      expect(item3.isPermanentDockItem).toBeUndefined()
+      item4 = new TestView('Item 4', undefined, "squirrel", "sample.js", true)
+      expect(typeof item4.isPermanentDockItem).toBe('function')
+      item5 = new TestView('Item 5', undefined, "squirrel", "sample.js", false)
+      expect(typeof item5.isPermanentDockItem).toBe('function')
+      pane.activateItem(item3)
+      pane.activateItem(item4)
+      pane.activateItem(item5)
+      tabs = tabBar.element.querySelectorAll('.tab')
+      expect(tabs[2].querySelector('.close-icon')).not.toEqual(null)
+      expect(tabs[3].querySelector('.close-icon')).not.toEqual(null)
+      expect(tabs[4].querySelector('.close-icon')).not.toEqual(null)
+
+    return unless atom.workspace.getRightDock?
+    describe "in docks", ->
+      beforeEach ->
+        pane = atom.workspace.getRightDock().getActivePane()
+        tabBar = new TabBarView(pane, 'right')
+
+      it "isn't shown if the method returns true", ->
+        item1 = new TestView('Item 1', undefined, "squirrel", "sample.js", true)
+        expect(typeof item1.isPermanentDockItem).toBe('function')
+        pane.activateItem(item1)
+        tab = tabBar.element.querySelector('.tab')
+        expect(tab.querySelector('.close-icon')).toEqual(null)
+
+      it "is shown if the method returns false", ->
+        item1 = new TestView('Item 1', undefined, "squirrel", "sample.js", false)
+        expect(typeof item1.isPermanentDockItem).toBe('function')
+        pane.activateItem(item1)
+        tab = tabBar.element.querySelector('.tab')
+        expect(tab.querySelector('.close-icon')).not.toBeUndefined()
+
+      it "is shown if the method doesn't exist", ->
+        item1 = new TestView('Item 1', undefined, "squirrel", "sample.js")
+        expect(item1.isPermanentDockItem).toBeUndefined()
+        pane.activateItem(item1)
+        tab = tabBar.element.querySelector('.tab')
+        expect(tab.querySelector('.close-icon')).not.toEqual(null)
 
   describe "when an item has an icon defined", ->
     it "displays the icon on the tab", ->
@@ -667,7 +713,7 @@ describe "TabBarView", ->
     describe "when pane:close is fired", ->
       it "destroys all the tabs within the pane", ->
         pane2 = pane.splitDown(copyActiveItem: true)
-        tabBar2 = new TabBarView(pane2)
+        tabBar2 = new TabBarView(pane2, 'center')
         tab2 = tabBar2.tabAtIndex(0)
         spyOn(tab2, 'destroy')
 
@@ -752,7 +798,7 @@ describe "TabBarView", ->
       beforeEach ->
         pane2 = pane.splitRight(copyActiveItem: true)
         [item2b] = pane2.getItems()
-        tabBar2 = new TabBarView(pane2)
+        tabBar2 = new TabBarView(pane2, 'center')
 
       it "removes the tab and item from their original pane and moves them to the target pane", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
@@ -994,7 +1040,7 @@ describe "TabBarView", ->
           config: atom.config
           viewRegistry: atom.views
         pane2 = paneContainer.getActivePane()
-        tabBar2 = new TabBarView(pane2)
+        tabBar2 = new TabBarView(pane2, 'center')
 
       afterEach ->
         workspaceElement.remove()
@@ -1220,7 +1266,7 @@ describe "TabBarView", ->
         it "makes the tab permanent in the new pane", ->
           pane.activateItem(editor1)
           pane2 = pane.splitRight(copyActiveItem: true)
-          tabBar2 = new TabBarView(pane2)
+          tabBar2 = new TabBarView(pane2, 'center')
           newEditor = pane2.getActiveItem()
           expect(isPending(newEditor)).toBe false
           expect(tabBar2.tabForItem(newEditor).element.querySelector('.title')).not.toHaveClass 'temp'
@@ -1239,7 +1285,7 @@ describe "TabBarView", ->
             pane.activateItem(editor1)
             pane2 = pane.splitRight()
 
-            tabBar2 = new TabBarView(pane2)
+            tabBar2 = new TabBarView(pane2, 'center')
             tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
 
             expect(tabBar2.tabForItem(pane2.getActiveItem()).element.querySelector('.title')).not.toHaveClass 'temp'
