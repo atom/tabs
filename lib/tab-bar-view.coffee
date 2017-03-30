@@ -285,7 +285,7 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    unless event.dataTransfer.getData('atom-event') is 'true'
+    unless @isAtomEvent(event)
       event.preventDefault()
       event.stopPropagation()
       return
@@ -499,3 +499,10 @@ class TabBarView
         return tab
       else
         currentElement = currentElement.parentElement
+
+  isAtomEvent: (event) ->
+    for item in event.dataTransfer.items
+      if item.type is 'atom-event'
+        return true
+
+    return false
