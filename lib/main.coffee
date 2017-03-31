@@ -1,4 +1,4 @@
-{Disposable} = require 'atom'
+{CompositeDisposable, Disposable} = require 'atom'
 IconServices = require './icon-services'
 layout = require './layout'
 TabBarView = require './tab-bar-view'
@@ -48,18 +48,29 @@ module.exports =
         for tabBarView in @tabBarViews by -1
           tabBarView.closeAllTabs()
 
-    @paneSubscription = atom.workspace.observePanes (pane) =>
-      tabBarView = new TabBarView(pane)
-      mruListView = new MRUListView
-      mruListView.initialize(pane)
+    paneContainers =
+      center: atom.workspace.getCenter?() ? atom.workspace
+      left: atom.workspace.getLeftDock?()
+      right: atom.workspace.getRightDock?()
+      bottom: atom.workspace.getBottomDock?()
 
-      paneElement = atom.views.getView(pane)
-      paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
+    subscriptions =
+      for location, container of paneContainers
+        continue unless container
+        container.observePanes (pane) =>
+          tabBarView = new TabBarView(pane, location)
+          mruListView = new MRUListView
+          mruListView.initialize(pane)
 
-      @tabBarViews.push(tabBarView)
-      pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
-      @mruListViews.push(mruListView)
-      pane.onDidDestroy => _.remove(@mruListViews, mruListView)
+          paneElement = atom.views.getView(pane)
+          paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
+
+          @tabBarViews.push(tabBarView)
+          pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
+          @mruListViews.push(mruListView)
+          pane.onDidDestroy => _.remove(@mruListViews, mruListView)
+
+    @paneSubscription = new CompositeDisposable(subscriptions...)
 
   deactivate: ->
     layout.deactivate()

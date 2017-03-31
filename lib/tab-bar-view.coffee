@@ -7,7 +7,7 @@ TabView = require './tab-view'
 
 module.exports =
 class TabBarView
-  constructor: (@pane) ->
+  constructor: (@pane, @location) ->
     @element = document.createElement('ul')
     @element.classList.add("list-inline")
     @element.classList.add("tab-bar")
@@ -107,6 +107,7 @@ class TabBarView
       didClickCloseIcon: =>
         @closeTab(tabView)
         return
+      @location
     })
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @tabsByElement.set(tabView.element, tabView)
@@ -259,6 +260,9 @@ class TabBarView
     else if typeof item.getUri is 'function'
       itemURI = item.getUri() ? ''
 
+    if typeof item.getAllowedLocations is 'function'
+      event.dataTransfer.setData 'allowed-locations', item.getAllowedLocations().join('|')
+
     if itemURI?
       event.dataTransfer.setData 'text/plain', itemURI
 
@@ -285,7 +289,7 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    unless event.dataTransfer.getData('atom-event') is 'true'
+    unless @isAtomEvent(event)
       event.preventDefault()
       event.stopPropagation()
       return
@@ -335,6 +339,8 @@ class TabBarView
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(event.dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(event.dataTransfer.getData('from-pane-index'))
+    allowedLocations = (event.dataTransfer.getData('allowed-locations') or '').trim()
+    itemIsAllowed = not allowedLocations or allowedLocations.split('|').includes(@location)
 
     hasUnsavedChanges = event.dataTransfer.getData('has-unsaved-changes') is 'true'
     modifiedText = event.dataTransfer.getData('modified-text')
@@ -343,6 +349,8 @@ class TabBarView
     toPane = @pane
 
     @clearDropTarget()
+
+    return unless itemIsAllowed
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
@@ -499,3 +507,10 @@ class TabBarView
         return tab
       else
         currentElement = currentElement.parentElement
+
+  isAtomEvent: (event) ->
+    for item in event.dataTransfer.items
+      if item.type is 'atom-event'
+        return true
+
+    return false

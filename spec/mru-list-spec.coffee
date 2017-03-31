@@ -15,27 +15,29 @@ describe 'MRU List', ->
       atom.packages.activatePackage("tabs")
 
   describe ".activate()", ->
+    initialPaneCount = atom.workspace.getPanes().length
+
     it "has exactly one modal panel per pane", ->
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe 1
+      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount
 
       pane = atom.workspace.getActivePane()
       pane.splitRight()
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe 2
+      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount + 1
 
       pane = atom.workspace.getActivePane()
       pane.splitDown()
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe 3
+      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount + 2
 
       pane = atom.workspace.getActivePane()
       pane.close()
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe 2
+      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount + 1
 
       pane = atom.workspace.getActivePane()
       pane.close()
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe 1
+      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount
 
     it "Doesn't build list until activated for the first time", ->
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe 1
+      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount
       expect(workspaceElement.querySelectorAll('.tabs-mru-switcher li').length).toBe 0
 
     it "Doesn't activate when a single pane item is open", ->
