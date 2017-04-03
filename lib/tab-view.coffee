@@ -80,6 +80,7 @@ class TabView
       @updateDataAttributes()
       @updateTitle()
       @updateTooltip()
+      @updateIcon()
 
     if typeof @item.onDidChangePath is 'function'
       onDidChangePathDisposable = @item.onDidChangePath(pathChangedHandler)
