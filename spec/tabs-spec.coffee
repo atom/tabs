@@ -200,7 +200,10 @@ describe "TabBarView", ->
       editor2 = null
 
       waitsForPromise ->
-        atom.workspace.createItemForURI('sample.txt').then (o) -> editor2 = o
+        if atom.workspace.createItemForURI?
+          atom.workspace.createItemForURI('sample.txt').then (o) -> editor2 = o
+        else
+          atom.workspace.open('sample.txt', {activateItem: false}).then (o) -> editor2 = o
 
       runs ->
         editor2.insertText('x')
