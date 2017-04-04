@@ -3,6 +3,7 @@ path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 layout = require '../lib/layout'
+main = require '../lib/main'
 {triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 addItemToPane = (pane, item, index) ->
@@ -1395,3 +1396,18 @@ describe "TabBarView", ->
 
         runs ->
           expect(tabBar.element.querySelectorAll('.tab')[1].querySelector('.title')).toHaveClass "status-modified"
+
+    if atom.workspace.getLeftDock?
+      describe "a pane in the dock", ->
+        beforeEach -> main.activate()
+        afterEach -> main.deactivate()
+        it "gets decorated with tabs", ->
+          dock = atom.workspace.getLeftDock()
+          dockElement = dock.getElement()
+          item = new TestView('Dock Item 1')
+          expect(dockElement.querySelectorAll('.tab').length).toBe(0)
+          pane = dock.getActivePane()
+          pane.activateItem(item)
+          expect(dockElement.querySelectorAll('.tab').length).toBe(1)
+          pane.destroyItem(item)
+          expect(dockElement.querySelectorAll('.tab').length).toBe(0)
