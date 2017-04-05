@@ -297,6 +297,7 @@ class TabBarView
     event.preventDefault()
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
+    return unless itemIsAllowed(event, @location)
 
     @removeDropTargetClasses()
 
@@ -339,8 +340,6 @@ class TabBarView
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(event.dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(event.dataTransfer.getData('from-pane-index'))
-    allowedLocations = (event.dataTransfer.getData('allowed-locations') or '').trim()
-    itemIsAllowed = not allowedLocations or allowedLocations.split('|').includes(@location)
 
     hasUnsavedChanges = event.dataTransfer.getData('has-unsaved-changes') is 'true'
     modifiedText = event.dataTransfer.getData('modified-text')
@@ -350,7 +349,7 @@ class TabBarView
 
     @clearDropTarget()
 
-    return unless itemIsAllowed
+    return unless itemIsAllowed(event, @location)
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
@@ -514,3 +513,7 @@ class TabBarView
         return true
 
     return false
+
+itemIsAllowed = (event, location) ->
+  allowedLocations = (event.dataTransfer.getData('allowed-locations') or '').trim()
+  not allowedLocations or allowedLocations.split('|').includes(location)
