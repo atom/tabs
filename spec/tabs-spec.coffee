@@ -73,6 +73,7 @@ describe "TabBarView", ->
     getURI: -> @pathURI
     getIconName: -> @iconName
     serialize: -> {deserializer: 'TestView', @title, @longTitle, @iconName}
+    copy: -> new TestView(@title, @longTitle, @iconName)
     onDidChangeTitle: (callback) ->
       @titleCallbacks ?= []
       @titleCallbacks.push(callback)
