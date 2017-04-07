@@ -1034,7 +1034,7 @@ describe "TabBarView", ->
           tabBar2 = new TabBarView(pane2, 'left')
 
         it "removes the tab and item from their original pane and moves them to the target pane", ->
-          expect(atom.workspace.getLeftDock().isOpen()).toBe(false)
+          expect(atom.workspace.getLeftDock().isVisible()).toBe(false)
 
           expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
           expect(pane.getItems()).toEqual [item1, editor1, item2]
@@ -1059,7 +1059,7 @@ describe "TabBarView", ->
           expect(tabBar2.getTabs().map (tab) -> tab.element.textContent).toEqual ["Dock Item", "Item 1"]
           expect(pane2.getItems()).toEqual [dockItem, item1]
           expect(pane2.activeItem).toBe item1
-          expect(atom.workspace.getLeftDock().isOpen()).toBe(true)
+          expect(atom.workspace.getLeftDock().isVisible()).toBe(true)
 
         describe "when the tab's item is not allowed in that pane container", ->
           it "does not show a placeholder or allow the tab be dropped", ->
