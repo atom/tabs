@@ -38,7 +38,7 @@ module.exports =
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
     @updateTabListSubscription = ->
-      if atom.config.get(mruConfigKey) && atom.config.get(listConfigKey)
+      if atom.config.get(mruConfigKey) and atom.config.get(listConfigKey)
         subscriptions =
           for location, container of paneContainers
             continue unless container
@@ -46,7 +46,7 @@ module.exports =
         @tabListPaneSubscription = new CompositeDisposable(subscriptions...)
       else
         mruListView.destroy() for mruListView in @mruListViews
-        @tabListPaneSubscription && @tabListPaneSubscription.dispose()
+        @tabListPaneSubscription.dispose() if @tabListPaneSubscription
 
     @registerTabBarPanes = (pane) =>
       tabBarView = new TabBarView(pane, location)
@@ -67,7 +67,7 @@ module.exports =
     atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
     atom.config.observe mruConfigKey, =>
       @updateTraversalKeybinds()
-      atom.config.get(listConfigKey) && @updateTabListSubscription()
+      @updateTabListSubscription() if atom.config.get(listConfigKey)
 
     atom.config.observe listConfigKey, => @updateTabListSubscription()
 
