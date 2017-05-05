@@ -261,7 +261,10 @@ class TabBarView
       itemURI = item.getUri() ? ''
 
     if typeof item.getAllowedLocations is 'function'
-      event.dataTransfer.setData 'allowed-locations', item.getAllowedLocations().join('|')
+      for location in item.getAllowedLocations()
+        event.dataTransfer.setData("allowed-location-#{location}", 'true')
+    else
+      event.dataTransfer.setData 'allow-all-locations', 'true'
 
     if itemURI?
       event.dataTransfer.setData 'text/plain', itemURI
@@ -289,7 +292,7 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    unless @isAtomEvent(event)
+    unless isAtomEvent(event)
       event.preventDefault()
       event.stopPropagation()
       return
@@ -507,13 +510,16 @@ class TabBarView
       else
         currentElement = currentElement.parentElement
 
-  isAtomEvent: (event) ->
-    for item in event.dataTransfer.items
-      if item.type is 'atom-event'
-        return true
+isAtomEvent = (event) ->
+  for item in event.dataTransfer.items
+    if item.type is 'atom-event'
+      return true
 
-    return false
+  return false
 
 itemIsAllowed = (event, location) ->
-  allowedLocations = (event.dataTransfer.getData('allowed-locations') or '').trim()
-  not allowedLocations or allowedLocations.split('|').includes(location)
+  for item in event.dataTransfer.items
+    if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
+      return true
+
+  return false
