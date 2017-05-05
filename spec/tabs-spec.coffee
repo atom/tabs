@@ -1061,22 +1061,28 @@ describe "TabBarView", ->
           expect(pane2.activeItem).toBe item1
           expect(atom.workspace.getLeftDock().isVisible()).toBe(true)
 
-        describe "when the tab's item is not allowed in that pane container", ->
-          it "does not show a placeholder or allow the tab be dropped", ->
-            item1.getAllowedLocations = -> ['center', 'bottom']
+        it "shows a placeholder and allows the tab be dropped only if the item supports the target pane container location", ->
+          item1.getAllowedLocations = -> ['center', 'bottom']
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
+          tabBar.onDragStart(dragStartEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDragOver(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDrop(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          expect(pane.getItems()).toEqual [item1, editor1, item2]
+          expect(pane2.getItems()).toEqual [dockItem]
 
-            expect(pane.getItems()).toEqual [item1, editor1, item2]
-            expect(pane2.getItems()).toEqual [dockItem]
-
-            [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
-            tabBar.onDragStart(dragStartEvent)
-            expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
-            tabBar2.onDragOver(dropEvent)
-            expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
-            tabBar2.onDrop(dropEvent)
-
-            expect(pane.getItems()).toEqual [item1, editor1, item2]
-            expect(pane2.getItems()).toEqual [dockItem]
+          item1.getAllowedLocations = -> ['left']
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
+          tabBar.onDragStart(dragStartEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDragOver(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).not.toBeNull()
+          tabBar2.onDrop(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          expect(pane.getItems()).toEqual [editor1, item2]
+          expect(pane2.getItems()).toEqual [dockItem, item1]
 
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->
