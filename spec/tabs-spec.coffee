@@ -261,19 +261,22 @@ describe "TabBarView", ->
       spyOn(pane, 'activate')
 
       event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0).element, which: 1)
-      expect(pane.getActiveItem()).toBe pane.getItems()[0]
-      expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
-
-      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(2).element, which: 1)
-      expect(pane.getActiveItem()).toBe pane.getItems()[2]
-      expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
-
       # Pane activation is delayed because focus is stolen by the tab bar
       # immediately afterward unless propagation of the mousedown event is
       # stopped. But stopping propagation of the mousedown event prevents the
       # dragstart event from occurring.
-      waits(1)
-      runs -> expect(pane.activate.callCount).toBe 2
+      waitsForPromise -> new Promise setImmediate
+      runs ->
+        expect(pane.getActiveItem()).toBe pane.getItems()[0]
+        expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
+
+        event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(2).element, which: 1)
+      waitsForPromise -> new Promise setImmediate
+      runs ->
+        expect(pane.getActiveItem()).toBe pane.getItems()[2]
+        expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
+
+        expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
       jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
