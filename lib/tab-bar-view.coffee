@@ -404,8 +404,14 @@ class TabBarView
       @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
-      @pane.activateItem(tab.item)
-      setImmediate => @pane.activate() unless @pane.isDestroyed()
+      # Delay action. This is important because the browser will set the focus
+      # as part of the default action of the mousedown event; therefore, any
+      # change we make to the focus as part of the handler would be overwritten.
+      # We could use `preventDefault()` to address this, but that would also
+      # make the tab undraggable.
+      setImmediate =>
+        @pane.activateItem(tab.item)
+        @pane.activate() unless @pane.isDestroyed()
     else if event.which is 2
       @pane.destroyItem(tab.item)
       event.preventDefault()
