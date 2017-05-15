@@ -265,17 +265,20 @@ describe "TabBarView", ->
       # immediately afterward unless propagation of the mousedown event is
       # stopped. But stopping propagation of the mousedown event prevents the
       # dragstart event from occurring.
-      waitsForPromise -> new Promise setImmediate
-      runs ->
-        expect(pane.getActiveItem()).toBe pane.getItems()[0]
-        expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
+      expect(pane.getActiveItem()).not.toBe(pane.getItems()[0])
+      waitsFor ->
+        pane.getActiveItem() is pane.getItems()[0]
 
+      runs ->
+        expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
         event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(2).element, which: 1)
-      waitsForPromise -> new Promise setImmediate
-      runs ->
-        expect(pane.getActiveItem()).toBe pane.getItems()[2]
-        expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
+        expect(pane.getActiveItem()).not.toBe(pane.getItems()[2])
 
+      waitsFor ->
+        pane.getActiveItem() is pane.getItems()[2]
+
+      runs ->
+        expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
         expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
