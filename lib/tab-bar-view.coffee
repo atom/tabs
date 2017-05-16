@@ -261,7 +261,10 @@ class TabBarView
       itemURI = item.getUri() ? ''
 
     if typeof item.getAllowedLocations is 'function'
-      event.dataTransfer.setData 'allowed-locations', item.getAllowedLocations().join('|')
+      for location in item.getAllowedLocations()
+        event.dataTransfer.setData("allowed-location-#{location}", 'true')
+    else
+      event.dataTransfer.setData 'allow-all-locations', 'true'
 
     if itemURI?
       event.dataTransfer.setData 'text/plain', itemURI
@@ -289,7 +292,7 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    unless @isAtomEvent(event)
+    unless isAtomEvent(event)
       event.preventDefault()
       event.stopPropagation()
       return
@@ -297,6 +300,7 @@ class TabBarView
     event.preventDefault()
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
+    return unless itemIsAllowed(event, @location)
 
     @removeDropTargetClasses()
 
@@ -339,8 +343,6 @@ class TabBarView
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
     fromIndex     = parseInt(event.dataTransfer.getData('sortable-index'))
     fromPaneIndex = parseInt(event.dataTransfer.getData('from-pane-index'))
-    allowedLocations = (event.dataTransfer.getData('allowed-locations') or '').trim()
-    itemIsAllowed = not allowedLocations or allowedLocations.split('|').includes(@location)
 
     hasUnsavedChanges = event.dataTransfer.getData('has-unsaved-changes') is 'true'
     modifiedText = event.dataTransfer.getData('modified-text')
@@ -350,7 +352,7 @@ class TabBarView
 
     @clearDropTarget()
 
-    return unless itemIsAllowed
+    return unless itemIsAllowed(event, @location)
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
@@ -402,8 +404,14 @@ class TabBarView
       @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
     else if event.which is 1 and not event.target.classList.contains('close-icon')
-      @pane.activateItem(tab.item)
-      setImmediate => @pane.activate() unless @pane.isDestroyed()
+      # Delay action. This is important because the browser will set the focus
+      # as part of the default action of the mousedown event; therefore, any
+      # change we make to the focus as part of the handler would be overwritten.
+      # We could use `preventDefault()` to address this, but that would also
+      # make the tab undraggable.
+      setImmediate =>
+        @pane.activateItem(tab.item)
+        @pane.activate() unless @pane.isDestroyed()
     else if event.which is 2
       @pane.destroyItem(tab.item)
       event.preventDefault()
@@ -508,9 +516,16 @@ class TabBarView
       else
         currentElement = currentElement.parentElement
 
-  isAtomEvent: (event) ->
-    for item in event.dataTransfer.items
-      if item.type is 'atom-event'
-        return true
+isAtomEvent = (event) ->
+  for item in event.dataTransfer.items
+    if item.type is 'atom-event'
+      return true
 
-    return false
+  return false
+
+itemIsAllowed = (event, location) ->
+  for item in event.dataTransfer.items
+    if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
+      return true
+
+  return false
