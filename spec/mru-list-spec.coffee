@@ -28,13 +28,19 @@ describe 'MRU List', ->
       pane.splitDown()
       expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount + 2
 
-      pane = atom.workspace.getActivePane()
-      pane.close()
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount + 1
+      waitsForPromise ->
+        pane = atom.workspace.getActivePane()
+        Promise.resolve(pane.close())
 
-      pane = atom.workspace.getActivePane()
-      pane.close()
-      expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount
+      runs ->
+        expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount + 1
+
+      waitsForPromise ->
+        pane = atom.workspace.getActivePane()
+        Promise.resolve(pane.close())
+
+      runs ->
+        expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount
 
     it "Doesn't build list until activated for the first time", ->
       expect(workspaceElement.querySelectorAll('.tabs-mru-switcher').length).toBe initialPaneCount

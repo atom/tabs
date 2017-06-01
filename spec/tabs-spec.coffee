@@ -722,8 +722,9 @@ describe "TabBarView", ->
         tab2 = tabBar2.tabAtIndex(0)
         spyOn(tab2, 'destroy')
 
-        pane2.close()
-        expect(tab2.destroy).toHaveBeenCalled()
+        waitsForPromise ->
+          Promise.resolve(pane2.close()).then ->
+            expect(tab2.destroy).toHaveBeenCalled()
 
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
