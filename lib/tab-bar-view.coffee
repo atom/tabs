@@ -19,7 +19,7 @@ class TabBarView
     @tabsByElement = new WeakMap
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+    @subscriptions.add atom.commands.add @pane.getElement(),
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
@@ -457,7 +457,7 @@ class TabBarView
       @isItemMovingBetweenPanes = false
 
   removeDropTargetClasses: ->
-    workspaceElement = atom.views.getView(atom.workspace)
+    workspaceElement = atom.workspace.getElement()
     for dropTarget in workspaceElement.querySelectorAll('.tab-bar .is-drop-target')
       dropTarget.classList.remove('is-drop-target')
 

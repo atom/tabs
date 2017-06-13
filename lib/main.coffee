@@ -62,7 +62,7 @@ module.exports =
           mruListView = new MRUListView
           mruListView.initialize(pane)
 
-          paneElement = atom.views.getView(pane)
+          paneElement = pane.getElement()
           paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
 
           @tabBarViews.push(tabBarView)

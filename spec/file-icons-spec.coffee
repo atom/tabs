@@ -5,7 +5,7 @@ describe 'file icon handling', ->
   workspaceElement = null
 
   beforeEach ->
-    workspaceElement = atom.views.getView(atom.workspace)
+    workspaceElement = atom.workspace.getElement()
 
     waitsForPromise ->
       atom.workspace.open('sample.js')

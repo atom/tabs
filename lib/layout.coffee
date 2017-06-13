@@ -1,7 +1,7 @@
 module.exports =
   activate: ->
     @view = document.createElement 'div'
-    atom.views.getView(atom.workspace).appendChild @view
+    atom.workspace.getElement().appendChild @view
     @view.classList.add 'tabs-layout-overlay'
 
   deactivate: ->
