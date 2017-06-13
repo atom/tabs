@@ -40,7 +40,9 @@ describe "Tabs package main", ->
       pane.splitRight()
 
       expect(centerElement.querySelectorAll('.pane').length).toBe 2
-      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
+      tabBars = centerElement.querySelectorAll('.pane > .tab-bar')
+      expect(tabBars.length).toBe 2
+      expect(tabBars[1].getAttribute('location')).toBe('center')
 
   describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->

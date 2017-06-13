@@ -7,6 +7,7 @@ _ = require 'underscore-plus'
 
 module.exports =
   activate: (state) ->
+    @subscriptions = new CompositeDisposable()
     layout.activate()
     @tabBarViews = []
     @mruListViews = []
@@ -36,12 +37,12 @@ module.exports =
             'ctrl-shift-tab ^ctrl': 'unset!'
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
-    atom.config.observe configKey, => @updateTraversalKeybinds()
-    atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
+    @subscriptions.add atom.config.observe configKey, => @updateTraversalKeybinds()
+    @subscriptions.add atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
 
     # If the command bubbles up without being handled by a particular pane,
     # close all tabs in all panes
-    atom.commands.add 'atom-workspace',
+    @subscriptions.add atom.commands.add 'atom-workspace',
       'tabs:close-all-tabs': =>
         # We loop backwards because the panes are
         # removed from the array as we go
@@ -54,27 +55,25 @@ module.exports =
       right: atom.workspace.getRightDock?()
       bottom: atom.workspace.getBottomDock?()
 
-    subscriptions =
-      for location, container of paneContainers
-        continue unless container
-        container.observePanes (pane) =>
-          tabBarView = new TabBarView(pane, location)
-          mruListView = new MRUListView
-          mruListView.initialize(pane)
+    Object.keys(paneContainers).forEach (location) =>
+      container = paneContainers[location]
+      return unless container
+      @subscriptions.add container.observePanes (pane) =>
+        tabBarView = new TabBarView(pane, location)
+        mruListView = new MRUListView
+        mruListView.initialize(pane)
 
-          paneElement = pane.getElement()
-          paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
+        paneElement = pane.getElement()
+        paneElement.insertBefore(tabBarView.element, paneElement.firstChild)
 
-          @tabBarViews.push(tabBarView)
-          pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
-          @mruListViews.push(mruListView)
-          pane.onDidDestroy => _.remove(@mruListViews, mruListView)
-
-    @paneSubscription = new CompositeDisposable(subscriptions...)
+        @tabBarViews.push(tabBarView)
+        pane.onDidDestroy => _.remove(@tabBarViews, tabBarView)
+        @mruListViews.push(mruListView)
+        pane.onDidDestroy => _.remove(@mruListViews, mruListView)
 
   deactivate: ->
     layout.deactivate()
-    @paneSubscription.dispose()
+    @subscriptions.dispose()
     @fileIconsDisposable?.dispose()
     tabBarView.destroy() for tabBarView in @tabBarViews
     mruListView.destroy() for mruListView in @mruListViews

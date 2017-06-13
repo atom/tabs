@@ -14,6 +14,7 @@ class TabBarView
     @element.classList.add("inset-panel")
     @element.setAttribute('is', 'atom-tabs')
     @element.setAttribute("tabindex", -1)
+    @element.setAttribute("location", @location)
 
     @tabs = []
     @tabsByElement = new WeakMap
