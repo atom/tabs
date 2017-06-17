@@ -23,7 +23,7 @@ describe "Tabs package main", ->
   centerElement = null
 
   beforeEach ->
-    centerElement = atom.views.getView(getCenter().paneContainer)
+    centerElement = getCenter().paneContainer.getElement()
 
     waitsForPromise ->
       atom.workspace.open('sample.js')
@@ -40,7 +40,9 @@ describe "Tabs package main", ->
       pane.splitRight()
 
       expect(centerElement.querySelectorAll('.pane').length).toBe 2
-      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
+      tabBars = centerElement.querySelectorAll('.pane > .tab-bar')
+      expect(tabBars.length).toBe 2
+      expect(tabBars[1].getAttribute('location')).toBe('center')
 
   describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->
@@ -545,7 +547,7 @@ describe "TabBarView", ->
 
   describe "context menu commands", ->
     beforeEach ->
-      paneElement = atom.views.getView(pane)
+      paneElement = pane.getElement()
       paneElement.insertBefore(tabBar.element, paneElement.firstChild)
 
     describe "when tabs:close-tab is fired", ->
@@ -667,8 +669,7 @@ describe "TabBarView", ->
     paneElement = null
 
     beforeEach ->
-      paneElement = atom.views.getView(pane)
-
+      paneElement = pane.getElement()
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
@@ -884,7 +885,7 @@ describe "TabBarView", ->
         tab = tabBar.tabAtIndex(2).element
         layout.test =
           pane: pane
-          itemView: atom.views.getView(pane).querySelector('.item-views')
+          itemView: pane.getElement().querySelector('.item-views')
           rect: {top: 0, left: 0, width: 100, height: 100}
 
         expect(layout.view.classList.contains('visible')).toBe(false)
@@ -903,7 +904,7 @@ describe "TabBarView", ->
         tab = tabBar.tabAtIndex(2).element
         layout.test =
           pane: pane
-          itemView: atom.views.getView(pane).querySelector('.item-views')
+          itemView: pane.getElement().querySelector('.item-views')
           rect: {top: 0, left: 0, width: 100, height: 100}
 
         tab.ondrag target: tab, clientX: 80, clientY: 50
@@ -920,7 +921,7 @@ describe "TabBarView", ->
           tab = tabBar.tabAtIndex(0).element
           layout.test =
             pane: pane
-            itemView: atom.views.getView(pane).querySelector('.item-views')
+            itemView: pane.getElement().querySelector('.item-views')
             rect: {top: 0, left: 0, width: 100, height: 100}
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
@@ -936,7 +937,7 @@ describe "TabBarView", ->
           tab = tabBar.tabAtIndex(2).element
           layout.test =
             pane: toPane
-            itemView: atom.views.getView(toPane).querySelector('.item-views')
+            itemView: toPane.getElement().querySelector('.item-views')
             rect: {top: 0, left: 0, width: 100, height: 100}
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
@@ -1033,7 +1034,7 @@ describe "TabBarView", ->
         [pane2, tabBar2, dockItem] = []
 
         beforeEach ->
-          jasmine.attachToDOM(atom.views.getView(atom.workspace))
+          jasmine.attachToDOM(atom.workspace.getElement())
           pane = atom.workspace.getActivePane()
           pane2 = atom.workspace.getLeftDock().getActivePane()
           dockItem = new TestView('Dock Item')
@@ -1222,7 +1223,7 @@ describe "TabBarView", ->
           runs ->
             pane.activateItem(editor1)
             expect(isPending(editor1)).toBe true
-            atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-pending-tab')
+            atom.commands.dispatch(atom.workspace.getActivePane().getElement(), 'tabs:keep-pending-tab')
             expect(isPending(editor1)).toBe false
 
       describe "when there is a temp tab already", ->
