@@ -69,19 +69,27 @@ class TabBarView
 
     @subscriptions.add @pane.onDidAddItem ({item, index}) =>
       @addTabForItem(item, index)
+      @recalculateLayout()
 
     @subscriptions.add @pane.onDidMoveItem ({item, newIndex}) =>
       @moveItemTabToIndex(item, newIndex)
+      @recalculateLayout()
 
     @subscriptions.add @pane.onDidRemoveItem ({item}) =>
       @removeTabForItem(item)
+      @recalculateLayout()
 
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
       @updateActiveTab()
 
+    @subscriptions.add @pane.onDidChangeFlexScale =>
+      window.requestAnimationFrame =>
+        @recalculateLayout()
+
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', @updateTabScrolling.bind(this)
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
+    @subscriptions.add atom.config.observe 'tabs.layoutToFit', @updateTabBarLayouting
 
     @updateActiveTab()
 
@@ -166,7 +174,10 @@ class TabBarView
       @activeTab?.element.classList.remove('active')
       @activeTab = tabView
       @activeTab.element.classList.add('active')
-      @activeTab.element.scrollIntoView(false)
+      if @layoutToFit
+        @recalculateLayoutToShow @activeTab.element
+      else
+        @activeTab.element.scrollIntoView(false)
 
   getActiveTab: ->
     @tabForItem(@pane.getActiveItem())
@@ -321,6 +332,8 @@ class TabBarView
         else
           tab.element.parentElement.appendChild(placeholder)
 
+    @recalculateLayout()
+
   onDropOnOtherWindow: (fromPaneId, fromItemIndex) ->
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
@@ -385,6 +398,10 @@ class TabBarView
   onMouseWheel: (event) ->
     return if event.shiftKey
 
+    if @layoutToFit
+      @recalculateLayout event.wheelDeltaX
+      return
+
     @wheelDelta ?= 0
     @wheelDelta += event.wheelDeltaY
 
@@ -423,6 +440,80 @@ class TabBarView
     else if event.target is @element
       atom.commands.dispatch(@element, 'application:new-file')
       event.preventDefault()
+
+  recalculateLayout: (deltaX = 0) ->
+    if not @layoutToFit
+      return
+
+    availableWidth = @element.clientWidth
+
+    widths = (tab.clientWidth for tab in @element.children)
+    totalWidth = _.sum widths
+    tabs = (tab for tab in @element.children)
+    numTabs = tabs.length
+
+    @scrollPos = Math.max 0,
+      Math.min totalWidth - availableWidth, @scrollPos - deltaX
+
+    at = -@scrollPos
+    zindex = numTabs
+    for width, i in widths
+      tab = tabs[i]
+      style = tab.style
+      leftBound = i * 10
+      rightBound = availableWidth - width + (i + 1 - numTabs) * 10
+      left = at < leftBound
+      right = at > rightBound
+      to = Math.max leftBound, Math.min rightBound, at
+      zindex += Math.sign to - at
+      style.left = "#{to}px"
+      if not @isPlaceholder tab
+        style.zIndex = zindex
+      at += width
+    @availableWidthInLastLayout
+    return
+
+  recalculateLayoutOnResize: ->
+    if @availableWidthInLastLayout isnt @element.clientWidth
+      @recalculateLayout()
+
+  recalculateLayoutToShow: (activeTab) ->
+    availableWidth = @element.clientWidth
+    pos = 0
+    for tab in @element.children
+      break if tab is activeTab
+      pos += tab.clientWidth
+    # As if to try to display the activeTab in the middle of the tab bar
+    @recalculateLayout @scrollPos + availableWidth // 2 - pos
+
+  resetLayout: ->
+    for tab in @element.children
+      tab.style.removeProperty 'left'
+      tab.style.removeProperty 'zIndex'
+
+    @element.scrollLeft = @scrollPos
+
+  updateTabBarLayouting: (@layoutToFit) =>
+    if @location is 'center' and @layoutToFit
+      @scrollPos = @element.scrollLeft
+      @element.classList.add('tab-bar-fitted')
+      window.requestAnimationFrame =>
+        @recalculateLayout()
+      @element.addEventListener 'mousewheel', @onMouseWheel.bind(this)
+
+      # TODO: no way to observe closing of side docks
+
+      # Used to react to side docks resizing
+      window.addEventListener 'mouseup', => @recalculateLayoutOnResize()
+
+      window.addEventListener 'resize', => @recalculateLayoutOnResize()
+    else
+      @element.classList.remove('tab-bar-fitted')
+      window.requestAnimationFrame =>
+        @resetLayout()
+      @element.removeEventListener 'mousewheel', @onMouseWheel.bind(this)
+      window.removeEventListener 'mouseup', => @recalculateLayoutOnResize()
+      window.removeEventListener 'resize', => @recalculateLayoutOnResize()
 
   updateTabScrollingThreshold: ->
     @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')

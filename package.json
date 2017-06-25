@@ -31,6 +31,11 @@
       "default": true,
       "description": "Show the tab bar even when only one tab is open."
     },
+    "layoutToFit": {
+      "type": "boolean",
+      "default": "false",
+      "description": "Stack tabs so they always fit ala Sublime Text."
+    },
     "tabScrolling": {
       "type": "any",
       "enum": [
