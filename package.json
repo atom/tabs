@@ -20,6 +20,14 @@
       }
     }
   },
+  "provideServices": {
+    "tabs": {
+      "description": "Get tabs info",
+      "versions": {
+        "1.0.0": "provideTabs"
+      }
+    }
+  },
   "configSchema": {
     "showIcons": {
       "type": "boolean",

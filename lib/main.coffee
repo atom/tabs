@@ -86,6 +86,9 @@ module.exports =
       FileIcons.resetService()
       @updateFileIcons()
 
+  provideTabs: ->
+    @tabBarViews
+
   updateFileIcons: ->
     for tabBarView in @tabBarViews
       tabView.updateIcon() for tabView in tabBarView.getTabs()
