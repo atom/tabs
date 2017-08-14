@@ -20,7 +20,7 @@
       }
     }
   },
-  "provideServices": {
+  "providedServices": {
     "tabs": {
       "description": "Get tabs info",
       "versions": {
