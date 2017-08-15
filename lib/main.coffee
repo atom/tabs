@@ -87,7 +87,8 @@ module.exports =
       @updateFileIcons()
 
   provideTabs: ->
-    @tabBarViews
+    isTab: (target) -> target.closest(".tab-bar > .tab")?
+    getPath: (target) -> target.closest(".tab-bar > .tab")?.querySelector(".title")?.dataset?.path
 
   updateFileIcons: ->
     for tabBarView in @tabBarViews
