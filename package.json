@@ -22,7 +22,7 @@
   },
   "providedServices": {
     "tabs": {
-      "description": "Get tabs info",
+      "description": "Get tab info",
       "versions": {
         "1.0.0": "provideTabs"
       }
