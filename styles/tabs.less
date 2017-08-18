@@ -8,6 +8,27 @@
   -webkit-user-select: none;
   margin: 0;
 
+  &.tab-bar-fitted {
+    position: relative;
+    display: block;
+    overflow: hidden;
+
+    .tab {
+      position: absolute;
+
+      /* TODO: This should be handled by theme */
+      border-right: 1px solid #181a1f;
+
+      &:hover .close-icon {
+        display: none;
+      }
+
+      &.active {
+        width: initial;
+      }
+    }
+  }
+
   .tab {
     font-size: 11px;
     position: relative;
