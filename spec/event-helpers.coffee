@@ -12,6 +12,19 @@ module.exports.triggerMouseEvent = (type, target, {which, ctrlKey}={}) ->
   target.dispatchEvent(event)
   event
 
+module.exports.triggerClickEvent = (target, options) ->
+  events = {
+    mousedown: buildMouseEvent('mousedown', target, options),
+    mouseup: buildMouseEvent('mouseup', target, options),
+    click: buildMouseEvent('click', target, options)
+  }
+
+  target.dispatchEvent(events.mousedown)
+  target.dispatchEvent(events.mouseup)
+  target.dispatchEvent(events.click)
+
+  events
+
 module.exports.buildDragEvents = (dragged, dropTarget) ->
   dataTransfer =
     data: {}

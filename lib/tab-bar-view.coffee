@@ -86,6 +86,7 @@ class TabBarView
     @updateActiveTab()
 
     @element.addEventListener "mousedown", @onMouseDown.bind(this)
+    @element.addEventListener "click", @onClick.bind(this)
     @element.addEventListener "dblclick", @onDoubleClick.bind(this)
 
     @onDropOnOtherWindow = @onDropOnOtherWindow.bind(this)
@@ -404,18 +405,21 @@ class TabBarView
       @rightClickedTab = tab
       @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
+
+  onClick: (event) ->
+    tab = @tabForElement(event.target)
+    return unless tab
+
+    event.preventDefault()
+    if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
+      # Bail out early when receiving this event, because we have already
+      # handled it in the mousedown handler.
+      return
     else if event.which is 1 and not event.target.classList.contains('close-icon')
-      # Delay action. This is important because the browser will set the focus
-      # as part of the default action of the mousedown event; therefore, any
-      # change we make to the focus as part of the handler would be overwritten.
-      # We could use `preventDefault()` to address this, but that would also
-      # make the tab undraggable.
-      setImmediate =>
-        @pane.activateItem(tab.item)
-        @pane.activate() unless @pane.isDestroyed()
+      @pane.activateItem(tab.item)
+      @pane.activate() unless @pane.isDestroyed()
     else if event.which is 2
       @pane.destroyItem(tab.item)
-      event.preventDefault()
 
   onDoubleClick: (event) ->
     if tab = @tabForElement(event.target)
