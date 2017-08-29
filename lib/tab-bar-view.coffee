@@ -405,6 +405,10 @@ class TabBarView
       @rightClickedTab = tab
       @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
+    else if event.which is 2
+      # This prevents Chromium from activating "scroll mode" when
+      # middle-clicking while some tabs are off-screen.
+      event.preventDefault()
 
   onClick: (event) ->
     tab = @tabForElement(event.target)
