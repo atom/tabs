@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.106.2",
+  "version": "0.107.1",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
