@@ -51,13 +51,16 @@ describe "Tabs package main", ->
       expect(centerElement.querySelectorAll('.pane').length).toBe 2
       expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
 
-      atom.packages.deactivatePackage('tabs')
-      expect(centerElement.querySelectorAll('.pane').length).toBe 2
-      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+      waitsForPromise ->
+        Promise.resolve(atom.packages.deactivatePackage('tabs')) # Wrapped so works with Promise & non-Promise deactivate
 
-      pane.splitRight()
-      expect(centerElement.querySelectorAll('.pane').length).toBe 3
-      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+      runs ->
+        expect(centerElement.querySelectorAll('.pane').length).toBe 2
+        expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+
+        pane.splitRight()
+        expect(centerElement.querySelectorAll('.pane').length).toBe 3
+        expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
