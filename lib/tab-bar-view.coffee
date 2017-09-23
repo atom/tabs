@@ -196,11 +196,8 @@ class TabBarView
 
   splitTab: (fn) ->
     if item = @rightClickedTab?.item
-      if copiedItem = @copyItem(item)
+      if copiedItem = item.copy?()
         @pane[fn](items: [copiedItem])
-
-  copyItem: (item) ->
-    item.copy?() ? atom.deserializers.deserialize(item.serialize())
 
   closeOtherTabs: (active) ->
     tabs = @getTabs()
