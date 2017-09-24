@@ -283,6 +283,7 @@ class TabBarView
       false
 
   onDragLeave: (event) ->
+    tab.style.maxWidth = '' for tab in @getTabs()
     @removePlaceholder()
 
   onDragEnd: (event) ->
