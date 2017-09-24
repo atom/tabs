@@ -637,9 +637,9 @@ describe "TabBarView", ->
         beforeEach ->
           triggerClickEvent(tabBar.tabForItem(item1).element, which: 3)
           expect(atom.workspace.getCenter().getPanes().length).toBe 1
+          spyOn(atom, 'open')
 
         it "opens new window, closes current tab", ->
-          spyOn(atom, 'open')
           atom.commands.dispatch(tabBar.element, 'tabs:open-in-new-window')
           expect(atom.open).toHaveBeenCalled()
 
@@ -647,6 +647,16 @@ describe "TabBarView", ->
           expect(tabBar.getTabs().length).toBe 2
           expect(tabBar.element.textContent).toMatch('Item 2')
           expect(tabBar.element.textContent).not.toMatch('Item 1')
+
+        it "resets the width on every tab", ->
+          # mouseenter (which will get emitted when going to right-click the tab) fixes the tab widths
+          # Make sure after the command is executed the widths are reset
+          triggerMouseEvent('mouseenter', tabBar.element)
+          atom.commands.dispatch(tabBar.element, 'tabs:open-in-new-window')
+
+          jasmine.attachToDOM(tabBar.element)
+          expect(tabBar.tabAtIndex(0).element.style.maxWidth).toBe ''
+          expect(tabBar.tabAtIndex(1).element.style.maxWidth).toBe ''
 
       describe "from the command palette", ->
         # See #309 for background
