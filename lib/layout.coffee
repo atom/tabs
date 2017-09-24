@@ -1,9 +1,7 @@
-{closest} = require './html-helpers'
-
 module.exports =
   activate: ->
     @view = document.createElement 'div'
-    atom.views.getView(atom.workspace).appendChild @view
+    atom.workspace.getElement().appendChild @view
     @view.classList.add 'tabs-layout-overlay'
 
   deactivate: ->
@@ -15,7 +13,8 @@ module.exports =
     @lastCoords = e
     pane = @getPaneAt e
     itemView = @getItemViewAt e
-    if pane? and itemView?
+    item = e.target.item
+    if pane? and itemView? and item and itemIsAllowedInPane(item, pane)
       coords = if not (@isOnlyTabInPane(pane, e.target) or pane.getItems().length is 0)
         [e.clientX, e.clientY]
       @lastSplit = @updateView itemView, coords
@@ -27,22 +26,23 @@ module.exports =
     return unless @lastCoords? and @getItemViewAt @lastCoords
     target = @getPaneAt @lastCoords
     return unless target?
+    tab = e.target
+    fromPane = tab.pane
+    item = tab.item
+    return unless itemIsAllowedInPane(item, toPane ? target)
     toPane = switch @lastSplit
       when 'left'  then target.splitLeft()
       when 'right' then target.splitRight()
       when 'up'    then target.splitUp()
       when 'down'  then target.splitDown()
-    tab = e.target
     toPane ?= target
-    fromPane = tab.pane
     return if toPane is fromPane
-    item = tab.item
     fromPane.moveItemToPane item, toPane
     toPane.activateItem item
     toPane.activate()
 
   getElement: ({clientX, clientY}, selector = '*') ->
-    closest document.elementFromPoint(clientX, clientY), selector
+    document.elementFromPoint(clientX, clientY).closest(selector)
 
   getItemViewAt: (coords) ->
     @test.itemView or @getElement coords, '.item-views'
@@ -92,3 +92,10 @@ module.exports =
 
   disableView: ->
     @view.classList.remove 'visible'
+
+itemIsAllowedInPane = (item, pane) ->
+  allowedLocations = item.getAllowedLocations?()
+  return true unless allowedLocations?
+  container = pane.getContainer()
+  location = container.getLocation?() ? 'center'
+  return location in allowedLocations

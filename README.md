@@ -12,4 +12,3 @@ Tabs can display icons next to file names. These icons are customizable by insta
 The `atom.file-icons` service must provide the following methods:
 
 * `iconClassForPath(path)` - Returns a CSS class name to add to the tab view
-* `onWillDeactivate` - An event that lets the tabs return to their default icon strategy

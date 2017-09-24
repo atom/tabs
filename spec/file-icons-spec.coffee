@@ -1,61 +1,35 @@
 DefaultFileIcons = require '../lib/default-file-icons'
 FileIcons = require '../lib/file-icons'
 
-describe 'FileIcons', ->
-  afterEach ->
-    FileIcons.setService(new DefaultFileIcons)
+describe 'file icon handling', ->
+  workspaceElement = null
 
-  it 'provides a default', ->
-    expect(FileIcons.getService()).toBeDefined()
-    expect(FileIcons.getService()).not.toBeNull()
+  beforeEach ->
+    workspaceElement = atom.workspace.getElement()
 
-  it 'allows the default to be overridden', ->
-    service = new Object
-    FileIcons.setService(service)
+    waitsForPromise ->
+      atom.workspace.open('sample.js')
 
-    expect(FileIcons.getService()).toBe(service)
+    waitsForPromise ->
+      atom.packages.activatePackage('tabs')
 
-  it 'allows the service to be reset to the default easily', ->
-    service = new Object
-    FileIcons.setService(service)
-    FileIcons.resetService()
+  it 'allows the service to provide icon classes', ->
+    fileIconsDisposable = atom.packages.serviceHub.provide 'atom.file-icons', '1.0.0', {
+      iconClassForPath: (path, context) ->
+        expect(context).toBe('tabs')
+        'first-icon-class second-icon-class'
+    }
 
-    expect(FileIcons.getService()).not.toBe(service)
+    tab = workspaceElement.querySelector('.tab')
+    expect(tab.itemTitle.className).toBe('title icon first-icon-class second-icon-class')
 
+    fileIconsDisposable.dispose()
+    expect(tab.itemTitle.className).toBe('title')
 
-  describe 'Class handling', ->
-    workspaceElement = null
-    
-    beforeEach ->
-      workspaceElement = atom.views.getView(atom.workspace)
-      
-      waitsForPromise ->
-        atom.workspace.open('sample.js')
-        
-      waitsForPromise ->
-        atom.packages.activatePackage('tabs')
-  
-    it 'allows multiple classes to be passed', ->
-      service =
-        iconClassForPath: (path) -> 'first second'
-      
-      FileIcons.setService(service)
-      tab = workspaceElement.querySelector('.tab')
-      tab.updateIcon()
-      expect(tab.itemTitle.className).toBe('title icon first second')
+  it 'allows the service to provide multiple classes as an array', ->
+    atom.packages.serviceHub.provide 'atom.file-icons', '1.0.0', {
+      iconClassForPath: (path) -> ['first-icon-class', 'second-icon-class']
+    }
 
-    it 'allows an array of classes to be passed', ->
-      service =
-        iconClassForPath: (path) -> ['first', 'second']
-      
-      FileIcons.setService(service)
-      tab = workspaceElement.querySelector('.tab')
-      tab.updateIcon()
-      expect(tab.itemTitle.className).toBe('title icon first second')
-
-    it 'passes the package name as iconClassForPath\'s second argument', ->
-      FileIcons.setService
-        iconClassForPath: (path, context) -> context
-      tab = workspaceElement.querySelector('.tab')
-      tab.updateIcon()
-      expect(tab.itemTitle.className).toBe('title icon tabs')
+    tab = workspaceElement.querySelector('.tab')
+    expect(tab.itemTitle.className).toBe('title icon first-icon-class second-icon-class')
