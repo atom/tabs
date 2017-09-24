@@ -284,7 +284,7 @@ class TabBarView
       false
 
   onDragLeave: (event) ->
-    @removePlaceholder() if event.target is event.currentTarget
+    @removePlaceholder()
 
   onDragEnd: (event) ->
     return unless @tabForElement(event.target)
