@@ -292,15 +292,15 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
+    event.preventDefault()
     unless isAtomEvent(event)
-      event.preventDefault()
       event.stopPropagation()
       return
 
-    event.preventDefault()
+    return unless itemIsAllowed(event, @location)
+
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
-    return unless itemIsAllowed(event, @location)
     return if @lastDropTargetIndex is newDropTargetIndex
     @lastDropTargetIndex = newDropTargetIndex
 
