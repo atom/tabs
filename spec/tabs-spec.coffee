@@ -3,23 +3,14 @@ path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 layout = require '../lib/layout'
-{triggerMouseEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
-
-addItemToPane = (pane, item, index) ->
-  # Support both the 1.5 and 1.6 API
-  # TODO: Remove once 1.6 is stable [MKT]
-  if pane.addItem.length is 2
-    pane.addItem(item, index: index)
-  else if pane.addItem.length is 3 or pane.addItem.length is 4
-    pane.addItem(item, index)
-  else
-    throw new Error("Unspoorted pane.addItem API")
+main = require '../lib/main'
+{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
-  workspaceElement = null
+  centerElement = null
 
   beforeEach ->
-    workspaceElement = atom.views.getView(atom.workspace)
+    centerElement = atom.workspace.getCenter().paneContainer.getElement()
 
     waitsForPromise ->
       atom.workspace.open('sample.js')
@@ -29,43 +20,52 @@ describe "Tabs package main", ->
 
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 1
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 1
+      expect(centerElement.querySelectorAll('.pane').length).toBe 1
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 1
 
       pane = atom.workspace.getActivePane()
       pane.splitRight()
 
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 2
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane').length).toBe 2
+      tabBars = centerElement.querySelectorAll('.pane > .tab-bar')
+      expect(tabBars.length).toBe 2
+      expect(tabBars[1].getAttribute('location')).toBe('center')
 
   describe ".deactivate()", ->
     it "removes all tab bar views and stops adding them to new panes", ->
       pane = atom.workspace.getActivePane()
       pane.splitRight()
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 2
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane').length).toBe 2
+      expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
 
-      atom.packages.deactivatePackage('tabs')
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 2
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+      waitsForPromise ->
+        Promise.resolve(atom.packages.deactivatePackage('tabs')) # Wrapped so works with Promise & non-Promise deactivate
 
-      pane.splitRight()
-      expect(workspaceElement.querySelectorAll('.pane').length).toBe 3
-      expect(workspaceElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+      runs ->
+        expect(centerElement.querySelectorAll('.pane').length).toBe 2
+        expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
+
+        pane.splitRight()
+        expect(centerElement.querySelectorAll('.pane').length).toBe 3
+        expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 0
 
 describe "TabBarView", ->
   [deserializerDisposable, item1, item2, editor1, pane, tabBar] = []
 
   class TestView
     @deserialize: ({title, longTitle, iconName}) -> new TestView(title, longTitle, iconName)
-    constructor: (@title, @longTitle, @iconName, @pathURI) ->
+    constructor: (@title, @longTitle, @iconName, @pathURI, isPermanentDockItem) ->
+      @_isPermanentDockItem = isPermanentDockItem
       @element = document.createElement('div')
       @element.textContent = @title
+      if isPermanentDockItem?
+        @isPermanentDockItem = -> isPermanentDockItem
     getTitle: -> @title
     getLongTitle: -> @longTitle
     getURI: -> @pathURI
     getIconName: -> @iconName
     serialize: -> {deserializer: 'TestView', @title, @longTitle, @iconName}
+    copy: -> new TestView(@title, @longTitle, @iconName)
     onDidChangeTitle: (callback) ->
       @titleCallbacks ?= []
       @titleCallbacks.push(callback)
@@ -92,10 +92,10 @@ describe "TabBarView", ->
     runs ->
       editor1 = atom.workspace.getActiveTextEditor()
       pane = atom.workspace.getActivePane()
-      addItemToPane(pane, item1, 0)
-      addItemToPane(pane, item2, 2)
+      pane.addItem(item1, index: 0)
+      pane.addItem(item2, index: 2)
       pane.activateItem(item2)
-      tabBar = new TabBarView(pane)
+      tabBar = new TabBarView(pane, 'center')
 
   afterEach ->
     deserializerDisposable.dispose()
@@ -204,13 +204,10 @@ describe "TabBarView", ->
       editor2 = null
 
       waitsForPromise ->
-        opener =
-          if atom.workspace.buildTextEditor?
-            atom.workspace.open('sample.txt', activateItem: false)
-          else
-            atom.project.open('sample.txt')
-
-        opener.then (o) -> editor2 = o
+        if atom.workspace.createItemForURI?
+          atom.workspace.createItemForURI('sample.txt').then (o) -> editor2 = o
+        else
+          atom.workspace.open('sample.txt', {activateItem: false}).then (o) -> editor2 = o
 
       runs ->
         editor2.insertText('x')
@@ -262,28 +259,25 @@ describe "TabBarView", ->
   describe "when a tab is clicked", ->
     it "shows the associated item on the pane and focuses the pane", ->
       jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
-
       spyOn(pane, 'activate')
 
-      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0).element, which: 1)
-      expect(pane.getActiveItem()).toBe pane.getItems()[0]
-      expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
+      {mousedown, click} = triggerClickEvent(tabBar.tabAtIndex(0).element, which: 1)
+      expect(pane.getActiveItem()).toBe(pane.getItems()[0])
+      # allows dragging
+      expect(mousedown.preventDefault).not.toHaveBeenCalled()
+      expect(click.preventDefault).toHaveBeenCalled()
 
-      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(2).element, which: 1)
-      expect(pane.getActiveItem()).toBe pane.getItems()[2]
-      expect(event.preventDefault).not.toHaveBeenCalled() # allows dragging
-
-      # Pane activation is delayed because focus is stolen by the tab bar
-      # immediately afterward unless propagation of the mousedown event is
-      # stopped. But stopping propagation of the mousedown event prevents the
-      # dragstart event from occurring.
-      waits(1)
-      runs -> expect(pane.activate.callCount).toBe 2
+      {mousedown, click} = triggerClickEvent(tabBar.tabAtIndex(2).element, which: 1)
+      expect(pane.getActiveItem()).toBe(pane.getItems()[2])
+      # allows dragging
+      expect(mousedown.preventDefault).not.toHaveBeenCalled()
+      expect(click.preventDefault).toHaveBeenCalled()
+      expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
       jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
 
-      event = triggerMouseEvent('mousedown', tabBar.tabForItem(editor1).element, which: 2)
+      {click} = triggerClickEvent(tabBar.tabForItem(editor1).element, which: 2)
 
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
@@ -291,20 +285,20 @@ describe "TabBarView", ->
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.element.textContent).not.toMatch('sample.js')
 
-      expect(event.preventDefault).toHaveBeenCalled()
+      expect(click.preventDefault).toHaveBeenCalled()
 
     it "doesn't switch tab when right (or ctrl-left) clicked", ->
       jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
 
       spyOn(pane, 'activate')
 
-      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0).element, which: 3)
+      {mousedown} = triggerClickEvent(tabBar.tabAtIndex(0).element, which: 3)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
-      expect(event.preventDefault).toHaveBeenCalled()
+      expect(mousedown.preventDefault).toHaveBeenCalled()
 
-      event = triggerMouseEvent('mousedown', tabBar.tabAtIndex(0).element, which: 1, ctrlKey: true)
+      {mousedown} = triggerClickEvent(tabBar.tabAtIndex(0).element, which: 1, ctrlKey: true)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
-      expect(event.preventDefault).toHaveBeenCalled()
+      expect(mousedown.preventDefault).toHaveBeenCalled()
 
       expect(pane.activate).not.toHaveBeenCalled()
 
@@ -383,6 +377,49 @@ describe "TabBarView", ->
 
       expect(tabBar.tabForItem(item1).element.textContent).toMatch "Grumpy Old Man"
       expect(tabBar.tabForItem(item2).element.textContent).toMatch "Old Man"
+
+  describe "the close button", ->
+    it "is present in the center, regardless of the value returned by isPermanentDockItem()", ->
+      item3 = new TestView('Item 3', undefined, "squirrel", "sample.js")
+      expect(item3.isPermanentDockItem).toBeUndefined()
+      item4 = new TestView('Item 4', undefined, "squirrel", "sample.js", true)
+      expect(typeof item4.isPermanentDockItem).toBe('function')
+      item5 = new TestView('Item 5', undefined, "squirrel", "sample.js", false)
+      expect(typeof item5.isPermanentDockItem).toBe('function')
+      pane.activateItem(item3)
+      pane.activateItem(item4)
+      pane.activateItem(item5)
+      tabs = tabBar.element.querySelectorAll('.tab')
+      expect(tabs[2].querySelector('.close-icon')).not.toEqual(null)
+      expect(tabs[3].querySelector('.close-icon')).not.toEqual(null)
+      expect(tabs[4].querySelector('.close-icon')).not.toEqual(null)
+
+    return unless atom.workspace.getRightDock?
+    describe "in docks", ->
+      beforeEach ->
+        pane = atom.workspace.getRightDock().getActivePane()
+        tabBar = new TabBarView(pane, 'right')
+
+      it "isn't shown if the method returns true", ->
+        item1 = new TestView('Item 1', undefined, "squirrel", "sample.js", true)
+        expect(typeof item1.isPermanentDockItem).toBe('function')
+        pane.activateItem(item1)
+        tab = tabBar.element.querySelector('.tab')
+        expect(tab.querySelector('.close-icon')).toEqual(null)
+
+      it "is shown if the method returns false", ->
+        item1 = new TestView('Item 1', undefined, "squirrel", "sample.js", false)
+        expect(typeof item1.isPermanentDockItem).toBe('function')
+        pane.activateItem(item1)
+        tab = tabBar.element.querySelector('.tab')
+        expect(tab.querySelector('.close-icon')).not.toBeUndefined()
+
+      it "is shown if the method doesn't exist", ->
+        item1 = new TestView('Item 1', undefined, "squirrel", "sample.js")
+        expect(item1.isPermanentDockItem).toBeUndefined()
+        pane.activateItem(item1)
+        tab = tabBar.element.querySelector('.tab')
+        expect(tab.querySelector('.close-icon')).not.toEqual(null)
 
   describe "when an item has an icon defined", ->
     it "displays the icon on the tab", ->
@@ -501,12 +538,12 @@ describe "TabBarView", ->
 
   describe "context menu commands", ->
     beforeEach ->
-      paneElement = atom.views.getView(pane)
+      paneElement = pane.getElement()
       paneElement.insertBefore(tabBar.element, paneElement.firstChild)
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
@@ -515,7 +552,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
@@ -525,7 +562,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
-        triggerMouseEvent('mousedown', tabBar.tabForItem(editor1).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(editor1).element, which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
@@ -535,7 +572,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-left is fired", ->
       it "closes only the tabs to the left of the active tab", ->
         pane.activateItem(editor1)
-        triggerMouseEvent('mousedown', tabBar.tabForItem(editor1).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(editor1).element, which: 3)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-left')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
@@ -557,49 +594,49 @@ describe "TabBarView", ->
 
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-up')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[1]).toBe pane
-        expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(atom.workspace.getCenter().getPanes().length).toBe 2
+        expect(atom.workspace.getCenter().getPanes()[1]).toBe pane
+        expect(atom.workspace.getCenter().getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-down is fired", ->
       it "splits the selected tab down", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-down')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[0]).toBe pane
-        expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(atom.workspace.getCenter().getPanes().length).toBe 2
+        expect(atom.workspace.getCenter().getPanes()[0]).toBe pane
+        expect(atom.workspace.getCenter().getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-left is fired", ->
       it "splits the selected tab to the left", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-left')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[1]).toBe pane
-        expect(atom.workspace.getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(atom.workspace.getCenter().getPanes().length).toBe 2
+        expect(atom.workspace.getCenter().getPanes()[1]).toBe pane
+        expect(atom.workspace.getCenter().getPanes()[0].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:split-right is fired", ->
       it "splits the selected tab to the right", ->
-        triggerMouseEvent('mousedown', tabBar.tabForItem(item2).element, which: 3)
-        expect(atom.workspace.getPanes().length).toBe 1
+        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-right')
-        expect(atom.workspace.getPanes().length).toBe 2
-        expect(atom.workspace.getPanes()[0]).toBe pane
-        expect(atom.workspace.getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
+        expect(atom.workspace.getCenter().getPanes().length).toBe 2
+        expect(atom.workspace.getCenter().getPanes()[0]).toBe pane
+        expect(atom.workspace.getCenter().getPanes()[1].getItems()[0].getTitle()).toBe item2.getTitle()
 
     describe "when tabs:open-in-new-window is fired", ->
       describe "by right-clicking on a tab", ->
         beforeEach ->
-          triggerMouseEvent('mousedown', tabBar.tabForItem(item1).element, which: 3)
-          expect(atom.workspace.getPanes().length).toBe 1
+          triggerClickEvent(tabBar.tabForItem(item1).element, which: 3)
+          expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         it "opens new window, closes current tab", ->
           spyOn(atom, 'open')
@@ -623,8 +660,7 @@ describe "TabBarView", ->
     paneElement = null
 
     beforeEach ->
-      paneElement = atom.views.getView(pane)
-
+      paneElement = pane.getElement()
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
@@ -674,12 +710,13 @@ describe "TabBarView", ->
     describe "when pane:close is fired", ->
       it "destroys all the tabs within the pane", ->
         pane2 = pane.splitDown(copyActiveItem: true)
-        tabBar2 = new TabBarView(pane2)
+        tabBar2 = new TabBarView(pane2, 'center')
         tab2 = tabBar2.tabAtIndex(0)
         spyOn(tab2, 'destroy')
 
-        pane2.close()
-        expect(tab2.destroy).toHaveBeenCalled()
+        waitsForPromise ->
+          Promise.resolve(pane2.close()).then ->
+            expect(tab2.destroy).toHaveBeenCalled()
 
   describe "dragging and dropping tabs", ->
     describe "when a tab is dragged within the same pane", ->
@@ -759,7 +796,7 @@ describe "TabBarView", ->
       beforeEach ->
         pane2 = pane.splitRight(copyActiveItem: true)
         [item2b] = pane2.getItems()
-        tabBar2 = new TabBarView(pane2)
+        tabBar2 = new TabBarView(pane2, 'center')
 
       it "removes the tab and item from their original pane and moves them to the target pane", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
@@ -839,7 +876,7 @@ describe "TabBarView", ->
         tab = tabBar.tabAtIndex(2).element
         layout.test =
           pane: pane
-          itemView: atom.views.getView(pane).querySelector('.item-views')
+          itemView: pane.getElement().querySelector('.item-views')
           rect: {top: 0, left: 0, width: 100, height: 100}
 
         expect(layout.view.classList.contains('visible')).toBe(false)
@@ -858,12 +895,12 @@ describe "TabBarView", ->
         tab = tabBar.tabAtIndex(2).element
         layout.test =
           pane: pane
-          itemView: atom.views.getView(pane).querySelector('.item-views')
+          itemView: pane.getElement().querySelector('.item-views')
           rect: {top: 0, left: 0, width: 100, height: 100}
 
         tab.ondrag target: tab, clientX: 80, clientY: 50
         tab.ondragend target: tab, clientX: 80, clientY: 50
-        expect(atom.workspace.getPanes().length).toEqual(2)
+        expect(atom.workspace.getCenter().getPanes().length).toEqual(2)
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js"]
         expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
 
@@ -875,12 +912,12 @@ describe "TabBarView", ->
           tab = tabBar.tabAtIndex(0).element
           layout.test =
             pane: pane
-            itemView: atom.views.getView(pane).querySelector('.item-views')
+            itemView: pane.getElement().querySelector('.item-views')
             rect: {top: 0, left: 0, width: 100, height: 100}
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
           tab.ondragend target: tab, clientX: 80, clientY: 50
-          expect(atom.workspace.getPanes().length).toEqual(1)
+          expect(atom.workspace.getCenter().getPanes().length).toEqual(1)
           expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["sample.js"]
 
       describe "when the pane is empty", ->
@@ -891,12 +928,12 @@ describe "TabBarView", ->
           tab = tabBar.tabAtIndex(2).element
           layout.test =
             pane: toPane
-            itemView: atom.views.getView(toPane).querySelector('.item-views')
+            itemView: toPane.getElement().querySelector('.item-views')
             rect: {top: 0, left: 0, width: 100, height: 100}
 
           tab.ondrag target: tab, clientX: 80, clientY: 50
           tab.ondragend target: tab, clientX: 80, clientY: 50
-          expect(atom.workspace.getPanes().length).toEqual(2)
+          expect(atom.workspace.getCenter().getPanes().length).toEqual(2)
           expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js"]
           expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
 
@@ -983,50 +1020,68 @@ describe "TabBarView", ->
           expect(atom.workspace.getActiveTextEditor().getText()).toBe 'I have no path'
           expect(atom.workspace.getActiveTextEditor().getPath()).toBeUndefined()
 
-    describe "when a tab is dragged to another pane container", ->
-      [workspaceElement, pane2, tabBar2] = []
+    if atom.workspace.getLeftDock?
+      describe "when a tab is dragged to another pane container", ->
+        [pane2, tabBar2, dockItem] = []
 
-      beforeEach ->
-        # Make sure the workspace view is in the document. It will be searched
-        # for the source pane.
-        workspaceElement = atom.views.getView atom.workspace
-        document.body.appendChild workspaceElement
+        beforeEach ->
+          jasmine.attachToDOM(atom.workspace.getElement())
+          pane = atom.workspace.getActivePane()
+          pane2 = atom.workspace.getLeftDock().getActivePane()
+          dockItem = new TestView('Dock Item')
+          pane2.addItem(dockItem)
+          tabBar2 = new TabBarView(pane2, 'left')
 
-        pane = atom.workspace.getActivePane()
+        it "removes the tab and item from their original pane and moves them to the target pane", ->
+          expect(atom.workspace.getLeftDock().isVisible()).toBe(false)
 
-        # Create a new pane container.
-        PaneContainer = atom.workspace.paneContainer.constructor
-        paneContainer = new PaneContainer config: atom.config
-        pane2 = paneContainer.getActivePane()
-        tabBar2 = new TabBarView(pane2)
+          expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [item1, editor1, item2]
+          expect(pane.getActiveItem()).toBe(item2)
 
-      afterEach ->
-        workspaceElement.remove()
+          expect(tabBar2.getTabs().map (tab) -> tab.element.textContent).toEqual ["Dock Item"]
+          expect(pane2.getItems()).toEqual [dockItem]
+          expect(pane2.getActiveItem()).toBe(dockItem)
 
-      it "removes the tab and item from their original pane and moves them to the target pane", ->
-        pane2.destroyItems()
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
+          tabBar.onDragStart(dragStartEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDragOver(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).not.toBeNull()
+          tabBar2.onDrop(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
 
-        expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
-        expect(pane.getItems()).toEqual [item1, editor1, item2]
-        expect(pane.getActiveItem()).toBe item2
+          expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["sample.js", "Item 2"]
+          expect(pane.getItems()).toEqual [editor1, item2]
+          expect(pane.getActiveItem()).toBe item2
 
-        expect(tabBar2.getTabs().map (tab) -> tab.element.textContent).toEqual []
-        expect(pane2.getItems()).toEqual []
-        expect(pane2.activeItem).toBeUndefined()
-        spyOn(pane2, 'activate')
-        [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
-        tabBar.onDragStart(dragStartEvent)
-        tabBar2.onDragOver(dropEvent)
-        tabBar2.onDrop(dropEvent)
+          expect(tabBar2.getTabs().map (tab) -> tab.element.textContent).toEqual ["Dock Item", "Item 1"]
+          expect(pane2.getItems()).toEqual [dockItem, item1]
+          expect(pane2.activeItem).toBe item1
+          expect(atom.workspace.getLeftDock().isVisible()).toBe(true)
 
-        expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["sample.js", "Item 2"]
-        expect(pane.getItems()).toEqual [editor1, item2]
-        expect(pane.getActiveItem()).toBe item2
+        it "shows a placeholder and allows the tab be dropped only if the item supports the target pane container location", ->
+          item1.getAllowedLocations = -> ['center', 'bottom']
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
+          tabBar.onDragStart(dragStartEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDragOver(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDrop(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          expect(pane.getItems()).toEqual [item1, editor1, item2]
+          expect(pane2.getItems()).toEqual [dockItem]
 
-        expect(tabBar2.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1"]
-        expect(pane2.getItems()).toEqual [item1]
-        expect(pane2.activeItem).toBe item1
-        expect(pane2.activate).toHaveBeenCalled()
+          item1.getAllowedLocations = -> ['left']
+          [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(0).element, tabBar2.element)
+          tabBar.onDragStart(dragStartEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          tabBar2.onDragOver(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).not.toBeNull()
+          tabBar2.onDrop(dropEvent)
+          expect(tabBar2.element.querySelector('.placeholder')).toBeNull()
+          expect(pane.getItems()).toEqual [editor1, item2]
+          expect(pane2.getItems()).toEqual [dockItem, item1]
 
   describe "when the tab bar is double clicked", ->
     it "opens a new empty editor", ->
@@ -1159,7 +1214,7 @@ describe "TabBarView", ->
           runs ->
             pane.activateItem(editor1)
             expect(isPending(editor1)).toBe true
-            atom.commands.dispatch(atom.views.getView(atom.workspace.getActivePane()), 'tabs:keep-pending-tab')
+            atom.commands.dispatch(atom.workspace.getActivePane().getElement(), 'tabs:keep-pending-tab')
             expect(isPending(editor1)).toBe false
 
       describe "when there is a temp tab already", ->
@@ -1224,7 +1279,7 @@ describe "TabBarView", ->
         it "makes the tab permanent in the new pane", ->
           pane.activateItem(editor1)
           pane2 = pane.splitRight(copyActiveItem: true)
-          tabBar2 = new TabBarView(pane2)
+          tabBar2 = new TabBarView(pane2, 'center')
           newEditor = pane2.getActiveItem()
           expect(isPending(newEditor)).toBe false
           expect(tabBar2.tabForItem(newEditor).element.querySelector('.title')).not.toHaveClass 'temp'
@@ -1243,7 +1298,7 @@ describe "TabBarView", ->
             pane.activateItem(editor1)
             pane2 = pane.splitRight()
 
-            tabBar2 = new TabBarView(pane2)
+            tabBar2 = new TabBarView(pane2, 'center')
             tabBar2.moveItemBetweenPanes(pane, 0, pane2, 1, editor1)
 
             expect(tabBar2.tabForItem(pane2.getActiveItem()).element.querySelector('.title')).not.toHaveClass 'temp'
@@ -1356,3 +1411,18 @@ describe "TabBarView", ->
 
         runs ->
           expect(tabBar.element.querySelectorAll('.tab')[1].querySelector('.title')).toHaveClass "status-modified"
+
+    if atom.workspace.getLeftDock?
+      describe "a pane in the dock", ->
+        beforeEach -> main.activate()
+        afterEach -> main.deactivate()
+        it "gets decorated with tabs", ->
+          dock = atom.workspace.getLeftDock()
+          dockElement = dock.getElement()
+          item = new TestView('Dock Item 1')
+          expect(dockElement.querySelectorAll('.tab').length).toBe(0)
+          pane = dock.getActivePane()
+          pane.activateItem(item)
+          expect(dockElement.querySelectorAll('.tab').length).toBe(1)
+          pane.destroyItem(item)
+          expect(dockElement.querySelectorAll('.tab').length).toBe(0)

@@ -7,19 +7,20 @@ TabView = require './tab-view'
 
 module.exports =
 class TabBarView
-  constructor: (@pane) ->
+  constructor: (@pane, @location) ->
     @element = document.createElement('ul')
     @element.classList.add("list-inline")
     @element.classList.add("tab-bar")
     @element.classList.add("inset-panel")
     @element.setAttribute('is', 'atom-tabs')
     @element.setAttribute("tabindex", -1)
+    @element.setAttribute("location", @location)
 
     @tabs = []
     @tabsByElement = new WeakMap
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add atom.views.getView(@pane),
+    @subscriptions.add atom.commands.add @pane.getElement(),
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
@@ -85,6 +86,7 @@ class TabBarView
     @updateActiveTab()
 
     @element.addEventListener "mousedown", @onMouseDown.bind(this)
+    @element.addEventListener "click", @onClick.bind(this)
     @element.addEventListener "dblclick", @onDoubleClick.bind(this)
 
     @onDropOnOtherWindow = @onDropOnOtherWindow.bind(this)
@@ -107,6 +109,7 @@ class TabBarView
       didClickCloseIcon: =>
         @closeTab(tabView)
         return
+      @location
     })
     tabView.terminatePendingState() if @isItemMovingBetweenPanes
     @tabsByElement.set(tabView.element, tabView)
@@ -193,11 +196,8 @@ class TabBarView
 
   splitTab: (fn) ->
     if item = @rightClickedTab?.item
-      if copiedItem = @copyItem(item)
+      if copiedItem = item.copy?()
         @pane[fn](items: [copiedItem])
-
-  copyItem: (item) ->
-    item.copy?() ? atom.deserializers.deserialize(item.serialize())
 
   closeOtherTabs: (active) ->
     tabs = @getTabs()
@@ -259,6 +259,12 @@ class TabBarView
     else if typeof item.getUri is 'function'
       itemURI = item.getUri() ? ''
 
+    if typeof item.getAllowedLocations is 'function'
+      for location in item.getAllowedLocations()
+        event.dataTransfer.setData("allowed-location-#{location}", 'true')
+    else
+      event.dataTransfer.setData 'allow-all-locations', 'true'
+
     if itemURI?
       event.dataTransfer.setData 'text/plain', itemURI
 
@@ -286,7 +292,7 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    unless event.dataTransfer.getData('atom-event') is 'true'
+    unless isAtomEvent(event)
       event.preventDefault()
       event.stopPropagation()
       return
@@ -294,6 +300,7 @@ class TabBarView
     event.preventDefault()
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
+    return unless itemIsAllowed(event, @location)
 
     @removeDropTargetClasses()
 
@@ -345,6 +352,8 @@ class TabBarView
 
     @clearDropTarget()
 
+    return unless itemIsAllowed(event, @location)
+
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
       if fromPane?.id isnt fromPaneId
@@ -394,12 +403,25 @@ class TabBarView
       @rightClickedTab = tab
       @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
+    else if event.which is 2
+      # This prevents Chromium from activating "scroll mode" when
+      # middle-clicking while some tabs are off-screen.
+      event.preventDefault()
+
+  onClick: (event) ->
+    tab = @tabForElement(event.target)
+    return unless tab
+
+    event.preventDefault()
+    if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
+      # Bail out early when receiving this event, because we have already
+      # handled it in the mousedown handler.
+      return
     else if event.which is 1 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
-      setImmediate => @pane.activate() unless @pane.isDestroyed()
+      @pane.activate() unless @pane.isDestroyed()
     else if event.which is 2
       @pane.destroyItem(tab.item)
-      event.preventDefault()
 
   onDoubleClick: (event) ->
     if tab = @tabForElement(event.target)
@@ -442,7 +464,7 @@ class TabBarView
       @isItemMovingBetweenPanes = false
 
   removeDropTargetClasses: ->
-    workspaceElement = atom.views.getView(atom.workspace)
+    workspaceElement = atom.workspace.getElement()
     for dropTarget in workspaceElement.querySelectorAll('.tab-bar .is-drop-target')
       dropTarget.classList.remove('is-drop-target')
 
@@ -500,3 +522,17 @@ class TabBarView
         return tab
       else
         currentElement = currentElement.parentElement
+
+isAtomEvent = (event) ->
+  for item in event.dataTransfer.items
+    if item.type is 'atom-event'
+      return true
+
+  return false
+
+itemIsAllowed = (event, location) ->
+  for item in event.dataTransfer.items
+    if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
+      return true
+
+  return false

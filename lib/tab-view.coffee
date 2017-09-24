@@ -6,7 +6,7 @@ layout = require './layout'
 
 module.exports =
 class TabView
-  constructor: ({@item, @pane, didClickCloseIcon, @tabs}) ->
+  constructor: ({@item, @pane, didClickCloseIcon, @tabs, location}) ->
     if typeof @item.getPath is 'function'
       @path = @item.getPath()
 
@@ -20,10 +20,11 @@ class TabView
     @itemTitle.classList.add('title')
     @element.appendChild(@itemTitle)
 
-    closeIcon = document.createElement('div')
-    closeIcon.classList.add('close-icon')
-    closeIcon.onclick = didClickCloseIcon
-    @element.appendChild(closeIcon)
+    if location is 'center' or not @item.isPermanentDockItem?()
+      closeIcon = document.createElement('div')
+      closeIcon.classList.add('close-icon')
+      closeIcon.onclick = didClickCloseIcon
+      @element.appendChild(closeIcon)
 
     @subscriptions = new CompositeDisposable()
 
