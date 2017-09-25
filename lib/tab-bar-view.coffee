@@ -191,6 +191,7 @@ class TabBarView
       itemURI = item.getUri()
     return unless itemURI?
     @closeTab(tab)
+    tab.element.style.maxWidth = '' for tab in @getTabs()
     pathsToOpen = [atom.project.getPaths(), itemURI].reduce ((a, b) -> a.concat(b)), []
     atom.open({pathsToOpen: pathsToOpen, newWindow: true, devMode: atom.devMode, safeMode: atom.safeMode})
 
@@ -292,6 +293,7 @@ class TabBarView
        event.clientY <= top or event.clientY >= height + top
       @removePlaceholder()
       @lastDropTargetIndex = null
+      tab.element.style.maxWidth = '' for tab in @getTabs()
 
   onDragEnd: (event) ->
     return unless @tabForElement(event.target)
