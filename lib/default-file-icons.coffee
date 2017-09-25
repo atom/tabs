@@ -4,6 +4,7 @@ path = require 'path'
 class DefaultFileIcons
   iconClassForPath: (filePath, caller) ->
     return '' unless caller is 'tabs-mru-switcher'
+    return 'icon-file-text' unless typeof filePath is 'string'
 
     extension = path.extname(filePath)
 
