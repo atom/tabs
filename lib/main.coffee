@@ -13,7 +13,7 @@ module.exports =
     @mruListViews = []
 
     keyBindSource = 'tabs package'
-    configKey = 'tabs.enableMruTabSwitching'
+    enableMruConfigKey = 'tabs.enableMruTabSwitching'
 
     @updateTraversalKeybinds = ->
       # We don't modify keybindings based on our setting if the user has already tweaked them.
@@ -26,7 +26,7 @@ module.exports =
         keystrokes: 'ctrl-shift-tab')
       return if bindings.length > 1 and bindings[0].source isnt keyBindSource
 
-      if atom.config.get(configKey)
+      if atom.config.get(enableMruConfigKey)
         atom.keymaps.removeBindingsFromSource(keyBindSource)
       else
         disabledBindings =
@@ -37,7 +37,7 @@ module.exports =
             'ctrl-shift-tab ^ctrl': 'unset!'
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
-    @subscriptions.add atom.config.observe configKey, => @updateTraversalKeybinds()
+    @subscriptions.add atom.config.observe enableMruConfigKey, => @updateTraversalKeybinds()
     @subscriptions.add atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
 
     # If the command bubbles up without being handled by a particular pane,
