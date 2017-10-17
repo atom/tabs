@@ -96,7 +96,6 @@ describe 'MRU List', ->
         atom.commands.dispatch(workspaceElement, 'pane:show-next-recently-used-item')
         expect(workspaceElement.querySelectorAll('.tabs-mru-switcher li').length).toBe 0
 
-
   describe "config", ->
     dotAtomPath = null
 
