@@ -53,11 +53,19 @@ describe 'MRU List', ->
 
   describe "contents", ->
     pane = null
+    realSetTimeout = window.setTimeout
 
     beforeEach ->
+      # The MRU tab list is deliberately delayed before display.
+      # Here we mock window.setTimeout rather than introducing a corresponding delay in tests
+      # because faster tests are better.
+      jasmine.getGlobal().setTimeout = (callback, wait) => callback()
       waitsForPromise ->
         atom.workspace.open("sample.png")
       pane = atom.workspace.getActivePane()
+
+    afterEach ->
+      jasmine.getGlobal().setTimeout = realSetTimeout
 
     it "has one item per tab", ->
       if pane.onChooseNextMRUItem?
