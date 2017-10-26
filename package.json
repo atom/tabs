@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.107.4",
+  "version": "0.108.0",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
@@ -67,6 +67,12 @@
       "title": "Enable MRU Tab Switching",
       "default": true,
       "description": "Enable tab switching in most-recently-used order. This setting has no effect if ctrl-tab or ctrl-shift-tab are already rebound via your keymap or another package."
+    },
+    "displayMruTabList": {
+      "type": "boolean",
+      "title": "Display MRU Tab Switching List",
+      "default": true,
+      "description": "When MRU Tab Switching is enabled, display the most-recently-used tab list."
     }
   },
   "devDependencies": {

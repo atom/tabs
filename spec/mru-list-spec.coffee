@@ -4,6 +4,8 @@ temp = require('temp').track()
 
 describe 'MRU List', ->
   workspaceElement = null
+  enableMruConfigKey = 'tabs.enableMruTabSwitching'
+  displayMruTabListConfigKey = 'tabs.displayMruTabList'
 
   beforeEach ->
     workspaceElement = atom.workspace.getElement()
@@ -53,11 +55,19 @@ describe 'MRU List', ->
 
   describe "contents", ->
     pane = null
+    realSetTimeout = window.setTimeout
 
     beforeEach ->
+      # The MRU tab list is deliberately delayed before display.
+      # Here we mock window.setTimeout rather than introducing a corresponding delay in tests
+      # because faster tests are better.
+      jasmine.getGlobal().setTimeout = (callback, wait) => callback()
       waitsForPromise ->
         atom.workspace.open("sample.png")
       pane = atom.workspace.getActivePane()
+
+    afterEach ->
+      jasmine.getGlobal().setTimeout = realSetTimeout
 
     it "has one item per tab", ->
       if pane.onChooseNextMRUItem?
@@ -78,8 +88,15 @@ describe 'MRU List', ->
       fourthActiveItem = pane.getActiveItem()
       expect(fourthActiveItem).toBe(firstActiveItem)
 
+    it "disables display when configured to", ->
+      atom.config.set(displayMruTabListConfigKey, false)
+      expect(atom.config.get(displayMruTabListConfigKey)).toBe(false)
+      if pane.onChooseNextMRUItem?
+        expect(pane.getItems().length).toBe 2
+        atom.commands.dispatch(workspaceElement, 'pane:show-next-recently-used-item')
+        expect(workspaceElement.querySelectorAll('.tabs-mru-switcher li').length).toBe 0
+
   describe "config", ->
-    configKey = 'tabs.enableMruTabSwitching'
     dotAtomPath = null
 
     beforeEach ->
@@ -92,7 +109,8 @@ describe 'MRU List', ->
       fs.removeSync(dotAtomPath)
 
     it "defaults on", ->
-      expect(atom.config.get(configKey)).toBe(true)
+      expect(atom.config.get(enableMruConfigKey)).toBe(true)
+      expect(atom.config.get(displayMruTabListConfigKey)).toBe(true)
 
       bindings = atom.keymaps.findKeyBindings(
         target: document.body,
@@ -119,7 +137,7 @@ describe 'MRU List', ->
       expect(bindings[0].command).toBe('pane:move-active-item-to-top-of-stack')
 
     it "alters keybindings when disabled", ->
-      atom.config.set(configKey, false)
+      atom.config.set(enableMruConfigKey, false)
       bindings = atom.keymaps.findKeyBindings(
         target: document.body,
         keystrokes: 'ctrl-tab')
