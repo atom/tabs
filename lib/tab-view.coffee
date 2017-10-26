@@ -220,23 +220,7 @@ class TabView
     @updatingTitle = false
 
   updateIcon: ->
-    if @iconElement?
-      return unless @iconElement.disposed
-    if @iconName
-      names = unless Array.isArray(@iconName) then @iconName.split(/\s+/g) else @iconName
-      @itemTitle.classList.remove('icon', "icon-#{names[0]}", names...)
-
-    if @iconName = @item.getIconName?()
-      @itemTitle.classList.add('icon', "icon-#{@iconName}")
-    else if @path?
-      if service = IconServices.get 'element-icons'
-        @itemTitle.classList.add 'icon'
-        @iconElement = service @itemTitle, @path, isTabIcon: true
-        @subscriptions.add @iconElement
-      else if @iconName = IconServices.get('file-icons').iconClassForPath(@path, "tabs")
-        unless Array.isArray names = @iconName
-          names = names.toString().split /\s+/g
-        @itemTitle.classList.add('icon', names...)
+    IconServices.updateTabIcon(this)
 
   isItemPending: ->
     if @pane.getPendingItem?

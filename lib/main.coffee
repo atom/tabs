@@ -80,17 +80,17 @@ module.exports =
     return
 
   consumeElementIcons: (service) ->
-    IconServices.set 'element-icons', service
+    IconServices.setElementIcons service
     @updateFileIcons()
     new Disposable =>
-      IconServices.reset 'element-icons'
+      IconServices.resetElementIcons()
       @updateFileIcons()
 
   consumeFileIcons: (service) ->
-    IconServices.set 'file-icons', service
+    IconServices.setFileIcons service
     @updateFileIcons()
     new Disposable =>
-      IconServices.reset 'file-icons'
+      IconServices.resetFileIcons()
       @updateFileIcons()
 
   updateFileIcons: ->

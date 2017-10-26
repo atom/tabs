@@ -1,11 +1,6 @@
-DefaultFileIcons = require '../lib/default-file-icons'
+fileIcons = require '../lib/default-file-icons'
 
 describe 'DefaultFileIcons', ->
-  [fileIcons] = []
-
-  beforeEach ->
-    fileIcons = new DefaultFileIcons
-
   it 'does not provide icons out of the box', ->
     expect(fileIcons.iconClassForPath('foo.bar')).toEqual('')
     expect(fileIcons.iconClassForPath('README.md')).toEqual('')
