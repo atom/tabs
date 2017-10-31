@@ -1,6 +1,6 @@
 path = require 'path'
 {Disposable, CompositeDisposable} = require 'atom'
-IconServices = require './icon-services'
+getIconServices = require './get-icon-services'
 
 layout = require './layout'
 
@@ -97,7 +97,7 @@ class TabView
     iconChangedHandler = =>
       @updateIcon()
 
-    @subscriptions.add IconServices.onDidChange => @updateIcon()
+    @subscriptions.add getIconServices().onDidChange => @updateIcon()
 
     if typeof @item.onDidChangeIcon is 'function'
       onDidChangeIconDisposable = @item.onDidChangeIcon? =>
@@ -220,7 +220,7 @@ class TabView
     @updatingTitle = false
 
   updateIcon: ->
-    IconServices.updateTabIcon(this)
+    getIconServices().updateTabIcon(this)
 
   isItemPending: ->
     if @pane.getPendingItem?

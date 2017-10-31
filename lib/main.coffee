@@ -1,5 +1,5 @@
 {CompositeDisposable, Disposable} = require 'atom'
-IconServices = require './icon-services'
+getIconServices = require './get-icon-services'
 layout = require './layout'
 TabBarView = require './tab-bar-view'
 MRUListView = require './mru-list-view'
@@ -80,17 +80,17 @@ module.exports =
     return
 
   consumeElementIcons: (service) ->
-    IconServices.setElementIcons service
+    getIconServices().setElementIcons service
     @updateFileIcons()
     new Disposable =>
-      IconServices.resetElementIcons()
+      getIconServices().resetElementIcons()
       @updateFileIcons()
 
   consumeFileIcons: (service) ->
-    IconServices.setFileIcons service
+    getIconServices().setFileIcons service
     @updateFileIcons()
     new Disposable =>
-      IconServices.resetFileIcons()
+      getIconServices().resetFileIcons()
       @updateFileIcons()
 
   updateFileIcons: ->
