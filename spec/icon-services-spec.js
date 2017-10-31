@@ -1,3 +1,6 @@
+/* eslint-env jasmine */
+/* global waitsForPromise */
+
 const path = require('path')
 const {Disposable} = require('atom')
 
@@ -66,7 +69,7 @@ describe('icon services', () => {
     })
 
     it('uses the element-icon service if available', () => {
-      const provider = element => {
+      const provider = (element) => {
         element.classList.add('foo', 'bar')
         return new Disposable(() => {
           element.classList.remove('foo', 'bar', 'icon')
@@ -83,7 +86,7 @@ describe('icon services', () => {
   describe('when both services are provided', () => {
     it('gives priority to the element-icon service', () => {
       const basicProvider = {iconClassForPath: () => 'foo'}
-      const elementProvider = element => {
+      const elementProvider = (element) => {
         element.classList.add('bar')
         return new Disposable(() => {
           element.classList.remove('bar')

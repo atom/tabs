@@ -61,7 +61,7 @@ describe 'MRU List', ->
       # The MRU tab list is deliberately delayed before display.
       # Here we mock window.setTimeout rather than introducing a corresponding delay in tests
       # because faster tests are better.
-      jasmine.getGlobal().setTimeout = (callback, wait) => callback()
+      jasmine.getGlobal().setTimeout = (callback, wait) -> callback()
       waitsForPromise ->
         atom.workspace.open("sample.png")
       pane = atom.workspace.getActivePane()
