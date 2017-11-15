@@ -258,16 +258,15 @@ describe "TabBarView", ->
 
   describe "when a tab is clicked", ->
     it "shows the associated item on the pane and focuses the pane", ->
-      jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
       spyOn(pane, 'activate')
 
-      {mousedown, click} = triggerClickEvent(tabBar.tabAtIndex(0).element, which: 1)
+      {mousedown, click} = triggerClickEvent(tabBar.tabAtIndex(0).element, button: 0)
       expect(pane.getActiveItem()).toBe(pane.getItems()[0])
       # allows dragging
       expect(mousedown.preventDefault).not.toHaveBeenCalled()
       expect(click.preventDefault).toHaveBeenCalled()
 
-      {mousedown, click} = triggerClickEvent(tabBar.tabAtIndex(2).element, which: 1)
+      {mousedown, click} = triggerClickEvent(tabBar.tabAtIndex(2).element, button: 0)
       expect(pane.getActiveItem()).toBe(pane.getItems()[2])
       # allows dragging
       expect(mousedown.preventDefault).not.toHaveBeenCalled()
@@ -275,9 +274,7 @@ describe "TabBarView", ->
       expect(pane.activate.callCount).toBe 2
 
     it "closes the tab when middle clicked", ->
-      jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
-
-      {click} = triggerClickEvent(tabBar.tabForItem(editor1).element, which: 2)
+      {click} = triggerClickEvent(tabBar.tabForItem(editor1).element, button: 1)
 
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
@@ -288,24 +285,22 @@ describe "TabBarView", ->
       expect(click.preventDefault).toHaveBeenCalled()
 
     it "doesn't switch tab when right (or ctrl-left) clicked", ->
-      jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
-
       spyOn(pane, 'activate')
 
-      {mousedown} = triggerClickEvent(tabBar.tabAtIndex(0).element, which: 3)
+      {mousedown} = triggerClickEvent(tabBar.tabAtIndex(0).element, button: 2)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
       expect(mousedown.preventDefault).toHaveBeenCalled()
 
-      {mousedown} = triggerClickEvent(tabBar.tabAtIndex(0).element, which: 1, ctrlKey: true)
+      {mousedown} = triggerClickEvent(tabBar.tabAtIndex(0).element, button: 0, ctrlKey: true)
       expect(pane.getActiveItem()).not.toBe pane.getItems()[0]
       expect(mousedown.preventDefault).toHaveBeenCalled()
 
-      expect(pane.activate).not.toHaveBeenCalled()
+      # We don't switch tabs, but the pane should still be activated
+      # because of the mouse click
+      expect(pane.activate).toHaveBeenCalled()
 
   describe "when a tab's close icon is clicked", ->
     it "destroys the tab's item on the pane", ->
-      jasmine.attachToDOM(tabBar.element) # Remove after Atom 1.2.0 is released
-
       tabBar.tabForItem(editor1).element.querySelector('.close-icon').click()
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
@@ -543,7 +538,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-tab is fired", ->
       it "closes the active tab", ->
-        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, button: 2)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tab')
         expect(pane.getItems().length).toBe 2
         expect(pane.getItems().indexOf(item2)).toBe -1
@@ -552,7 +547,7 @@ describe "TabBarView", ->
 
     describe "when tabs:close-other-tabs is fired", ->
       it "closes all other tabs except the active tab", ->
-        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, button: 2)
         atom.commands.dispatch(tabBar.element, 'tabs:close-other-tabs')
         expect(pane.getItems().length).toBe 1
         expect(tabBar.getTabs().length).toBe 1
@@ -562,7 +557,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-right is fired", ->
       it "closes only the tabs to the right of the active tab", ->
         pane.activateItem(editor1)
-        triggerClickEvent(tabBar.tabForItem(editor1).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(editor1).element, button: 2)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-right')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
@@ -572,7 +567,7 @@ describe "TabBarView", ->
     describe "when tabs:close-tabs-to-left is fired", ->
       it "closes only the tabs to the left of the active tab", ->
         pane.activateItem(editor1)
-        triggerClickEvent(tabBar.tabForItem(editor1).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(editor1).element, button: 2)
         atom.commands.dispatch(tabBar.element, 'tabs:close-tabs-to-left')
         expect(pane.getItems().length).toBe 2
         expect(tabBar.getTabs().length).toBe 2
@@ -594,7 +589,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-up is fired", ->
       it "splits the selected tab up", ->
-        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, button: 2)
         expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-up')
@@ -604,7 +599,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-down is fired", ->
       it "splits the selected tab down", ->
-        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, button: 2)
         expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-down')
@@ -614,7 +609,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-left is fired", ->
       it "splits the selected tab to the left", ->
-        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, button: 2)
         expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-left')
@@ -624,7 +619,7 @@ describe "TabBarView", ->
 
     describe "when tabs:split-right is fired", ->
       it "splits the selected tab to the right", ->
-        triggerClickEvent(tabBar.tabForItem(item2).element, which: 3)
+        triggerClickEvent(tabBar.tabForItem(item2).element, button: 2)
         expect(atom.workspace.getCenter().getPanes().length).toBe 1
 
         atom.commands.dispatch(tabBar.element, 'tabs:split-right')
@@ -635,7 +630,7 @@ describe "TabBarView", ->
     describe "when tabs:open-in-new-window is fired", ->
       describe "by right-clicking on a tab", ->
         beforeEach ->
-          triggerClickEvent(tabBar.tabForItem(item1).element, which: 3)
+          triggerClickEvent(tabBar.tabForItem(item1).element, button: 2)
           expect(atom.workspace.getCenter().getPanes().length).toBe 1
           spyOn(atom, 'open')
 
@@ -1384,7 +1379,7 @@ describe "TabBarView", ->
           runs ->
             pane.activateItem(editor2)
             expect(tabBar.tabForItem(editor2).element.querySelector('.title')).toHaveClass 'temp'
-            triggerMouseEvent('dblclick', tabBar.tabForItem(editor2).element, which: 1)
+            triggerMouseEvent('dblclick', tabBar.tabForItem(editor2).element, button: 0)
             expect(tabBar.tabForItem(editor2).element.querySelector('.title')).not.toHaveClass 'temp'
 
       describe "when editing a file in pending state", ->
