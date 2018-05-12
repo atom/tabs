@@ -1,5 +1,5 @@
 {CompositeDisposable, Disposable} = require 'atom'
-FileIcons = require './file-icons'
+getIconServices = require './get-icon-services'
 layout = require './layout'
 TabBarView = require './tab-bar-view'
 MRUListView = require './mru-list-view'
@@ -13,7 +13,7 @@ module.exports =
     @mruListViews = []
 
     keyBindSource = 'tabs package'
-    configKey = 'tabs.enableMruTabSwitching'
+    enableMruConfigKey = 'tabs.enableMruTabSwitching'
 
     @updateTraversalKeybinds = ->
       # We don't modify keybindings based on our setting if the user has already tweaked them.
@@ -26,7 +26,7 @@ module.exports =
         keystrokes: 'ctrl-shift-tab')
       return if bindings.length > 1 and bindings[0].source isnt keyBindSource
 
-      if atom.config.get(configKey)
+      if atom.config.get(enableMruConfigKey)
         atom.keymaps.removeBindingsFromSource(keyBindSource)
       else
         disabledBindings =
@@ -37,7 +37,7 @@ module.exports =
             'ctrl-shift-tab ^ctrl': 'unset!'
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
-    @subscriptions.add atom.config.observe configKey, => @updateTraversalKeybinds()
+    @subscriptions.add atom.config.observe enableMruConfigKey, => @updateTraversalKeybinds()
     @subscriptions.add atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
 
     # If the command bubbles up without being handled by a particular pane,
@@ -79,11 +79,18 @@ module.exports =
     mruListView.destroy() for mruListView in @mruListViews
     return
 
-  consumeFileIcons: (service) ->
-    FileIcons.setService(service)
+  consumeElementIcons: (service) ->
+    getIconServices().setElementIcons service
     @updateFileIcons()
     new Disposable =>
-      FileIcons.resetService()
+      getIconServices().resetElementIcons()
+      @updateFileIcons()
+
+  consumeFileIcons: (service) ->
+    getIconServices().setFileIcons service
+    @updateFileIcons()
+    new Disposable =>
+      getIconServices().resetFileIcons()
       @updateFileIcons()
 
   updateFileIcons: ->

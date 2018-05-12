@@ -281,7 +281,7 @@ describe "TabBarView", ->
 
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
-      expect(editor1.destroyed).toBeTruthy()
+      expect(editor1.isDestroyed()).toBeTruthy()
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.element.textContent).not.toMatch('sample.js')
 
@@ -309,7 +309,7 @@ describe "TabBarView", ->
       tabBar.tabForItem(editor1).element.querySelector('.close-icon').click()
       expect(pane.getItems().length).toBe 2
       expect(pane.getItems().indexOf(editor1)).toBe -1
-      expect(editor1.destroyed).toBeTruthy()
+      expect(editor1.isDestroyed()).toBeTruthy()
       expect(tabBar.getTabs().length).toBe 2
       expect(tabBar.element.textContent).not.toMatch('sample.js')
 
