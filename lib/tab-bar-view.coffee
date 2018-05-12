@@ -285,6 +285,7 @@ class TabBarView
       false
 
   onDragLeave: (event) ->
+    # Do not do anything unless the drag goes outside the tab bar
     unless event.currentTarget.contains(event.relatedTarget)
       @removePlaceholder()
       @lastDropTargetIndex = null
