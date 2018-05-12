@@ -285,12 +285,7 @@ class TabBarView
       false
 
   onDragLeave: (event) ->
-    # If we are exiting the drag area remove the placeholder,
-    # otherwise keep it for performance benefits
-    # (onDragOver won't need to keep recreating it)
-    {top, left, width, height} = @element.getBoundingClientRect()
-    if event.clientX <= left or event.clientX >= width + left or
-       event.clientY <= top or event.clientY >= height + top
+    unless event.currentTarget.contains(event.relatedTarget)
       @removePlaceholder()
       @lastDropTargetIndex = null
       tab.element.style.maxWidth = '' for tab in @getTabs()
