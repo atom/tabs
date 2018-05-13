@@ -236,6 +236,7 @@ class TabBarView
   onDragStart: (event) ->
     @draggedTab = @tabForElement(event.target)
     return unless @draggedTab
+    @lastDropTargetIndex = null
 
     event.dataTransfer.setData 'atom-event', 'true'
 
@@ -284,8 +285,11 @@ class TabBarView
       false
 
   onDragLeave: (event) ->
-    tab.element.style.maxWidth = '' for tab in @getTabs()
-    @removePlaceholder()
+    # Do not do anything unless the drag goes outside the tab bar
+    unless event.currentTarget.contains(event.relatedTarget)
+      @removePlaceholder()
+      @lastDropTargetIndex = null
+      tab.element.style.maxWidth = '' for tab in @getTabs()
 
   onDragEnd: (event) ->
     return unless @tabForElement(event.target)
@@ -293,15 +297,17 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
+    event.preventDefault()
     unless isAtomEvent(event)
-      event.preventDefault()
       event.stopPropagation()
       return
 
-    event.preventDefault()
+    return unless itemIsAllowed(event, @location)
+
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
-    return unless itemIsAllowed(event, @location)
+    return if @lastDropTargetIndex is newDropTargetIndex
+    @lastDropTargetIndex = newDropTargetIndex
 
     @removeDropTargetClasses()
 
