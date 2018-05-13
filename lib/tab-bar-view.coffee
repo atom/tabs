@@ -148,10 +148,11 @@ class TabBarView
     @updateTabBarVisibility()
 
   updateTabBarVisibility: ->
-    if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
-      @element.classList.add('hidden')
-    else
+    # Show tab bar if the setting is true or there is more than one tab
+    if atom.config.get('tabs.alwaysShowTabBar') or @pane.getItems().length > 1
       @element.classList.remove('hidden')
+    else
+      @element.classList.add('hidden')
 
   getTabs: ->
     @tabs.slice()
@@ -229,9 +230,6 @@ class TabBarView
 
   getWindowId: ->
     @windowId ?= atom.getCurrentWindow().id
-
-  shouldAllowDrag: ->
-    (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
 
   onDragStart: (event) ->
     @draggedTab = @tabForElement(event.target)
