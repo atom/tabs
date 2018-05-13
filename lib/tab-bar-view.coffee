@@ -20,7 +20,9 @@ class TabBarView
     @tabsByElement = new WeakMap
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add @pane.getElement(),
+    @paneElement = @pane.getElement()
+
+    @subscriptions.add atom.commands.add @paneElement,
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
@@ -60,6 +62,9 @@ class TabBarView
     @element.addEventListener "dragleave", @onDragLeave.bind(this)
     @element.addEventListener "dragover", @onDragOver.bind(this)
     @element.addEventListener "drop", @onDrop.bind(this)
+
+    @paneElement.addEventListener 'dragenter', @onPaneDragEnter.bind(this)
+    @paneElement.addEventListener 'dragleave', @onPaneDragLeave.bind(this)
 
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
@@ -385,6 +390,16 @@ class TabBarView
           browserWindow?.webContents.send('tab:dropped', fromPaneId, fromIndex)
 
       atom.focus()
+
+  onPaneDragEnter: (event) ->
+    return if @pane.getItems().length > 1
+    if @paneElement.contains(event.relatedTarget)
+      @element.classList.remove('hidden')
+
+  onPaneDragLeave: (event) ->
+    return if @pane.getItems().length > 1
+    unless @paneElement.contains(event.relatedTarget)
+      @element.classList.add('hidden')
 
   onMouseWheel: (event) ->
     return if event.shiftKey
