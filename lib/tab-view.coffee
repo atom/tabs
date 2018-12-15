@@ -52,17 +52,8 @@ class TabView
       @updateTitle()
 
     @subscriptions.add @pane.onDidDestroy => @destroy()
-
-    # TODO: remove else condition once pending API is on stable [MKT]
-    if typeof @pane.onItemDidTerminatePendingState is 'function'
-      @subscriptions.add @pane.onItemDidTerminatePendingState (item) =>
-        @clearPending() if item is @item
-    else if typeof @item.onDidTerminatePendingState is 'function'
-      onDidTerminatePendingStateDisposable = @item.onDidTerminatePendingState => @clearPending()
-      if Disposable.isDisposable(onDidTerminatePendingStateDisposable)
-        @subscriptions.add(onDidTerminatePendingStateDisposable)
-      else
-        console.warn "::onDidTerminatePendingState does not return a valid Disposable!", @item
+    @subscriptions.add @pane.onItemDidTerminatePendingState (item) =>
+      @clearPending() if item is @item
 
     if typeof @item.onDidChangeTitle is 'function'
       onDidChangeTitleDisposable = @item.onDidChangeTitle(titleChangedHandler)

@@ -38,7 +38,7 @@ module.exports =
         atom.keymaps.add(keyBindSource, disabledBindings, 0)
 
     @subscriptions.add atom.config.observe enableMruConfigKey, => @updateTraversalKeybinds()
-    @subscriptions.add atom.keymaps.onDidLoadUserKeymap? => @updateTraversalKeybinds()
+    @subscriptions.add atom.keymaps.onDidLoadUserKeymap => @updateTraversalKeybinds()
 
     # If the command bubbles up without being handled by a particular pane,
     # close all tabs in all panes
@@ -50,10 +50,10 @@ module.exports =
           tabBarView.closeAllTabs()
 
     paneContainers =
-      center: atom.workspace.getCenter?() ? atom.workspace
-      left: atom.workspace.getLeftDock?()
-      right: atom.workspace.getRightDock?()
-      bottom: atom.workspace.getBottomDock?()
+      center: atom.workspace.getCenter()
+      left: atom.workspace.getLeftDock()
+      right: atom.workspace.getRightDock()
+      bottom: atom.workspace.getBottomDock()
 
     Object.keys(paneContainers).forEach (location) =>
       container = paneContainers[location]
