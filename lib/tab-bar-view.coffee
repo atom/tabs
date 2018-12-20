@@ -242,7 +242,7 @@ class TabBarView
     return unless @draggedTab
     @lastDropTargetIndex = null
 
-    event.dataTransfer.setData 'atom-event', 'true'
+    event.dataTransfer.setData 'atom-tab-event', 'true'
 
     @draggedTab.element.classList.add('is-dragging')
     @draggedTab.destroyTooltip()
@@ -302,7 +302,7 @@ class TabBarView
 
   onDragOver: (event) ->
     event.preventDefault()
-    unless isAtomEvent(event)
+    unless isAtomTabEvent(event)
       event.stopPropagation()
       return
 
@@ -348,7 +348,7 @@ class TabBarView
   onDrop: (event) ->
     event.preventDefault()
 
-    return unless event.dataTransfer.getData('atom-event') is 'true'
+    return unless isAtomTabEvent(event)
 
     fromWindowId  = parseInt(event.dataTransfer.getData('from-window-id'))
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
@@ -394,12 +394,14 @@ class TabBarView
 
   # Show the tab bar when a tab is being dragged in this pane when alwaysShowTabBar = false
   onPaneDragEnter: (event) ->
+    return unless isAtomTabEvent(event)
     return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
     if @paneElement.contains(event.relatedTarget)
       @element.classList.remove('hidden')
 
   # Hide the tab bar when the dragged tab leaves this pane when alwaysShowTabBar = false
   onPaneDragLeave: (event) ->
+    return unless isAtomTabEvent(event)
     return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
     unless @paneElement.contains(event.relatedTarget)
       @element.classList.add('hidden')
@@ -546,9 +548,9 @@ class TabBarView
       else
         currentElement = currentElement.parentElement
 
-isAtomEvent = (event) ->
+isAtomTabEvent = (event) ->
   for item in event.dataTransfer.items
-    if item.type is 'atom-event'
+    if item.type is 'atom-tab-event'
       return true
 
   return false
