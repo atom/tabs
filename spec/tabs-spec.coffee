@@ -947,6 +947,23 @@ describe "TabBarView", ->
           expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js"]
           expect(atom.workspace.getActivePane().getItems().length).toEqual(1)
 
+      describe "when the tab is not allowed in that pane", ->
+        it "does not move the tab, nor does it create a split", ->
+          layout.test =
+            pane: pane
+            itemView: pane.getElement().querySelector('.item-views')
+            rect: {top: 0, left: 0, width: 100, height: 100}
+
+          spyOn(layout, 'itemIsAllowedInPane').andReturn(false)
+          spyOn(pane, 'split')
+
+          tab = tabBar.tabAtIndex(0).element
+          tab.ondrag(target: tab, clientX: 80, clientY: 50)
+          layout.lastSplit = 'left'
+          tab.ondragend(target: tab, clientX: 80, clientY: 50)
+
+          expect(pane.split).not.toHaveBeenCalled()
+
     describe "when a non-tab is dragged to pane", ->
       it "has no effect", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
