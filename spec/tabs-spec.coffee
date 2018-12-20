@@ -1163,35 +1163,66 @@ describe "TabBarView", ->
     beforeEach ->
       atom.config.set("tabs.alwaysShowTabBar", true)
 
-    describe "when 2 tabs are open", ->
+    describe "when more than one tab is open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        expect(tabBar).not.toHaveClass 'hidden'
+        expect(tabBar.element).not.toHaveClass 'hidden'
 
-    describe "when 1 tab is open", ->
+    describe "when only one tab is open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        pane.destroyItem(item1)
-        pane.destroyItem(item2)
-        expect(pane.getItems().length).toBe 1
-        expect(tabBar).not.toHaveClass 'hidden'
+
+        waitsForPromise ->
+          pane.destroyItem(item1)
+
+        waitsForPromise ->
+          pane.destroyItem(item2)
+
+        runs ->
+          expect(pane.getItems().length).toBe 1
+          expect(tabBar.element).not.toHaveClass 'hidden'
 
   describe "when alwaysShowTabBar is false in package settings", ->
     beforeEach ->
       atom.config.set("tabs.alwaysShowTabBar", false)
 
-    describe "when 2 tabs are open", ->
+    describe "when more than one tab is open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        expect(tabBar).not.toHaveClass 'hidden'
+        expect(tabBar.element).not.toHaveClass 'hidden'
 
-    describe "when 1 tab is open", ->
+    describe "when only one tab is open", ->
       it "hides the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        pane.destroyItem(item1)
-        pane.destroyItem(item2)
-        expect(pane.getItems().length).toBe 1
-        expect(tabBar.element).toHaveClass 'hidden'
+
+        waitsForPromise ->
+          pane.destroyItem(item1)
+
+        waitsForPromise ->
+          pane.destroyItem(item2)
+
+        runs ->
+          expect(pane.getItems().length).toBe 1
+          expect(tabBar.element).toHaveClass 'hidden'
+
+    describe "when there are multiple panes", ->
+      it "hides each tab bar separately", ->
+        item3 = new TestView('Item 3')
+        item4 = new TestView('Item 4')
+        pane2 = pane.splitRight({items: [item3, item4]})
+        tabBar2 = new TabBarView(pane2, 'center')
+
+        expect(tabBar.element).not.toHaveClass 'hidden'
+        expect(tabBar2.element).not.toHaveClass 'hidden'
+
+        waitsForPromise ->
+          pane2.destroyItem(item3)
+
+        runs ->
+          expect(pane2.getItems().length).toBe 1
+
+          expect(tabBar.element).not.toHaveClass 'hidden'
+          expect(tabBar2.element).toHaveClass 'hidden'
 
   if atom.workspace.buildTextEditor().isPending? or atom.workspace.getActivePane().getActiveItem?
     isPending = (item) ->
