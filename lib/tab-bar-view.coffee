@@ -63,6 +63,7 @@ class TabBarView
     @element.addEventListener "dragover", @onDragOver.bind(this)
     @element.addEventListener "drop", @onDrop.bind(this)
 
+    # Toggle the tab bar when a tab is dragged over the pane with alwaysShowTabBar = false
     @paneElement.addEventListener 'dragenter', @onPaneDragEnter.bind(this)
     @paneElement.addEventListener 'dragleave', @onPaneDragLeave.bind(this)
 
@@ -391,13 +392,15 @@ class TabBarView
 
       atom.focus()
 
+  # Show the tab bar when a tab is being dragged in this pane when alwaysShowTabBar = false
   onPaneDragEnter: (event) ->
-    return if @pane.getItems().length > 1
+    return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
     if @paneElement.contains(event.relatedTarget)
       @element.classList.remove('hidden')
 
+  # Hide the tab bar when the dragged tab leaves this pane when alwaysShowTabBar = false
   onPaneDragLeave: (event) ->
-    return if @pane.getItems().length > 1
+    return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
     unless @paneElement.contains(event.relatedTarget)
       @element.classList.add('hidden')
 

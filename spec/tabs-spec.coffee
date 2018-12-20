@@ -880,8 +880,22 @@ describe "TabBarView", ->
 
           atom.config.set("tabs.addNewTabsAtEnd", false)
 
+      describe "when alwaysShowTabBar is set to true in package settings", ->
+        it "always shows the tab bar in the new pane", ->
+          atom.config.set("tabs.alwaysShowTabBar", true)
+          expect(pane2.getItems().length).toBe 1
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
       describe "when alwaysShowTabBar is set to false in package settings", ->
-        it "shows the tab bar in the new pane", ->
+        it "toggles the tab bar in the new pane", ->
           atom.config.set("tabs.alwaysShowTabBar", false)
           expect(pane2.getItems().length).toBe 1
           expect(tabBar2.element).toHaveClass('hidden')
