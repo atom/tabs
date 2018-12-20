@@ -901,10 +901,21 @@ describe "TabBarView", ->
           expect(tabBar2.element).toHaveClass('hidden')
 
         it "toggles the tab bar in the new pane", ->
+          spyOn(tabBar2, 'itemIsAllowed').andReturn(true)
           [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
 
           tabBar2.onPaneDragEnter(dragEnterEvent)
           expect(tabBar2.element).not.toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+        it "does not toggle the tab bar if the item cannot be moved to that pane", ->
+          spyOn(tabBar2, 'itemIsAllowed').andReturn(false)
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
 
           tabBar2.onPaneDragLeave(dragLeaveEvent)
           expect(tabBar2.element).toHaveClass('hidden')

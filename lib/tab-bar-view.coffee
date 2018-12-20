@@ -301,8 +301,8 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    return unless isAtomTabEvent(event)
-    return unless itemIsAllowed(event, @location)
+    return unless @isAtomTabEvent(event)
+    return unless @itemIsAllowed(event, @location)
 
     event.preventDefault()
     event.stopPropagation()
@@ -347,7 +347,7 @@ class TabBarView
   onDrop: (event) ->
     event.preventDefault()
 
-    return unless isAtomTabEvent(event)
+    return unless @isAtomTabEvent(event)
 
     fromWindowId  = parseInt(event.dataTransfer.getData('from-window-id'))
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
@@ -362,7 +362,7 @@ class TabBarView
 
     @clearDropTarget()
 
-    return unless itemIsAllowed(event, @location)
+    return unless @itemIsAllowed(event, @location)
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
@@ -393,17 +393,17 @@ class TabBarView
 
   # Show the tab bar when a tab is being dragged in this pane when alwaysShowTabBar = false
   onPaneDragEnter: (event) ->
-    return unless isAtomTabEvent(event)
+    return unless @isAtomTabEvent(event)
+    return unless @itemIsAllowed(event, @location)
     return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
-    return unless itemIsAllowed(event, @location)
     if @paneElement.contains(event.relatedTarget)
       @element.classList.remove('hidden')
 
   # Hide the tab bar when the dragged tab leaves this pane when alwaysShowTabBar = false
   onPaneDragLeave: (event) ->
-    return unless isAtomTabEvent(event)
+    return unless @isAtomTabEvent(event)
+    return unless @itemIsAllowed(event, @location)
     return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
-    return unless itemIsAllowed(event, @location)
     unless @paneElement.contains(event.relatedTarget)
       @element.classList.add('hidden')
 
@@ -549,16 +549,16 @@ class TabBarView
       else
         currentElement = currentElement.parentElement
 
-isAtomTabEvent = (event) ->
-  for item in event.dataTransfer.items
-    if item.type is 'atom-tab-event'
-      return true
+  isAtomTabEvent: (event) ->
+    for item in event.dataTransfer.items
+      if item.type is 'atom-tab-event'
+        return true
 
-  return false
+    return false
 
-itemIsAllowed = (event, location) ->
-  for item in event.dataTransfer.items
-    if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
-      return true
+  itemIsAllowed: (event, location) ->
+    for item in event.dataTransfer.items
+      if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
+        return true
 
-  return false
+    return false
