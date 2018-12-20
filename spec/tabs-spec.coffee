@@ -881,6 +881,13 @@ describe "TabBarView", ->
           atom.config.set("tabs.addNewTabsAtEnd", false)
 
     describe "when a tab is dragged over a pane item", ->
+      beforeEach ->
+        layout.activate()
+
+      afterEach ->
+        layout.deactivate()
+        layout.test = {}
+
       it "draws an overlay over the item", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
         tab = tabBar.tabAtIndex(2).element
