@@ -68,6 +68,13 @@ module.exports.buildDragEvents = (dragged, dropTarget) => {
     },
     getData (key) {
       return this.data[key]
+    },
+    clearData (key) {
+      if (key) {
+        delete this.data[key]
+      } else {
+        this.data = {}
+      }
     }
   }
 
@@ -105,6 +112,13 @@ module.exports.buildDragEnterLeaveEvents = (enterRelatedTarget, leaveRelatedTarg
     },
     getData (key) {
       return this.data[key]
+    },
+    clearData (key) {
+      if (key) {
+        delete this.data[key]
+      } else {
+        this.data = {}
+      }
     }
   }
 

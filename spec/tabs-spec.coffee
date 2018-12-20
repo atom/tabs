@@ -895,11 +895,12 @@ describe "TabBarView", ->
           expect(tabBar2.element).not.toHaveClass('hidden')
 
       describe "when alwaysShowTabBar is set to false in package settings", ->
-        it "toggles the tab bar in the new pane", ->
+        beforeEach ->
           atom.config.set("tabs.alwaysShowTabBar", false)
           expect(pane2.getItems().length).toBe 1
           expect(tabBar2.element).toHaveClass('hidden')
 
+        it "toggles the tab bar in the new pane", ->
           [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
 
           tabBar2.onPaneDragEnter(dragEnterEvent)
@@ -908,7 +909,16 @@ describe "TabBarView", ->
           tabBar2.onPaneDragLeave(dragLeaveEvent)
           expect(tabBar2.element).toHaveClass('hidden')
 
-          atom.config.set("tabs.alwaysShowTabBar", true)
+        it "does not toggle the tab bar if the item being dragged is not a tab", ->
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+          dragEnterEvent.dataTransfer.clearData('atom-tab-event')
+          dragLeaveEvent.dataTransfer.clearData('atom-tab-event')
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
 
     describe "when a tab is dragged over a pane item", ->
       it "draws an overlay over the item", ->
