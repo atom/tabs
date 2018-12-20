@@ -4,7 +4,7 @@ temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 layout = require '../lib/layout'
 main = require '../lib/main'
-{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
+{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildDragEnterLeaveEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   centerElement = null
@@ -880,6 +880,22 @@ describe "TabBarView", ->
 
           atom.config.set("tabs.addNewTabsAtEnd", false)
 
+      describe "when alwaysShowTabBar is set to false in package settings", ->
+        it "shows the tab bar in the new pane", ->
+          atom.config.set("tabs.alwaysShowTabBar", false)
+          expect(pane2.getItems().length).toBe 1
+          expect(tabBar2.element).toHaveClass('hidden')
+
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+          atom.config.set("tabs.alwaysShowTabBar", true)
+
     describe "when a tab is dragged over a pane item", ->
       it "draws an overlay over the item", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
@@ -900,7 +916,7 @@ describe "TabBarView", ->
         tab.ondrag target: tab, clientX: 200, clientY: 200
         expect(layout.view.classList.contains('visible')).toBe(false)
 
-      it "cleaves the pane in twain", ->
+      it "cleaves the pane in two", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
         tab = tabBar.tabAtIndex(2).element
         layout.test =
