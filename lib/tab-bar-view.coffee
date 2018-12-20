@@ -301,12 +301,11 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    event.preventDefault()
-    unless isAtomTabEvent(event)
-      event.stopPropagation()
-      return
-
+    return unless isAtomTabEvent(event)
     return unless itemIsAllowed(event, @location)
+
+    event.preventDefault()
+    event.stopPropagation()
 
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
@@ -396,6 +395,7 @@ class TabBarView
   onPaneDragEnter: (event) ->
     return unless isAtomTabEvent(event)
     return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
+    return unless itemIsAllowed(event, @location)
     if @paneElement.contains(event.relatedTarget)
       @element.classList.remove('hidden')
 
@@ -403,6 +403,7 @@ class TabBarView
   onPaneDragLeave: (event) ->
     return unless isAtomTabEvent(event)
     return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
+    return unless itemIsAllowed(event, @location)
     unless @paneElement.contains(event.relatedTarget)
       @element.classList.add('hidden')
 
