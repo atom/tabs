@@ -87,6 +87,7 @@ class TabBarView
 
     @element.addEventListener "mousedown", @onMouseDown.bind(this)
     @element.addEventListener "click", @onClick.bind(this)
+    @element.addEventListener "auxclick", @onClick.bind(this)
     @element.addEventListener "dblclick", @onDoubleClick.bind(this)
 
     @onDropOnOtherWindow = @onDropOnOtherWindow.bind(this)
