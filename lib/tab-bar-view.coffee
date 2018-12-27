@@ -345,9 +345,9 @@ class TabBarView
     @removePlaceholder()
 
   onDrop: (event) ->
-    event.preventDefault()
-
     return unless @isAtomTabEvent(event)
+
+    event.preventDefault()
 
     fromWindowId  = parseInt(event.dataTransfer.getData('from-window-id'))
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
