@@ -55,6 +55,7 @@ class TabBarView
 
     @element.addEventListener "mouseenter", @onMouseEnter.bind(this)
     @element.addEventListener "mouseleave", @onMouseLeave.bind(this)
+    @element.addEventListener "mousewheel", @onMouseWheel.bind(this)
     @element.addEventListener "dragstart", @onDragStart.bind(this)
     @element.addEventListener "dragend", @onDragEnd.bind(this)
     @element.addEventListener "dragleave", @onDragLeave.bind(this)
@@ -389,7 +390,7 @@ class TabBarView
       atom.focus()
 
   onMouseWheel: (event) ->
-    return if event.shiftKey
+    return if event.shiftKey or not @tabScrolling
 
     @wheelDelta ?= 0
     @wheelDelta += event.wheelDeltaY
@@ -445,12 +446,6 @@ class TabBarView
       @tabScrolling = (process.platform is 'linux')
     else
       @tabScrolling = value
-    @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
-
-    if @tabScrolling
-      @element.addEventListener 'mousewheel', @onMouseWheel.bind(this)
-    else
-      @element.removeEventListener 'mousewheel', @onMouseWheel.bind(this)
 
   browserWindowForId: (id) ->
     BrowserWindow ?= require('electron').remote.BrowserWindow
