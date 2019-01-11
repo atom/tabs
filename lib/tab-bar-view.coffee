@@ -80,9 +80,9 @@ class TabBarView
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
       @updateActiveTab()
 
-    @subscriptions.add atom.config.observe 'tabs.tabScrolling', @updateTabScrolling.bind(this)
-    @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
-    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
+    @subscriptions.add atom.config.observe 'tabs.tabScrolling', (value) => @updateTabScrolling(value)
+    @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', (value) => @updateTabScrollingThreshold(value)
+    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', (value) => @updateTabBarVisibility(value)
 
     @updateActiveTab()
 
@@ -148,8 +148,8 @@ class TabBarView
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
-  updateTabBarVisibility: ->
-    if not atom.config.get('tabs.alwaysShowTabBar') and not @shouldAllowDrag()
+  updateTabBarVisibility: (value) ->
+    if not value and not @shouldAllowDrag()
       @element.classList.add('hidden')
     else
       @element.classList.remove('hidden')
@@ -438,8 +438,8 @@ class TabBarView
       atom.commands.dispatch(@element, 'application:new-file')
       event.preventDefault()
 
-  updateTabScrollingThreshold: ->
-    @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
+  updateTabScrollingThreshold: (value) ->
+    @tabScrollingThreshold = value
 
   updateTabScrolling: (value) ->
     if value is 'platform'
