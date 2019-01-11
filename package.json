@@ -37,7 +37,7 @@
       "description": "Show the tab bar even when only one tab is open."
     },
     "tabScrolling": {
-      "type": "any",
+      "type": ["boolean", "string"],
       "enum": [
         true,
         false,
