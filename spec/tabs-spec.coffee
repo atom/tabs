@@ -333,7 +333,7 @@ describe "TabBarView", ->
       tabBar.getTabs().forEach((tab) -> tab.element.style.minWidth = '60px')
 
       # Expect there to be content to scroll
-      console.log(document.querySelector('#jasmine-content').clientWidth)
+      expect(document.querySelector('#jasmine-content').clientWidth).not.toBeLessThan 150
       expect(tabBar.element.scrollWidth).toBeGreaterThan tabBar.element.clientWidth
 
     it "does not scroll to the item when it is at least partially visible", ->
