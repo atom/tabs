@@ -333,23 +333,20 @@ describe "TabBarView", ->
       tabBar.getTabs().forEach((tab) -> tab.element.style.minWidth = '60px')
 
       # Expect there to be content to scroll
+      expect(tabBar.element.clientWidth).toBe 150
       expect(tabBar.element.scrollWidth).toBeGreaterThan tabBar.element.clientWidth
 
     it "does not scroll to the item when it is at least partially visible", ->
       pane.activateItem(item1)
-      expect(tabBar.tabForItem(item1).element.offsetLeft).toBe 0
       expect(tabBar.element.scrollLeft).toBe 0
 
       pane.activateItem(editor1)
-      expect(tabBar.tabForItem(editor1).element.offsetLeft).toBe 60
       expect(tabBar.element.scrollLeft).toBe 0
 
       pane.activateItem(item2)
-      expect(tabBar.tabForItem(item2).element.offsetLeft).toBe 120
       expect(tabBar.element.scrollLeft).toBe 0
 
       pane.activateItem(item3)
-      expect(tabBar.tabForItem(item3).element.offsetLeft).toBe 180
       expect(tabBar.element.scrollLeft).not.toBe 0
 
     it "scrolls to the item when it isn't visible", ->
