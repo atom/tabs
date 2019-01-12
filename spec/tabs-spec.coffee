@@ -332,9 +332,8 @@ describe "TabBarView", ->
       # 240 px, so there should be a scrollbar
       tabBar.getTabs().forEach((tab) -> tab.element.style.minWidth = '60px')
 
-      tabBar.getTabs().forEach((tab) -> console.log(getComputedStyle(tab.element).width))
-
       # Expect there to be content to scroll
+      expect(tabBar.element.scrollWidth).toBe 240
       expect(tabBar.element.scrollWidth).toBeGreaterThan tabBar.element.clientWidth
 
     it "does not scroll to the item when it is at least partially visible", ->
