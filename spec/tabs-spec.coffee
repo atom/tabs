@@ -330,7 +330,7 @@ describe "TabBarView", ->
       jasmine.attachToDOM(container)
 
       # 240 px, so there should be a scrollbar
-      tabBar.getTabs().forEach((tab) -> tab.style.minWidth = '60px')
+      tabBar.getTabs().forEach((tab) -> tab.element.style.minWidth = '60px')
 
       tabBar.getTabs().forEach((tab) -> console.log(getComputedStyle(tab.element).width))
 
