@@ -4,7 +4,7 @@ temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 layout = require '../lib/layout'
 main = require '../lib/main'
-{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
+{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildDragEnterLeaveEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
 
 describe "Tabs package main", ->
   centerElement = null
@@ -880,6 +880,57 @@ describe "TabBarView", ->
 
           atom.config.set("tabs.addNewTabsAtEnd", false)
 
+      describe "when alwaysShowTabBar is set to true in package settings", ->
+        it "always shows the tab bar in the new pane", ->
+          atom.config.set("tabs.alwaysShowTabBar", true)
+          expect(pane2.getItems().length).toBe 1
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+      describe "when alwaysShowTabBar is set to false in package settings", ->
+        beforeEach ->
+          atom.config.set("tabs.alwaysShowTabBar", false)
+          expect(pane2.getItems().length).toBe 1
+          expect(tabBar2.element).toHaveClass('hidden')
+
+        it "toggles the tab bar in the new pane", ->
+          spyOn(tabBar2, 'itemIsAllowed').andReturn(true)
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).not.toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+        it "does not toggle the tab bar if the item cannot be moved to that pane", ->
+          spyOn(tabBar2, 'itemIsAllowed').andReturn(false)
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+        it "does not toggle the tab bar if the item being dragged is not a tab", ->
+          [dragEnterEvent, dragLeaveEvent] = buildDragEnterLeaveEvents(pane2.getElement(), pane.getElement())
+          dragEnterEvent.dataTransfer.clearData('atom-tab-event')
+          dragLeaveEvent.dataTransfer.clearData('atom-tab-event')
+
+          tabBar2.onPaneDragEnter(dragEnterEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
+          tabBar2.onPaneDragLeave(dragLeaveEvent)
+          expect(tabBar2.element).toHaveClass('hidden')
+
     describe "when a tab is dragged over a pane item", ->
       beforeEach ->
         layout.activate()
@@ -907,7 +958,7 @@ describe "TabBarView", ->
         tab.ondrag target: tab, clientX: 200, clientY: 200
         expect(layout.view.classList.contains('visible')).toBe(false)
 
-      it "cleaves the pane in twain", ->
+      it "cleaves the pane in two", ->
         expect(tabBar.getTabs().map (tab) -> tab.element.textContent).toEqual ["Item 1", "sample.js", "Item 2"]
         tab = tabBar.tabAtIndex(2).element
         layout.test =
@@ -1195,35 +1246,66 @@ describe "TabBarView", ->
     beforeEach ->
       atom.config.set("tabs.alwaysShowTabBar", true)
 
-    describe "when 2 tabs are open", ->
+    describe "when more than one tab is open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        expect(tabBar).not.toHaveClass 'hidden'
+        expect(tabBar.element).not.toHaveClass 'hidden'
 
-    describe "when 1 tab is open", ->
+    describe "when only one tab is open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        pane.destroyItem(item1)
-        pane.destroyItem(item2)
-        expect(pane.getItems().length).toBe 1
-        expect(tabBar).not.toHaveClass 'hidden'
+
+        waitsForPromise ->
+          pane.destroyItem(item1)
+
+        waitsForPromise ->
+          pane.destroyItem(item2)
+
+        runs ->
+          expect(pane.getItems().length).toBe 1
+          expect(tabBar.element).not.toHaveClass 'hidden'
 
   describe "when alwaysShowTabBar is false in package settings", ->
     beforeEach ->
       atom.config.set("tabs.alwaysShowTabBar", false)
 
-    describe "when 2 tabs are open", ->
+    describe "when more than one tab is open", ->
       it "shows the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        expect(tabBar).not.toHaveClass 'hidden'
+        expect(tabBar.element).not.toHaveClass 'hidden'
 
-    describe "when 1 tab is open", ->
+    describe "when only one tab is open", ->
       it "hides the tab bar", ->
         expect(pane.getItems().length).toBe 3
-        pane.destroyItem(item1)
-        pane.destroyItem(item2)
-        expect(pane.getItems().length).toBe 1
-        expect(tabBar.element).toHaveClass 'hidden'
+
+        waitsForPromise ->
+          pane.destroyItem(item1)
+
+        waitsForPromise ->
+          pane.destroyItem(item2)
+
+        runs ->
+          expect(pane.getItems().length).toBe 1
+          expect(tabBar.element).toHaveClass 'hidden'
+
+    describe "when there are multiple panes", ->
+      it "hides each tab bar separately", ->
+        item3 = new TestView('Item 3')
+        item4 = new TestView('Item 4')
+        pane2 = pane.splitRight({items: [item3, item4]})
+        tabBar2 = new TabBarView(pane2, 'center')
+
+        expect(tabBar.element).not.toHaveClass 'hidden'
+        expect(tabBar2.element).not.toHaveClass 'hidden'
+
+        waitsForPromise ->
+          pane2.destroyItem(item3)
+
+        runs ->
+          expect(pane2.getItems().length).toBe 1
+
+          expect(tabBar.element).not.toHaveClass 'hidden'
+          expect(tabBar2.element).toHaveClass 'hidden'
 
   if atom.workspace.buildTextEditor().isPending? or atom.workspace.getActivePane().getActiveItem?
     isPending = (item) ->

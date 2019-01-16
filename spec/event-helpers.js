@@ -1,4 +1,4 @@
-const buildMouseEvent = (type, target, {which, ctrlKey} = {}) => {
+const buildMouseEvent = (type, target, {which, ctrlKey, relatedTarget} = {}) => {
   const event = new MouseEvent(type, {bubbles: true, cancelable: true})
   if (which != null) {
     Object.defineProperty(event, 'which', {
@@ -12,6 +12,14 @@ const buildMouseEvent = (type, target, {which, ctrlKey} = {}) => {
     Object.defineProperty(event, 'ctrlKey', {
       get () {
         return ctrlKey
+      }
+    })
+  }
+
+  if (relatedTarget != null) {
+    Object.defineProperty(event, 'relatedTarget', {
+      get () {
+        return relatedTarget
       }
     })
   }
@@ -60,6 +68,13 @@ module.exports.buildDragEvents = (dragged, dropTarget) => {
     },
     getData (key) {
       return this.data[key]
+    },
+    clearData (key) {
+      if (key) {
+        delete this.data[key]
+      } else {
+        this.data = {}
+      }
     }
   }
 
@@ -87,6 +102,52 @@ module.exports.buildDragEvents = (dragged, dropTarget) => {
   })
 
   return [dragStartEvent, dropEvent]
+}
+
+module.exports.buildDragEnterLeaveEvents = (enterRelatedTarget, leaveRelatedTarget) => {
+  const dataTransfer = {
+    data: {},
+    setData (key, value) {
+      this.data[key] = `${value}` // Drag events stringify data values
+    },
+    getData (key) {
+      return this.data[key]
+    },
+    clearData (key) {
+      if (key) {
+        delete this.data[key]
+      } else {
+        this.data = {}
+      }
+    }
+  }
+
+  Object.defineProperty(
+    dataTransfer,
+    'items', {
+      get () {
+        return Object.keys(dataTransfer.data).map(key => ({type: key}))
+      }
+    }
+  )
+
+  const dragEnterEvent = buildMouseEvent('dragenter', null, {relatedTarget: enterRelatedTarget})
+  Object.defineProperty(dragEnterEvent, 'dataTransfer', {
+    get () {
+      return dataTransfer
+    }
+  })
+  dragEnterEvent.dataTransfer.setData('atom-tab-event', 'true')
+
+  const dragLeaveEvent = buildMouseEvent('dragleave', null, {relatedTarget: leaveRelatedTarget})
+  Object.defineProperty(dragLeaveEvent, 'dataTransfer', {
+    get () {
+      return dataTransfer
+    }
+  })
+  dragLeaveEvent.dataTransfer.setData('atom-tab-event', 'true')
+
+  return [dragEnterEvent, dragLeaveEvent]
 }
 
 module.exports.buildWheelEvent = delta => new WheelEvent('mousewheel', {wheelDeltaY: delta})

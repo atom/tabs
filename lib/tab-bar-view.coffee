@@ -20,7 +20,9 @@ class TabBarView
     @tabsByElement = new WeakMap
     @subscriptions = new CompositeDisposable
 
-    @subscriptions.add atom.commands.add @pane.getElement(),
+    @paneElement = @pane.getElement()
+
+    @subscriptions.add atom.commands.add @paneElement,
       'tabs:keep-pending-tab': => @terminatePendingStates()
       'tabs:close-tab': => @closeTab(@getActiveTab())
       'tabs:close-other-tabs': => @closeOtherTabs(@getActiveTab())
@@ -62,6 +64,10 @@ class TabBarView
     @element.addEventListener "dragover", @onDragOver.bind(this)
     @element.addEventListener "drop", @onDrop.bind(this)
 
+    # Toggle the tab bar when a tab is dragged over the pane with alwaysShowTabBar = false
+    @paneElement.addEventListener 'dragenter', @onPaneDragEnter.bind(this)
+    @paneElement.addEventListener 'dragleave', @onPaneDragLeave.bind(this)
+
     @paneContainer = @pane.getContainer()
     @addTabForItem(item) for item in @pane.getItems()
 
@@ -82,7 +88,7 @@ class TabBarView
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', (value) => @updateTabScrolling(value)
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', (value) => @updateTabScrollingThreshold(value)
-    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', (value) => @updateTabBarVisibility(value)
+    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
     @updateActiveTab()
 
@@ -148,11 +154,12 @@ class TabBarView
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
-  updateTabBarVisibility: (value) ->
-    if not value and not @shouldAllowDrag()
-      @element.classList.add('hidden')
-    else
+  updateTabBarVisibility: ->
+    # Show tab bar if the setting is true or there is more than one tab
+    if atom.config.get('tabs.alwaysShowTabBar') or @pane.getItems().length > 1
       @element.classList.remove('hidden')
+    else
+      @element.classList.add('hidden')
 
   getTabs: ->
     @tabs.slice()
@@ -231,15 +238,12 @@ class TabBarView
   getWindowId: ->
     @windowId ?= atom.getCurrentWindow().id
 
-  shouldAllowDrag: ->
-    (@paneContainer.getPanes().length > 1) or (@pane.getItems().length > 1)
-
   onDragStart: (event) ->
     @draggedTab = @tabForElement(event.target)
     return unless @draggedTab
     @lastDropTargetIndex = null
 
-    event.dataTransfer.setData 'atom-event', 'true'
+    event.dataTransfer.setData 'atom-tab-event', 'true'
 
     @draggedTab.element.classList.add('is-dragging')
     @draggedTab.destroyTooltip()
@@ -298,12 +302,11 @@ class TabBarView
     @clearDropTarget()
 
   onDragOver: (event) ->
-    event.preventDefault()
-    unless isAtomEvent(event)
-      event.stopPropagation()
-      return
+    return unless @isAtomTabEvent(event)
+    return unless @itemIsAllowed(event, @location)
 
-    return unless itemIsAllowed(event, @location)
+    event.preventDefault()
+    event.stopPropagation()
 
     newDropTargetIndex = @getDropTargetIndex(event)
     return unless newDropTargetIndex?
@@ -343,9 +346,9 @@ class TabBarView
     @removePlaceholder()
 
   onDrop: (event) ->
-    event.preventDefault()
+    return unless @isAtomTabEvent(event)
 
-    return unless event.dataTransfer.getData('atom-event') is 'true'
+    event.preventDefault()
 
     fromWindowId  = parseInt(event.dataTransfer.getData('from-window-id'))
     fromPaneId    = parseInt(event.dataTransfer.getData('from-pane-id'))
@@ -360,7 +363,7 @@ class TabBarView
 
     @clearDropTarget()
 
-    return unless itemIsAllowed(event, @location)
+    return unless @itemIsAllowed(event, @location)
 
     if fromWindowId is @getWindowId()
       fromPane = @paneContainer.getPanes()[fromPaneIndex]
@@ -388,6 +391,22 @@ class TabBarView
           browserWindow?.webContents.send('tab:dropped', fromPaneId, fromIndex)
 
       atom.focus()
+
+  # Show the tab bar when a tab is being dragged in this pane when alwaysShowTabBar = false
+  onPaneDragEnter: (event) ->
+    return unless @isAtomTabEvent(event)
+    return unless @itemIsAllowed(event, @location)
+    return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
+    if @paneElement.contains(event.relatedTarget)
+      @element.classList.remove('hidden')
+
+  # Hide the tab bar when the dragged tab leaves this pane when alwaysShowTabBar = false
+  onPaneDragLeave: (event) ->
+    return unless @isAtomTabEvent(event)
+    return unless @itemIsAllowed(event, @location)
+    return if @pane.getItems().length > 1 or atom.config.get('tabs.alwaysShowTabBar')
+    unless @paneElement.contains(event.relatedTarget)
+      @element.classList.add('hidden')
 
   onMouseWheel: (event) ->
     return if event.shiftKey or not @tabScrolling
@@ -525,16 +544,16 @@ class TabBarView
       else
         currentElement = currentElement.parentElement
 
-isAtomEvent = (event) ->
-  for item in event.dataTransfer.items
-    if item.type is 'atom-event'
-      return true
+  isAtomTabEvent: (event) ->
+    for item in event.dataTransfer.items
+      if item.type is 'atom-tab-event'
+        return true
 
-  return false
+    return false
 
-itemIsAllowed = (event, location) ->
-  for item in event.dataTransfer.items
-    if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
-      return true
+  itemIsAllowed: (event, location) ->
+    for item in event.dataTransfer.items
+      if item.type is 'allow-all-locations' or item.type is "allowed-location-#{location}"
+        return true
 
-  return false
+    return false
