@@ -57,6 +57,7 @@ class TabBarView
 
     @element.addEventListener "mouseenter", @onMouseEnter.bind(this)
     @element.addEventListener "mouseleave", @onMouseLeave.bind(this)
+    @element.addEventListener "mousewheel", @onMouseWheel.bind(this)
     @element.addEventListener "dragstart", @onDragStart.bind(this)
     @element.addEventListener "dragend", @onDragEnd.bind(this)
     @element.addEventListener "dragleave", @onDragLeave.bind(this)
@@ -85,9 +86,9 @@ class TabBarView
     @subscriptions.add @pane.onDidChangeActiveItem (item) =>
       @updateActiveTab()
 
-    @subscriptions.add atom.config.observe 'tabs.tabScrolling', @updateTabScrolling.bind(this)
-    @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', => @updateTabScrollingThreshold()
-    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
+    @subscriptions.add atom.config.observe 'tabs.tabScrolling', (value) => @updateTabScrolling(value)
+    @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', (value) => @updateTabScrollingThreshold(value)
+    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', (value) => @updateTabBarVisibility(value)
 
     @updateActiveTab()
 
@@ -153,9 +154,9 @@ class TabBarView
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
-  updateTabBarVisibility: ->
+  updateTabBarVisibility: (value) ->
     # Show tab bar if the setting is true or there is more than one tab
-    if atom.config.get('tabs.alwaysShowTabBar') or @pane.getItems().length > 1
+    if value or @pane.getItems().length > 1
       @element.classList.remove('hidden')
     else
       @element.classList.add('hidden')
@@ -408,7 +409,7 @@ class TabBarView
       @element.classList.add('hidden')
 
   onMouseWheel: (event) ->
-    return if event.shiftKey
+    return if event.shiftKey or not @tabScrolling
 
     @wheelDelta ?= 0
     @wheelDelta += event.wheelDeltaY
@@ -456,20 +457,14 @@ class TabBarView
       atom.commands.dispatch(@element, 'application:new-file')
       event.preventDefault()
 
-  updateTabScrollingThreshold: ->
-    @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
+  updateTabScrollingThreshold: (value) ->
+    @tabScrollingThreshold = value
 
   updateTabScrolling: (value) ->
     if value is 'platform'
       @tabScrolling = (process.platform is 'linux')
     else
       @tabScrolling = value
-    @tabScrollingThreshold = atom.config.get('tabs.tabScrollingThreshold')
-
-    if @tabScrolling
-      @element.addEventListener 'mousewheel', @onMouseWheel.bind(this)
-    else
-      @element.removeEventListener 'mousewheel', @onMouseWheel.bind(this)
 
   browserWindowForId: (id) ->
     BrowserWindow ?= require('electron').remote.BrowserWindow

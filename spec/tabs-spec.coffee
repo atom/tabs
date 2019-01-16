@@ -1218,6 +1218,14 @@ describe "TabBarView", ->
           tabBar.element.dispatchEvent(buildWheelPlusShiftEvent(-120))
           expect(pane.getActiveItem()).toBe item2
 
+      describe "when the tabScrolling is changed to false", ->
+        it "does not change the active tab when scrolling", ->
+          atom.config.set("tabs.tabScrolling", false)
+
+          expect(pane.getActiveItem()).toBe item2
+          tabBar.element.dispatchEvent(buildWheelEvent(120))
+          expect(pane.getActiveItem()).toBe item2
+
     describe "when tabScrolling is false in package settings", ->
       beforeEach ->
         atom.config.set("tabs.tabScrolling", false)
