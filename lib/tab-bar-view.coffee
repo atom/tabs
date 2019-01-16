@@ -88,7 +88,7 @@ class TabBarView
 
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', (value) => @updateTabScrolling(value)
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', (value) => @updateTabScrollingThreshold(value)
-    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', (value) => @updateTabBarVisibility(value)
+    @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
 
     @updateActiveTab()
 
@@ -154,9 +154,9 @@ class TabBarView
     tab.updateTitle() for tab in @getTabs()
     @updateTabBarVisibility()
 
-  updateTabBarVisibility: (value) ->
+  updateTabBarVisibility: ->
     # Show tab bar if the setting is true or there is more than one tab
-    if value or @pane.getItems().length > 1
+    if atom.config.get('tabs.alwaysShowTabBar') or @pane.getItems().length > 1
       @element.classList.remove('hidden')
     else
       @element.classList.add('hidden')
