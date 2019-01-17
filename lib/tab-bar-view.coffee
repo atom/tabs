@@ -330,7 +330,7 @@ class TabBarView
         else
           tab.element.parentElement.appendChild(placeholder)
 
-  onDropOnOtherWindow: (fromPaneId, fromItemIndex) ->
+  onDropOnOtherWindow: (event, fromPaneId, fromItemIndex) ->
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
