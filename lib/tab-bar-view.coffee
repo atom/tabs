@@ -2,7 +2,6 @@ BrowserWindow = null # Defer require until actually used
 {ipcRenderer} = require 'electron'
 
 {CompositeDisposable} = require 'atom'
-_ = require 'underscore-plus'
 TabView = require './tab-view'
 
 module.exports =
