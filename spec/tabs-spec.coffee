@@ -1,4 +1,3 @@
-_ = require 'underscore-plus'
 path = require 'path'
 temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
@@ -69,13 +68,13 @@ describe "TabBarView", ->
     onDidChangeTitle: (callback) ->
       @titleCallbacks ?= []
       @titleCallbacks.push(callback)
-      dispose: => _.remove(@titleCallbacks, callback)
+      dispose: => @titleCallbacks.splice(@titleCallbacks.indexOf(callback), 1)
     emitTitleChanged: ->
       callback() for callback in @titleCallbacks ? []
     onDidChangeIcon: (callback) ->
       @iconCallbacks ?= []
       @iconCallbacks.push(callback)
-      dispose: => _.remove(@iconCallbacks, callback)
+      dispose: => @iconCallbacks.splice(@iconCallbacks.indexOf(callback), 1)
     emitIconChanged: ->
       callback() for callback in @iconCallbacks ? []
     onDidChangeModified: -> # to suppress deprecation warning
@@ -1465,14 +1464,14 @@ describe "TabBarView", ->
       repository.onDidChangeStatus = (callback) ->
         @changeStatusCallbacks ?= []
         @changeStatusCallbacks.push(callback)
-        dispose: => _.remove(@changeStatusCallbacks, callback)
+        dispose: => @changeStatusCallbacks.splice(@changeStatusCallbacks.indexOf(callback), 1)
       repository.emitDidChangeStatus = (event) ->
         callback(event) for callback in @changeStatusCallbacks ? []
 
       repository.onDidChangeStatuses = (callback) ->
         @changeStatusesCallbacks ?= []
         @changeStatusesCallbacks.push(callback)
-        dispose: => _.remove(@changeStatusesCallbacks, callback)
+        dispose: => @changeStatusesCallbacks.splice(@changeStatusCallbacks.indexOf(callback), 1)
       repository.emitDidChangeStatuses = (event) ->
         callback(event) for callback in @changeStatusesCallbacks ? []
 

@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "fs-plus": "^3.0.0",
-    "temp": "~0.8.1",
-    "underscore-plus": "1.x"
+    "temp": "~0.8.1"
   },
   "consumedServices": {
     "atom.file-icons": {
@@ -37,7 +36,10 @@
       "description": "Show the tab bar even when only one tab is open."
     },
     "tabScrolling": {
-      "type": ["boolean", "string"],
+      "type": [
+        "boolean",
+        "string"
+      ],
       "enum": [
         true,
         false,
