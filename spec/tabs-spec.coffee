@@ -1047,18 +1047,26 @@ describe "TabBarView", ->
           expect(dragStartEvent.dataTransfer.getData("text/uri-list")).toEqual "file://#{editor1.getPath()}"
 
     describe "when a tab is dragged to another Atom window", ->
+      beforeEach ->
+        spyOn(pane, 'destroyItem').andCallThrough()
+
       it "closes the tab in the first window and opens the tab in the second window", ->
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1).element, tabBar.tabAtIndex(0).element)
         tabBar.onDragStart(dragStartEvent)
-        tabBar.onDropOnOtherWindow(pane.id, 1)
+        atom.getCurrentWindow().webContents.send('tab:dropped', pane.id, 1)
 
-        expect(pane.getItems()).toEqual [item1, item2]
-        expect(pane.getActiveItem()).toBe item2
+        # Can't spy on onDropOnOtherWindow since it's binded
+        waitsFor 'dragged pane item to be destroyed', ->
+          pane.destroyItem.callCount is 1
 
-        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        runs ->
+          expect(pane.getItems()).toEqual [item1, item2]
+          expect(pane.getActiveItem()).toBe item2
 
-        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
-        tabBar.onDrop(dropEvent)
+          dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+
+          spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+          tabBar.onDrop(dropEvent)
 
         waitsFor ->
           tabBar.moveItemBetweenPanes.callCount > 0
@@ -1072,12 +1080,17 @@ describe "TabBarView", ->
         editor1.setText('I came from another window')
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1).element, tabBar.tabAtIndex(0).element)
         tabBar.onDragStart(dragStartEvent)
-        tabBar.onDropOnOtherWindow(pane.id, 1)
+        atom.getCurrentWindow().webContents.send('tab:dropped', pane.id, 1)
 
-        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        # Can't spy on onDropOnOtherWindow since it's binded
+        waitsFor 'dragged pane item to be destroyed', ->
+          pane.destroyItem.callCount is 1
 
-        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
-        tabBar.onDrop(dropEvent)
+        runs ->
+          dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+
+          spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+          tabBar.onDrop(dropEvent)
 
         waitsFor ->
           tabBar.moveItemBetweenPanes.callCount > 0
@@ -1091,12 +1104,17 @@ describe "TabBarView", ->
 
         [dragStartEvent, dropEvent] = buildDragEvents(tabBar.tabAtIndex(1).element, tabBar.tabAtIndex(0).element)
         tabBar.onDragStart(dragStartEvent)
-        tabBar.onDropOnOtherWindow(pane.id, 1)
+        atom.getCurrentWindow().webContents.send('tab:dropped', pane.id, 1)
 
-        dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+        # Can't spy on onDropOnOtherWindow since it's binded
+        waitsFor 'dragged pane item to be destroyed', ->
+          pane.destroyItem.callCount is 1
 
-        spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
-        tabBar.onDrop(dropEvent)
+        runs ->
+          dropEvent.dataTransfer.setData('from-window-id', tabBar.getWindowId() + 1)
+
+          spyOn(tabBar, 'moveItemBetweenPanes').andCallThrough()
+          tabBar.onDrop(dropEvent)
 
         waitsFor ->
           tabBar.moveItemBetweenPanes.callCount > 0
