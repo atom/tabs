@@ -2,7 +2,6 @@ BrowserWindow = null # Defer require until actually used
 {ipcRenderer} = require 'electron'
 
 {CompositeDisposable} = require 'atom'
-_ = require 'underscore-plus'
 TabView = require './tab-view'
 
 module.exports =
@@ -331,7 +330,7 @@ class TabBarView
         else
           tab.element.parentElement.appendChild(placeholder)
 
-  onDropOnOtherWindow: (fromPaneId, fromItemIndex) ->
+  onDropOnOtherWindow: (event, fromPaneId, fromItemIndex) ->
     if @pane.id is fromPaneId
       if itemToRemove = @pane.getItems()[fromItemIndex]
         @pane.destroyItem(itemToRemove)
