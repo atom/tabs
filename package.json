@@ -1,6 +1,6 @@
 {
   "name": "tabs",
-  "version": "0.109.2",
+  "version": "0.110.0",
   "main": "./lib/main",
   "description": "Display a selectable tab for each editor open.",
   "license": "MIT",
@@ -37,7 +37,10 @@
       "description": "Show the tab bar even when only one tab is open."
     },
     "tabScrolling": {
-      "type": ["boolean", "string"],
+      "type": [
+        "boolean",
+        "string"
+      ],
       "enum": [
         true,
         false,
