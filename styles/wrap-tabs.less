@@ -1,0 +1,27 @@
+@import "ui-variables";
+
+.tab-bar.wrap-tabs {
+           flex-wrap: wrap;
+            height: auto;
+        box-shadow: none;
+          margin-top: -1px;
+       background: linear-gradient(180deg, @tab-border-color, transparent 75%);
+       background-size: 1px @tab-height+1px;
+
+    .tab, .tab.active {
+         min-width: auto;
+         max-width: 19em;
+    }
+
+    .tab.active {
+        box-shadow: none !important;
+        margin-left: 1px;
+    }
+
+    .tab {
+         border: 1px solid @tab-border-color;
+         border-bottom: none;
+         margin: 0 -1px 0 -1px;
+         &:last-of-type { box-shadow: none; }
+    }
+}
