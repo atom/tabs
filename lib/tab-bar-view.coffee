@@ -175,7 +175,7 @@ class TabBarView
       @activeTab?.element.classList.remove('active')
       @activeTab = tabView
       @activeTab.element.classList.add('active')
-      @activeTab.element.scrollIntoView(false)
+      @activeTab.element.scrollIntoView({inline: 'nearest'})
 
   getActiveTab: ->
     @tabForItem(@pane.getActiveItem())
