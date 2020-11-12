@@ -422,15 +422,15 @@ class TabBarView
       @pane.activatePreviousItem()
 
   onMouseDown: (event) ->
+    @pane.activate() unless @pane.isDestroyed()
+
     tab = @tabForElement(event.target)
     return unless tab
 
-    if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
-      @rightClickedTab?.element.classList.remove('right-clicked')
+    if event.button is 2 or (event.button is 0 and event.ctrlKey is true)
       @rightClickedTab = tab
-      @rightClickedTab.element.classList.add('right-clicked')
       event.preventDefault()
-    else if event.which is 2
+    else if event.button is 1
       # This prevents Chromium from activating "scroll mode" when
       # middle-clicking while some tabs are off-screen.
       event.preventDefault()
@@ -440,14 +440,13 @@ class TabBarView
     return unless tab
 
     event.preventDefault()
-    if event.which is 3 or (event.which is 1 and event.ctrlKey is true)
+    if event.button is 2 or (event.button is 0 and event.ctrlKey is true)
       # Bail out early when receiving this event, because we have already
       # handled it in the mousedown handler.
       return
-    else if event.which is 1 and not event.target.classList.contains('close-icon')
+    else if event.button is 0 and not event.target.classList.contains('close-icon')
       @pane.activateItem(tab.item)
-      @pane.activate() unless @pane.isDestroyed()
-    else if event.which is 2
+    else if event.button is 1
       @pane.destroyItem(tab.item)
 
   onDoubleClick: (event) ->
