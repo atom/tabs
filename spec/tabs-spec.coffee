@@ -4,7 +4,8 @@ temp = require 'temp'
 TabBarView = require '../lib/tab-bar-view'
 layout = require '../lib/layout'
 main = require '../lib/main'
-{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildDragEnterLeaveEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers"
+{triggerMouseEvent, triggerClickEvent, buildDragEvents, buildDragEnterLeaveEvents, buildWheelEvent, buildWheelPlusShiftEvent} = require "./event-helpers.coffee"
+{buildDragEnterLeaveEvents} = require "./event-helpers"
 
 describe "Tabs package main", ->
   centerElement = null
