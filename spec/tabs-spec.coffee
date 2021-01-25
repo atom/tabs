@@ -1442,7 +1442,7 @@ describe "TabBarView", ->
             expect(tabBar2.tabForItem(pane2.getActiveItem()).element.querySelector('.title')).not.toHaveClass 'temp'
 
   describe "integration with version control systems", ->
-    [repository, tab, tab1] = []
+    [repository, repositorySpy, tab, tab1] = []
 
     beforeEach ->
       tab = tabBar.tabForItem(editor1)
@@ -1473,7 +1473,7 @@ describe "TabBarView", ->
         callback(event) for callback in @changeStatusesCallbacks ? []
 
       # Mock atom.project to pretend we are working within a repository
-      spyOn(atom.project, 'repositoryForDirectory').andReturn Promise.resolve(repository)
+      repositorySpy = spyOn(atom.project, 'repositoryForDirectory').andReturn Promise.resolve(repository)
 
       atom.config.set "tabs.enableVcsColoring", true
 
@@ -1515,6 +1515,10 @@ describe "TabBarView", ->
         expect(repository.getCachedPathStatus.calls.length).toBe 0
 
       it "does not update status for items not in the repository", ->
+        atom.config.set "tabs.enableVcsColoring", false
+        repositorySpy.andReturn Promise.resolve(null)
+        atom.config.set "tabs.enableVcsColoring", true
+
         tab1.updateVcsStatus.reset()
         repository.emitDidChangeStatuses()
         expect(tab1.updateVcsStatus.calls.length).toEqual 0
