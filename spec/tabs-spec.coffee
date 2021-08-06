@@ -21,6 +21,7 @@ describe "Tabs package main", ->
 
   describe ".activate()", ->
     it "appends a tab bar all existing and new panes", ->
+      jasmine.attachToDOM(centerElement)
       expect(centerElement.querySelectorAll('.pane').length).toBe 1
       expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 1
 
@@ -36,6 +37,7 @@ describe "Tabs package main", ->
     it "removes all tab bar views and stops adding them to new panes", ->
       pane = atom.workspace.getActivePane()
       pane.splitRight()
+      jasmine.attachToDOM(centerElement)
       expect(centerElement.querySelectorAll('.pane').length).toBe 2
       expect(centerElement.querySelectorAll('.pane > .tab-bar').length).toBe 2
 
@@ -929,6 +931,7 @@ describe "TabBarView", ->
 
     describe "when a tab is dragged over a pane item", ->
       beforeEach ->
+        jasmine.attachToDOM(atom.workspace.getElement())
         layout.activate()
 
       afterEach ->
