@@ -1,5 +1,5 @@
 path = require 'path'
-{Disposable, CompositeDisposable} = require 'atom'
+{Directory, Disposable, CompositeDisposable} = require 'atom'
 getIconServices = require './get-icon-services'
 
 layout = require './layout'
@@ -263,9 +263,7 @@ class TabView
       @updateVcsStatus(repo)
 
   repoForPath: ->
-    for dir in atom.project.getDirectories()
-      return atom.project.repositoryForDirectory(dir) if dir.contains @path
-    Promise.resolve(null)
+    return atom.project.repositoryForDirectory(new Directory(@path))
 
   # Update the VCS status property of this tab using the repo.
   updateVcsStatus: (repo, status) ->
