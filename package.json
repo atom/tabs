@@ -76,6 +76,11 @@
       "title": "Display MRU Tab Switching List",
       "default": true,
       "description": "When MRU Tab Switching is enabled, display the most-recently-used tab list."
+    },
+    "wrapTabs": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wrap overflowing tabs onto multiple rows."
     }
   },
   "devDependencies": {

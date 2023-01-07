@@ -88,6 +88,7 @@ class TabBarView
     @subscriptions.add atom.config.observe 'tabs.tabScrolling', (value) => @updateTabScrolling(value)
     @subscriptions.add atom.config.observe 'tabs.tabScrollingThreshold', (value) => @updateTabScrollingThreshold(value)
     @subscriptions.add atom.config.observe 'tabs.alwaysShowTabBar', => @updateTabBarVisibility()
+    @subscriptions.add atom.config.observe 'tabs.wrapTabs', (value) => @element.classList.toggle "wrap-tabs", value
 
     @updateActiveTab()
 

@@ -1324,6 +1324,17 @@ describe "TabBarView", ->
           expect(tabBar.element).not.toHaveClass 'hidden'
           expect(tabBar2.element).toHaveClass 'hidden'
 
+  describe "when wrapTabs is true in package settings", ->
+    it "adds the `wrap-tabs` class to tabBar element", ->
+      atom.config.set("tabs.wrapTabs", true)
+      expect(tabBar.element).toHaveClass 'wrap-tabs'
+
+  describe "when wrapTabs is false in package settings", ->
+    it "removes `wrap-tabs` class from tabBar element", ->
+      tabBar.element.classList.add 'wrap-tabs'
+      atom.config.set("tabs.wrapTabs", false)
+      expect(tabBar.element).not.toHaveClass 'wrap-tabs'
+
   if atom.workspace.buildTextEditor().isPending? or atom.workspace.getActivePane().getActiveItem?
     isPending = (item) ->
       if item.isPending?
