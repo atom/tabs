@@ -327,10 +327,14 @@ describe "TabBarView", ->
       container.appendChild(tabBar.element)
       jasmine.attachToDOM(container)
 
+      # 240 px, so there should be a scrollbar
+      tabBar.getTabs().forEach((tab) -> tab.element.style.minWidth = '60px')
+
       # Expect there to be content to scroll
+      expect(document.querySelector('#jasmine-content').clientWidth).not.toBeLessThan 50000
       expect(tabBar.element.scrollWidth).toBeGreaterThan tabBar.element.clientWidth
 
-    it "does not scroll to the item when it is visible", ->
+    it "does not scroll to the item when it is at least partially visible", ->
       pane.activateItem(item1)
       expect(tabBar.element.scrollLeft).toBe 0
 
@@ -343,15 +347,23 @@ describe "TabBarView", ->
       pane.activateItem(item3)
       expect(tabBar.element.scrollLeft).not.toBe 0
 
-    it "scrolls to the item when it isn't completely visible", ->
-      tabBar.element.scrollLeft = 5
-      expect(tabBar.element.scrollLeft).toBe 5 # This can be 0 if there is no horizontal scrollbar
+    it "scrolls to the item when it isn't visible", ->
+      tabBar.element.scrollLeft = 20
+
+      # Ceil it because scrollLeft can be a decimal with display scaling
+      # https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTop
+      expect(Math.ceil(tabBar.element.scrollLeft)).toBe 20 # This can be 0 if there is no horizontal scrollbar
+
+      # Last 40 pixels of item1 are still visible
+      pane.activateItem(item1)
+      expect(Math.ceil(tabBar.element.scrollLeft)).toBe 20
+
+      # item3 is not visible (visible area goes to 150 + 20 = 170px, item3 starts at 180px)
+      pane.activateItem(item3)
+      expect(Math.ceil(tabBar.element.scrollLeft)).toBe tabBar.element.scrollWidth - tabBar.element.clientWidth
 
       pane.activateItem(item1)
-      expect(tabBar.element.scrollLeft).toBe 0
-
-      pane.activateItem(item3)
-      expect(tabBar.element.scrollLeft).toBe tabBar.element.scrollWidth - tabBar.element.clientWidth
+      expect(Math.floor(tabBar.element.scrollLeft)).toBe 0
 
   describe "when a tab item's title changes", ->
     it "updates the title of the item's tab", ->
